@@ -4,6 +4,7 @@ import { ReactNode, useState } from 'react';
 import Box from '@mui/material/Box';
 import { MaterioSidebar, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './MaterioSidebar';
 import { MaterioTopbar } from './MaterioTopbar';
+import { MobileBottomNav } from './MobileBottomNav';
 
 interface MaterioLayoutProps {
   children: ReactNode;
@@ -12,8 +13,6 @@ interface MaterioLayoutProps {
 export function MaterioLayout({ children }: MaterioLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-  const sidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -43,13 +42,21 @@ export function MaterioLayout({ children }: MaterioLayoutProps) {
         <Box
           sx={{
             flex: 1,
-            p: { xs: 2, sm: 3 },
+            p: { xs: 1.5, sm: 2.5, md: 3 },
             overflowY: 'auto',
+            paddingTop: { xs: 1.5, sm: 2.5, md: 3 },
+            paddingBottom: {
+              xs: 'calc(env(safe-area-inset-bottom) + 72px)',
+              lg: 3,
+            },
           }}
         >
           {children}
         </Box>
       </Box>
+
+      {/* Mobile bottom navigation — hidden on desktop */}
+      <MobileBottomNav />
     </Box>
   );
 }
