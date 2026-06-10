@@ -1,3 +1,4 @@
 - [Next.js version block](nextjs-version.md) — next@14.2.5 diblokir package firewall Replit (security vuln); pakai next@14.2.30 sebagai gantinya
 - [Prisma pnpm version](prisma-pnpm.md) — backend pakai prisma@5.22.0, root pakai prisma@7.8.0; jalankan via `pnpm --filter @erp-modern/backend exec prisma` bukan `npx prisma`
 - [Auth cookie vs localStorage](auth-cookie-localstorage.md) — middleware baca cookie tapi auth store simpan ke localStorage saja → infinite redirect loop; fix: set cookie di login/loginDemo/logout/rehydrate, dan tambah `/` ke PUBLIC_PATHS middleware
+- [Auth rehydrate timing fix](auth-rehydrate-timing.md) — 100+ halaman redirect ke dashboard karena rehydrate() dipanggil di useEffect (async); fix: pindah ke useState lazy initializer di ConditionalLayout agar sinkron sebelum render anak
