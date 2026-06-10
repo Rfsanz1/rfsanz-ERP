@@ -14,7 +14,6 @@ apps/
 │   ├── /gudang     → Warehouse/Gudang (sidebar amber)
 │   ├── /driver     → Driver/Delivery (mobile bottom nav)
 │   └── /...        → Accounting, HR, Payroll, CRM, dst.
-└── pos-app/   → Kasir (Replit project terpisah)
 ```
 
 ## Cara Menjalankan
@@ -28,7 +27,6 @@ Dua workflow berjalan otomatis:
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | `admin@example.com` | `admin123` |
-| Kasir (POS) | `kasir1` | `kasir123` |
 
 ## Role-Based Access
 
@@ -42,11 +40,6 @@ Login otomatis redirect ke halaman yang sesuai:
 | Driver | `/driver` |
 
 Administrator dapat mengatur akses tiap user melalui menu **Settings → Users & Roles**.
-
-## POS App (Repo Terpisah)
-
-Folder `apps/pos-app/` adalah aplikasi kasir mandiri yang bisa dipindah ke Replit project baru.
-Lihat `apps/pos-app/README.md` untuk panduan setup lengkap.
 
 ## Catatan Penting
 
