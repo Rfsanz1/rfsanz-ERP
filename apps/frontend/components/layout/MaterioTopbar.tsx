@@ -66,21 +66,14 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
         padding: '0 16px', height: 64, flexShrink: 0,
       }}
     >
-      {/* Hamburger — desktop */}
+      {/* Hamburger — satu tombol, handler sesuai breakpoint */}
       <button
-        onClick={onToggleSidebar}
-        className="hidden lg:flex"
+        onClick={() => {
+          if (window.innerWidth >= 1024) onToggleSidebar();
+          else onToggleMobileSidebar();
+        }}
         style={{ ...iconBtnStyle, border: '1px solid var(--border)' }}
         onMouseEnter={hoverOn} onMouseLeave={hoverOff}
-      >
-        <MenuIcon size={17} strokeWidth={2} />
-      </button>
-
-      {/* Hamburger — mobile */}
-      <button
-        onClick={onToggleMobileSidebar}
-        className="flex lg:hidden"
-        style={{ ...iconBtnStyle, border: '1px solid var(--border)' }}
       >
         <MenuIcon size={17} strokeWidth={2} />
       </button>
