@@ -5,288 +5,440 @@ import Link from 'next/link';
 import {
   TrendingUp, TrendingDown, ShoppingCart, Package, DollarSign,
   Users, FileText, AlertTriangle, CheckCircle, Clock, BarChart2,
-  RefreshCw, Truck, Target, MoreHorizontal, ChevronRight, Wallet,
+  RefreshCw, Truck, Target, ChevronRight, Wallet, ArrowUpRight,
 } from 'lucide-react';
 import CreateOrderModal from '../../components/orders/CreateOrderModal';
 import { useDashboardData } from '../../lib/hooks/useDashboardData';
 
+/* ── Formatters ────────────────────────────────────────────────────── */
 function formatRp(n: number): string {
   if (!n || isNaN(n)) return 'Rp 0';
-  if (n >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toFixed(2)} M`;
-  if (n >= 1_000_000)     return `Rp ${(n / 1_000_000).toFixed(2)} Jt`;
-  if (n >= 1_000)         return `Rp ${(n / 1_000).toFixed(0)} rb`;
+  if (n >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toFixed(1)}M`;
+  if (n >= 1_000_000)     return `Rp ${(n / 1_000_000).toFixed(1)}Jt`;
+  if (n >= 1_000)         return `Rp ${(n / 1_000).toFixed(0)}rb`;
   return `Rp ${n.toLocaleString('id-ID')}`;
 }
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins} mnt lalu`;
+  if (mins < 60)  return `${mins}m lalu`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} jam lalu`;
-  return `${Math.floor(hrs / 24)} hari lalu`;
+  if (hrs < 24)   return `${hrs}j lalu`;
+  return `${Math.floor(hrs / 24)}h lalu`;
 }
 
-const STATUS_STYLE: Record<string, { color: string; bg: string; label: string }> = {
-  confirmed:   { color: '#3B82F6', bg: '#EFF6FF',  label: 'Dikonfirmasi' },
-  in_progress: { color: '#F59E0B', bg: '#FFFBEB',  label: 'Diproses' },
-  done:        { color: '#10B981', bg: '#ECFDF5',  label: 'Selesai' },
-  cancelled:   { color: '#EA5455', bg: '#FFF5F5',  label: 'Dibatalkan' },
-  pending:     { color: '#94A3B8', bg: '#F8FAFC',  label: 'Pending' },
+/* ── Status pills ──────────────────────────────────────────────────── */
+const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
+  confirmed:   { label: 'Dikonfirmasi', color: '#3B82F6', bg: 'rgba(59,130,246,0.10)' },
+  in_progress: { label: 'Diproses',     color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
+  done:        { label: 'Selesai',       color: '#10B981', bg: 'rgba(16,185,129,0.10)' },
+  cancelled:   { label: 'Dibatalkan',   color: '#EF4444', bg: 'rgba(239,68,68,0.10)'  },
+  pending:     { label: 'Pending',       color: '#94A3B8', bg: 'rgba(148,163,184,0.10)'},
 };
+const getStatus = (s: string) => STATUS_MAP[s?.toLowerCase()] ?? STATUS_MAP.pending;
 
-function getStatusStyle(s: string) {
-  return STATUS_STYLE[s?.toLowerCase()] ?? STATUS_STYLE.pending;
-}
-
-function Skeleton({ w = 'w-full', h = 'h-4', rounded = 'rounded' }: { w?: string; h?: string; rounded?: string }) {
-  return <div className={`${w} ${h} ${rounded} animate-pulse`} style={{ backgroundColor: '#F1F5F9' }} />;
-}
-
-function MiniBarChart({ data }: { data: { month: string; revenue: number }[] }) {
-  if (!data.length) return <div className="h-20 flex items-center justify-center text-xs text-slate-400">Belum ada data</div>;
-  const max = Math.max(...data.map((d) => d.revenue), 1);
+/* ── Skeleton ──────────────────────────────────────────────────────── */
+function Skel({ w = '100%', h = 16, r = 8 }: { w?: string | number; h?: number; r?: number }) {
   return (
-    <div className="flex items-end gap-1 h-20">
-      {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-          <div
-            className="w-full rounded-t-sm transition-all"
-            style={{
-              height: `${Math.max((d.revenue / max) * 100, 4)}%`,
-              backgroundColor: i === data.length - 1 ? '#3B82F6' : '#BFDBFE',
-              minHeight: '4px',
-            }}
-          />
-          <span className="text-[9px] text-slate-400 hidden sm:block">{d.month}</span>
-        </div>
-      ))}
+    <div
+      className="animate-pulse"
+      style={{
+        width: w, height: h, borderRadius: r,
+        background: 'var(--border)',
+      }}
+    />
+  );
+}
+
+/* ── Mini bar chart ────────────────────────────────────────────────── */
+function BarChart({ data }: { data: { month: string; revenue: number }[] }) {
+  if (!data.length) {
+    return (
+      <div className="h-24 flex items-center justify-center text-sm" style={{ color: 'var(--text-muted)' }}>
+        Belum ada data
+      </div>
+    );
+  }
+  const max = Math.max(...data.map(d => d.revenue), 1);
+  return (
+    <div className="flex items-end gap-1" style={{ height: 96 }}>
+      {data.map((d, i) => {
+        const pct = Math.max((d.revenue / max) * 100, 3);
+        const isLast = i === data.length - 1;
+        return (
+          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            <div
+              style={{
+                width: '100%',
+                height: `${pct}%`,
+                borderRadius: '4px 4px 2px 2px',
+                background: isLast
+                  ? 'linear-gradient(180deg, #818CF8 0%, #6366F1 100%)'
+                  : 'var(--border-strong)',
+                minHeight: 3,
+                transition: 'height 0.4s ease',
+              }}
+            />
+            <span
+              className="hidden sm:block"
+              style={{ fontSize: 9, color: 'var(--text-muted)', lineHeight: 1 }}
+            >
+              {d.month}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
+/* ── Quick actions ─────────────────────────────────────────────────── */
 const QUICK_ACTIONS = [
-  { label: 'Buat Order',        href: '/sales/orders',              icon: FileText,  color: '#3B82F6', bg: '#EFF6FF', modal: true },
-  { label: 'Transfer Stok',     href: '/inventory/transfers',       icon: Package,   color: '#8B5CF6', bg: '#F5F3FF' },
-  { label: 'Purchase Order',    href: '/purchasing/purchase-orders', icon: Truck,    color: '#F59E0B', bg: '#FFFBEB' },
-  { label: 'Lap. Penjualan',    href: '/reports/sales',             icon: BarChart2, color: '#6366F1', bg: '#EEF2FF' },
-  { label: 'CRM Pipeline',      href: '/crm/pipeline',              icon: Target,    color: '#14B8A6', bg: '#F0FDFA' },
-  { label: 'Karyawan',          href: '/hr',                        icon: Users,     color: '#10B981', bg: '#ECFDF5' },
+  { label: 'Buat Order',      href: '/sales/orders',               icon: FileText,  color: '#6366F1', bg: 'rgba(99,102,241,0.10)',  modal: true },
+  { label: 'Transfer Stok',   href: '/inventory/transfers',        icon: Package,   color: '#8B5CF6', bg: 'rgba(139,92,246,0.10)' },
+  { label: 'Purchase Order',  href: '/purchasing/purchase-orders', icon: Truck,     color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
+  { label: 'Lap. Penjualan',  href: '/reports/sales',              icon: BarChart2, color: '#3B82F6', bg: 'rgba(59,130,246,0.10)' },
+  { label: 'CRM Pipeline',    href: '/crm/pipeline',               icon: Target,    color: '#10B981', bg: 'rgba(16,185,129,0.10)' },
+  { label: 'Karyawan',        href: '/hr',                         icon: Users,     color: '#EC4899', bg: 'rgba(236,72,153,0.10)' },
 ];
 
+/* ═══════════════════════════════════════════════════════════════════ */
 export default function DashboardContent() {
-  const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month'>('month');
-  const [showCreateOrder, setShowCreateOrder] = useState(false);
+  const [tab, setTab] = useState<'today' | 'week' | 'month'>('month');
+  const [showOrder, setShowOrder] = useState(false);
   const { data, loading, refresh } = useDashboardData();
-
   const { summary, revenueChart, topProducts, lowStock, recentOrders, adminStats } = data;
 
-  const tabRevenue = activeTab === 'today' ? summary.todayRevenue
-    : activeTab === 'month' ? summary.monthRevenue
-    : summary.monthRevenue;
+  const revenue = tab === 'today' ? summary.todayRevenue : summary.monthRevenue;
 
-  const KPI_CARDS = [
+  const KPI = [
     {
-      title:  activeTab === 'today' ? 'Penjualan Hari Ini' : 'Total Penjualan Bulan Ini',
-      value:  formatRp(tabRevenue),
+      title:  tab === 'today' ? 'Penjualan Hari Ini' : 'Total Penjualan',
+      value:  formatRp(revenue),
       sub:    `Tahun ini: ${formatRp(summary.yearRevenue)}`,
-      trend:  'up' as const,
+      up:     true,
       icon:   DollarSign,
-      color:  '#3B82F6',
-      bg:     '#EFF6FF',
+      accent: '#6366F1',
+      light:  'rgba(99,102,241,0.10)',
     },
     {
       title:  'Total Orders',
       value:  recentOrders.length > 0 ? `${recentOrders.length}+` : '—',
-      sub:    `${summary.pendingPOCount} PO pending`,
-      trend:  'up' as const,
+      sub:    `${summary.pendingPOCount} PO menunggu`,
+      up:     true,
       icon:   ShoppingCart,
-      color:  '#8B5CF6',
-      bg:     '#F5F3FF',
+      accent: '#8B5CF6',
+      light:  'rgba(139,92,246,0.10)',
     },
     {
       title:  'Total Pengguna',
       value:  adminStats.totalUsers > 0 ? String(adminStats.totalUsers) : '—',
       sub:    `${adminStats.totalRoles} role · ${adminStats.unreadNotifications} notif`,
-      trend:  'up' as const,
+      up:     true,
       icon:   Users,
-      color:  '#10B981',
-      bg:     '#ECFDF5',
+      accent: '#10B981',
+      light:  'rgba(16,185,129,0.10)',
     },
     {
       title:  'Invoice Belum Bayar',
       value:  String(summary.overdueInvoiceCount || 0),
       sub:    `AR: ${formatRp(summary.totalAR)}`,
-      trend:  summary.overdueInvoiceCount > 0 ? 'down' as const : 'up' as const,
+      up:     summary.overdueInvoiceCount === 0,
       icon:   FileText,
-      color:  '#F59E0B',
-      bg:     '#FFFBEB',
+      accent: summary.overdueInvoiceCount > 0 ? '#EF4444' : '#F59E0B',
+      light:  summary.overdueInvoiceCount > 0 ? 'rgba(239,68,68,0.10)' : 'rgba(245,158,11,0.10)',
     },
   ];
 
+  /* ── Render ──────────────────────────────────────────────────────── */
   return (
     <>
-    <div className="space-y-4 max-w-[1400px]">
+    <div style={{ maxWidth: 1400 }} className="space-y-5">
 
-      {/* Page header — stacks on mobile */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      {/* ── Page header ─────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-base sm:text-lg font-bold text-slate-800">Dashboard</h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Ringkasan bisnis Anda secara real-time.</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+            Dashboard
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
+            Ringkasan bisnis Anda secara real-time
+          </p>
         </div>
+
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex rounded-lg border overflow-hidden text-xs font-medium" style={{ borderColor: '#E2E8F0' }}>
+          {/* Tab switcher */}
+          <div
+            className="flex"
+            style={{
+              background: 'var(--surface-sunken)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: 3,
+              gap: 2,
+            }}
+          >
             {(['today', 'week', 'month'] as const).map((t) => (
               <button
                 key={t}
-                onClick={() => setActiveTab(t)}
-                className="px-3 py-2 sm:py-1.5 transition-colors"
+                onClick={() => setTab(t)}
                 style={{
-                  backgroundColor: activeTab === t ? '#3B82F6' : '#FFFFFF',
-                  color: activeTab === t ? '#FFFFFF' : '#64748B',
-                  minWidth: 60,
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  background: tab === t ? 'var(--surface)' : 'transparent',
+                  color: tab === t ? 'var(--text-primary)' : 'var(--text-muted)',
+                  boxShadow: tab === t ? 'var(--shadow-sm)' : 'none',
                 }}
               >
                 {t === 'today' ? 'Hari Ini' : t === 'week' ? 'Minggu' : 'Bulan'}
               </button>
             ))}
           </div>
+
+          {/* Refresh */}
           <button
             onClick={refresh}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium border transition-colors hover:bg-slate-50 disabled:opacity-50"
-            style={{ borderColor: '#E2E8F0', color: '#64748B' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '7px 14px',
+              borderRadius: 10,
+              fontSize: 12,
+              fontWeight: 600,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              opacity: loading ? 0.5 : 1,
+            }}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* Aksi Cepat */}
-      <div className="rounded-xl border p-3 sm:p-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
-        <h2 className="text-sm font-semibold text-slate-700 mb-3 sm:mb-4">Aksi Cepat</h2>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
-          {QUICK_ACTIONS.map((action) => {
-            const Icon = action.icon;
-            const cls = "flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-xl border transition-all active:scale-95 w-full";
-            if (action.modal) {
-              return (
-                <button
-                  key={action.label}
-                  onClick={() => setShowCreateOrder(true)}
-                  className={cls}
-                  style={{ borderColor: '#E2E8F0' }}
-                >
-                  <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: action.bg }}>
-                    <Icon className="h-4 w-4" style={{ color: action.color }} />
-                  </div>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 text-center leading-tight">{action.label}</span>
-                </button>
-              );
-            }
-            return (
-              <Link key={action.label} href={action.href}
-                className={cls}
-                style={{ borderColor: '#E2E8F0' }}
-              >
-                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: action.bg }}>
-                  <Icon className="h-4 w-4" style={{ color: action.color }} />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 text-center leading-tight">{action.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* KPI Cards — 1 col xs, 2 col sm, 4 col xl */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-        {KPI_CARDS.map((card) => {
-          const Icon = card.icon;
+      {/* ── KPI cards ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+        {KPI.map((k) => {
+          const Icon = k.icon;
           return (
-            <div key={card.title} className="rounded-xl p-4 sm:p-5 border flex flex-col gap-3 sm:gap-4"
-              style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
+            <div
+              key={k.title}
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 16,
+                padding: '18px 20px',
+                boxShadow: 'var(--shadow-sm)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14,
+              }}
             >
-              <div className="flex items-start justify-between">
-                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: card.bg }}>
-                  <Icon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: card.color }} />
+              <div className="flex items-center justify-between">
+                <div
+                  style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    background: k.light,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon size={18} style={{ color: k.accent }} strokeWidth={2} />
                 </div>
-                <span className="flex items-center gap-1 text-xs font-medium"
-                  style={{ color: card.trend === 'up' ? '#10B981' : '#EA5455' }}>
-                  {card.trend === 'up' ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                <span
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 3,
+                    fontSize: 11, fontWeight: 600,
+                    color: k.up ? '#10B981' : '#EF4444',
+                  }}
+                >
+                  {k.up
+                    ? <TrendingUp size={13} strokeWidth={2.5} />
+                    : <TrendingDown size={13} strokeWidth={2.5} />}
                 </span>
               </div>
+
               <div>
-                {loading
-                  ? <><Skeleton w="w-24" h="h-6 sm:h-7" rounded="rounded-lg" /><Skeleton w="w-32" h="h-3" rounded="rounded" /></>
-                  : <>
-                    <p className="text-xl sm:text-2xl font-bold text-slate-800 break-all">{card.value}</p>
-                    <p className="text-xs text-slate-400 mt-1">{card.sub}</p>
+                {loading ? (
+                  <div className="space-y-2">
+                    <Skel w="70%" h={26} r={8} />
+                    <Skel w="90%" h={12} r={6} />
+                  </div>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+                      {k.value}
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '5px 0 0', lineHeight: 1.4 }}>
+                      {k.sub}
+                    </p>
                   </>
-                }
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">{card.title}</p>
+                )}
+                <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', margin: '6px 0 0', lineHeight: 1.3 }}>
+                  {k.title}
+                </p>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Revenue chart + Cash balance */}
+      {/* ── Quick actions ────────────────────────────────────────────── */}
+      <div
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 16,
+          padding: '18px 20px',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px', letterSpacing: '-0.01em' }}>
+          Aksi Cepat
+        </p>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          {QUICK_ACTIONS.map((a) => {
+            const Icon = a.icon;
+            const base: React.CSSProperties = {
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              padding: '12px 8px', borderRadius: 12,
+              border: '1px solid var(--border)',
+              background: 'transparent',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              width: '100%',
+            };
+            const inner = (
+              <>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: a.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon size={16} style={{ color: a.color }} strokeWidth={2} />
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.3 }}>
+                  {a.label}
+                </span>
+              </>
+            );
+            if (a.modal) return (
+              <button key={a.label} onClick={() => setShowOrder(true)} style={base}>{inner}</button>
+            );
+            return (
+              <Link key={a.label} href={a.href} style={{ ...base, textDecoration: 'none' }}>{inner}</Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Revenue + Kas ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
-        <div className="lg:col-span-2 rounded-xl border p-4 sm:p-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
-          <div className="flex items-center justify-between mb-4">
+
+        {/* Revenue chart */}
+        <div
+          className="lg:col-span-2"
+          style={{
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          <div className="flex items-start justify-between mb-5">
             <div>
-              <h2 className="text-sm font-semibold text-slate-700">Tren Pendapatan</h2>
-              <p className="text-xs text-slate-400">12 bulan terakhir</p>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+                Tren Pendapatan
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '3px 0 0' }}>12 bulan terakhir</p>
             </div>
-            <button className="p-1.5 rounded-lg hover:bg-slate-100">
-              <MoreHorizontal className="h-4 w-4 text-slate-400" />
-            </button>
+            <div
+              style={{
+                fontSize: 11, fontWeight: 700, color: '#6366F1',
+                background: 'rgba(99,102,241,0.10)', borderRadius: 8,
+                padding: '4px 10px',
+              }}
+            >
+              Live
+            </div>
           </div>
+
           {loading
-            ? <Skeleton h="h-20" rounded="rounded-lg" />
-            : <MiniBarChart data={revenueChart.slice(-12).map(d => ({ month: d.month?.slice(0,3) ?? '', revenue: d.revenue }))} />
+            ? <Skel h={96} r={10} />
+            : <BarChart data={revenueChart.slice(-12).map(d => ({ month: d.month?.slice(0, 3) ?? '', revenue: d.revenue }))} />
           }
-          <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t" style={{ borderColor: '#F1F5F9' }}>
+
+          <div
+            className="grid grid-cols-3 gap-3 mt-5 pt-5"
+            style={{ borderTop: '1px solid var(--border)' }}
+          >
             {[
-              { label: 'Bulan ini',               value: formatRp(summary.monthRevenue) },
-              { label: 'Tahun ini',                value: formatRp(summary.yearRevenue) },
-              { label: 'Pengeluaran bulan ini',    value: formatRp(summary.monthExpense) },
-            ].map(({ label, value }) => (
+              { label: 'Bulan ini',            val: formatRp(summary.monthRevenue),  accent: '#6366F1' },
+              { label: 'Tahun ini',             val: formatRp(summary.yearRevenue),   accent: '#10B981' },
+              { label: 'Pengeluaran',           val: formatRp(summary.monthExpense),  accent: '#F59E0B' },
+            ].map(({ label, val, accent }) => (
               <div key={label} className="text-center">
-                {loading ? <Skeleton w="w-full" h="h-5" rounded="rounded" /> : <p className="text-sm sm:text-lg font-bold text-slate-800 break-all">{value}</p>}
-                <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 leading-tight">{label}</p>
+                {loading
+                  ? <Skel w="80%" h={20} r={6} />
+                  : <p style={{ fontSize: 15, fontWeight: 800, color: accent, margin: 0, letterSpacing: '-0.01em' }}>{val}</p>}
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.3 }}>{label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Saldo & stats */}
-        <div className="rounded-xl border p-4 sm:p-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-slate-700">Kas & Bank</h2>
-            <Wallet className="h-4 w-4 text-slate-400" />
+        {/* Kas & Bank */}
+        <div
+          style={{
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          <div className="flex items-center justify-between mb-5">
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+              Kas & Bank
+            </p>
+            <Wallet size={16} style={{ color: 'var(--text-muted)' }} />
           </div>
-          <div className="space-y-3 sm:space-y-4">
-            <div className="rounded-xl p-3 sm:p-4" style={{ background: 'linear-gradient(135deg, #3B82F6, #6366F1)' }}>
-              <p className="text-xs text-blue-100 mb-1">Total Saldo</p>
-              {loading
-                ? <Skeleton w="w-32" h="h-7" rounded="rounded-lg" />
-                : <p className="text-xl sm:text-2xl font-bold text-white break-all">{formatRp(summary.cashBalance)}</p>
-              }
-            </div>
+
+          {/* Saldo utama */}
+          <div
+            style={{
+              borderRadius: 14,
+              padding: '16px 18px',
+              background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+              marginBottom: 16,
+            }}
+          >
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', margin: '0 0 6px', fontWeight: 500 }}>
+              Total Saldo
+            </p>
+            {loading
+              ? <Skel w="60%" h={28} r={8} />
+              : <p style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', margin: 0, letterSpacing: '-0.02em' }}>
+                  {formatRp(summary.cashBalance)}
+                </p>
+            }
+          </div>
+
+          {/* Stats */}
+          <div className="space-y-3">
             {[
-              { label: 'Piutang (AR)',        value: formatRp(summary.totalAR),           color: '#F59E0B' },
-              { label: 'Invoice Jatuh Tempo', value: String(summary.overdueInvoiceCount), color: '#EA5455' },
-              { label: 'Stok Menipis',        value: String(summary.lowStockCount),       color: '#F59E0B' },
-              { label: 'Pengguna Aktif',      value: String(adminStats.totalUsers),       color: '#10B981' },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between py-0.5">
-                <span className="text-xs text-slate-500">{item.label}</span>
+              { label: 'Piutang (AR)',        val: formatRp(summary.totalAR),           color: '#F59E0B' },
+              { label: 'Invoice Jatuh Tempo', val: String(summary.overdueInvoiceCount), color: '#EF4444' },
+              { label: 'Stok Menipis',        val: String(summary.lowStockCount),       color: '#F59E0B' },
+              { label: 'Pengguna Aktif',      val: String(adminStats.totalUsers),       color: '#10B981' },
+            ].map(({ label, val, color }) => (
+              <div key={label} className="flex items-center justify-between" style={{ padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{label}</span>
                 {loading
-                  ? <Skeleton w="w-16" h="h-4" rounded="rounded" />
-                  : <span className="text-sm font-semibold" style={{ color: item.color }}>{item.value}</span>
+                  ? <Skel w={48} h={14} r={6} />
+                  : <span style={{ fontSize: 13, fontWeight: 700, color }}>{val}</span>
                 }
               </div>
             ))}
@@ -294,78 +446,139 @@ export default function DashboardContent() {
         </div>
       </div>
 
-      {/* Recent Orders + Low Stock */}
+      {/* ── Orders + Stock + Summary ─────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+
         {/* Recent orders */}
-        <div className="lg:col-span-2 rounded-xl border overflow-hidden" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
-          <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b" style={{ borderColor: '#F1F5F9' }}>
-            <h2 className="text-sm font-semibold text-slate-700">Sales Order Terbaru</h2>
-            <Link href="/sales/orders" className="flex items-center gap-1 text-xs font-medium" style={{ color: '#3B82F6' }}>
-              Lihat semua <ChevronRight className="h-3.5 w-3.5" />
+        <div
+          className="lg:col-span-2"
+          style={{
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          <div
+            className="flex items-center justify-between"
+            style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}
+          >
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+              Sales Order Terbaru
+            </p>
+            <Link
+              href="/sales/orders"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                fontSize: 12, fontWeight: 600, color: '#6366F1',
+                textDecoration: 'none',
+              }}
+            >
+              Lihat semua <ChevronRight size={14} />
             </Link>
           </div>
-          <div>
-            {loading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 px-4 sm:px-5 py-3" style={{ borderBottom: i < 3 ? '1px solid #F8FAFC' : 'none' }}>
-                  <div className="flex-1 space-y-2"><Skeleton w="w-32" /><Skeleton w="w-24" h="h-3" /></div>
-                  <div className="space-y-2 text-right"><Skeleton w="w-20" /><Skeleton w="w-16" h="h-3" /></div>
+
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ padding: '14px 20px', borderBottom: i < 3 ? '1px solid var(--border)' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div className="flex-1 space-y-2"><Skel w="55%" h={14} /><Skel w="35%" h={11} /></div>
+                <div className="space-y-2 text-right"><Skel w={72} h={14} /><Skel w={52} h={11} /></div>
+              </div>
+            ))
+            : recentOrders.length === 0
+              ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Belum ada order</p>
                 </div>
-              ))
-              : recentOrders.length === 0
-                ? <div className="px-5 py-8 text-center text-sm text-slate-400">Belum ada order</div>
-                : recentOrders.map((order, i) => {
-                  const s = getStatusStyle(order.status);
-                  return (
-                    <div key={order.id}
-                      className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 active:bg-slate-50 hover:bg-slate-50 transition-colors"
-                      style={{ borderBottom: i < recentOrders.length - 1 ? '1px solid #F8FAFC' : 'none' }}
+              )
+              : recentOrders.map((order, i) => {
+                const s = getStatus(order.status);
+                return (
+                  <div
+                    key={order.id}
+                    className="flex items-center gap-3 group"
+                    style={{
+                      padding: '13px 20px',
+                      borderBottom: i < recentOrders.length - 1 ? '1px solid var(--border)' : 'none',
+                      transition: 'background 0.15s ease',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {/* Order number badge */}
+                    <div
+                      style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: 'var(--surface-sunken)',
+                        border: '1px solid var(--border)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-medium text-slate-700">#{order.id}</p>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                            style={{ color: s.color, backgroundColor: s.bg }}>{s.label}</span>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-0.5 truncate">{order.namaCustomer}</p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-sm font-semibold text-slate-700">{formatRp(Number(order.totalHarga))}</p>
-                        <p className="text-[11px] text-slate-400">{formatRelative(order.createdAt)}</p>
-                      </div>
+                      <ShoppingCart size={14} style={{ color: 'var(--text-muted)' }} />
                     </div>
-                  );
-                })
-            }
-          </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                          #{order.id}
+                        </p>
+                        <span
+                          style={{
+                            fontSize: 10, fontWeight: 700, padding: '2px 8px',
+                            borderRadius: 100, color: s.color, background: s.bg,
+                          }}
+                        >
+                          {s.label}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '3px 0 0' }} className="truncate">
+                        {order.namaCustomer || '—'}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                        {formatRp(Number(order.totalHarga))}
+                      </p>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '3px 0 0' }}>
+                        {formatRelative(order.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+          }
         </div>
 
+        {/* Right column */}
         <div className="flex flex-col gap-3 sm:gap-4">
-          {/* Low stock alerts */}
-          <div className="rounded-xl border p-4 sm:p-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-slate-700">Stok Menipis</h2>
-              <AlertTriangle className="h-4 w-4" style={{ color: '#F59E0B' }} />
+
+          {/* Low stock */}
+          <div
+            style={{
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 16, padding: '18px 20px', boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Stok Menipis</p>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AlertTriangle size={13} style={{ color: '#F59E0B' }} />
+              </div>
             </div>
             {loading
               ? Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 mb-3">
-                  <Skeleton w="w-8" h="h-8" rounded="rounded-lg" />
-                  <div className="flex-1 space-y-1"><Skeleton /><Skeleton w="w-24" h="h-3" /></div>
+                  <Skel w={32} h={32} r={8} />
+                  <div className="flex-1 space-y-1.5"><Skel h={13} /><Skel w="60%" h={10} /></div>
                 </div>
               ))
               : lowStock.length === 0
-                ? <p className="text-xs text-slate-400 text-center py-4">Semua stok aman ✓</p>
+                ? <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>Semua stok aman ✓</p>
                 : lowStock.slice(0, 4).map((item) => (
                   <div key={item.productName} className="flex items-center gap-3 mb-3 last:mb-0">
-                    <div className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: '#FFFBEB' }}>
-                      <Package className="h-4 w-4" style={{ color: '#F59E0B' }} />
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(245,158,11,0.10)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Package size={13} style={{ color: '#F59E0B' }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-slate-700 truncate">{item.productName}</p>
-                      <p className="text-[11px] text-slate-400">
-                        Sisa: <span className="font-semibold text-red-500">{item.currentStock}</span> / min {item.minStock}
+                      <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }} className="truncate">{item.productName}</p>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                        Sisa <span style={{ fontWeight: 700, color: '#EF4444' }}>{item.currentStock}</span> / min {item.minStock}
                       </p>
                     </div>
                   </div>
@@ -373,63 +586,96 @@ export default function DashboardContent() {
             }
           </div>
 
-          {/* Activity summary */}
-          <div className="rounded-xl border p-4 sm:p-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
-            <h2 className="text-sm font-semibold text-slate-700 mb-3">Ringkasan Hari Ini</h2>
-            <div className="space-y-2.5">
+          {/* Ringkasan hari ini */}
+          <div
+            style={{
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 16, padding: '18px 20px', boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Ringkasan Hari Ini</p>
+            <div className="space-y-3">
               {[
-                { icon: CheckCircle, label: 'Revenue hari ini',   value: loading ? '…' : formatRp(summary.todayRevenue),          color: '#10B981', bg: '#ECFDF5' },
-                { icon: Clock,       label: 'Invoice jatuh tempo', value: loading ? '…' : String(summary.overdueInvoiceCount),     color: '#F59E0B', bg: '#FFFBEB' },
-                { icon: Truck,       label: 'PO pending',          value: loading ? '…' : String(summary.pendingPOCount),          color: '#3B82F6', bg: '#EFF6FF' },
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div key={item.label} className="flex items-center gap-3">
-                    <div className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: item.bg }}>
-                      <Icon className="h-3.5 w-3.5" style={{ color: item.color }} />
-                    </div>
-                    <span className="flex-1 text-xs text-slate-600">{item.label}</span>
-                    <span className="text-sm font-bold text-slate-700">{item.value}</span>
+                { Icon: CheckCircle, label: 'Revenue hari ini',    val: formatRp(summary.todayRevenue),        color: '#10B981', bg: 'rgba(16,185,129,0.10)' },
+                { Icon: Clock,       label: 'Invoice jatuh tempo', val: String(summary.overdueInvoiceCount),   color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
+                { Icon: Truck,       label: 'PO pending',           val: String(summary.pendingPOCount),        color: '#6366F1', bg: 'rgba(99,102,241,0.10)' },
+              ].map(({ Icon, label, val, color, bg }) => (
+                <div key={label} className="flex items-center gap-3">
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon size={13} style={{ color }} strokeWidth={2.5} />
                   </div>
-                );
-              })}
+                  <span style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)' }}>{label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {loading ? '…' : val}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Top Products */}
-      <div className="rounded-xl border p-4 sm:p-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-slate-700">Produk Terlaris</h2>
-          <Link href="/reports/sales" className="text-xs font-medium" style={{ color: '#3B82F6' }}>Lihat semua</Link>
+      {/* ── Top Products ─────────────────────────────────────────────── */}
+      <div
+        style={{
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+            Produk Terlaris
+          </p>
+          <Link
+            href="/reports/sales"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              fontSize: 12, fontWeight: 600, color: '#6366F1', textDecoration: 'none',
+            }}
+          >
+            Lihat semua <ArrowUpRight size={13} />
+          </Link>
         </div>
+
         {loading
           ? Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 mb-3">
-              <Skeleton w="w-5" h="h-4" rounded="rounded" />
-              <div className="flex-1 space-y-1"><Skeleton /><Skeleton h="h-1.5" rounded="rounded-full" /></div>
-              <Skeleton w="w-16" h="h-4" rounded="rounded" />
+            <div key={i} className="flex items-center gap-3 mb-4">
+              <Skel w={20} h={14} />
+              <div className="flex-1 space-y-2"><Skel h={13} /><Skel h={6} r={100} /></div>
+              <Skel w={64} h={14} />
             </div>
           ))
           : topProducts.length === 0
-            ? <p className="text-sm text-slate-400 text-center py-4">Belum ada data penjualan</p>
+            ? <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>Belum ada data penjualan</p>
             : (() => {
-              const maxRev = Math.max(...topProducts.map(p => p.totalRevenue), 1);
-              return topProducts.slice(0, 7).map((product, i) => (
-                <div key={product.productName} className="flex items-center gap-3 mb-3 last:mb-0">
-                  <span className="text-xs font-bold w-5 text-slate-400 flex-shrink-0">{i + 1}</span>
+              const maxR = Math.max(...topProducts.map(p => p.totalRevenue), 1);
+              return topProducts.slice(0, 7).map((p, i) => (
+                <div key={p.productName} className="flex items-center gap-3 mb-4 last:mb-0">
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', width: 20, flexShrink: 0, textAlign: 'right' }}>
+                    {i + 1}
+                  </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-slate-700 truncate">{product.productName}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: '#F1F5F9' }}>
-                        <div className="h-1.5 rounded-full" style={{ width: `${(product.totalRevenue / maxRev) * 100}%`, backgroundColor: '#3B82F6' }} />
+                    <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }} className="truncate">
+                      {p.productName}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <div style={{ flex: 1, height: 5, borderRadius: 100, background: 'var(--border)' }}>
+                        <div
+                          style={{
+                            width: `${(p.totalRevenue / maxR) * 100}%`,
+                            height: '100%', borderRadius: 100,
+                            background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+                          }}
+                        />
                       </div>
-                      <span className="text-[10px] text-slate-400 w-16 sm:w-20 text-right flex-shrink-0">{product.totalQty} terjual</span>
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0, minWidth: 60, textAlign: 'right' }}>
+                        {p.totalQty} terjual
+                      </span>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-slate-600 flex-shrink-0 w-16 sm:w-20 text-right">{formatRp(product.totalRevenue)}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', flexShrink: 0, minWidth: 70, textAlign: 'right' }}>
+                    {formatRp(p.totalRevenue)}
+                  </span>
                 </div>
               ));
             })()
@@ -438,10 +684,10 @@ export default function DashboardContent() {
 
     </div>
 
-    {showCreateOrder && (
+    {showOrder && (
       <CreateOrderModal
-        onClose={() => setShowCreateOrder(false)}
-        onSuccess={() => { setShowCreateOrder(false); refresh(); }}
+        onClose={() => setShowOrder(false)}
+        onSuccess={() => { setShowOrder(false); refresh(); }}
       />
     )}
     </>
