@@ -7,11 +7,11 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { href: '/dashboard',   label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/sales',       label: 'Penjualan',  icon: ShoppingCart },
-  { href: '/inventory/products', label: 'Stok', icon: Package },
-  { href: '/finance/cash', label: 'Keuangan',  icon: DollarSign },
-  { href: '/settings',    label: 'Pengaturan', icon: Settings },
+  { href: '/dashboard',          label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/sales/orders',       label: 'Penjualan',  icon: ShoppingCart },
+  { href: '/inventory/products', label: 'Stok',       icon: Package },
+  { href: '/accounting',         label: 'Keuangan',   icon: DollarSign },
+  { href: '/settings',           label: 'Pengaturan', icon: Settings },
 ];
 
 export function MobileBottomNav() {
@@ -25,16 +25,17 @@ export function MobileBottomNav() {
         left: 0,
         right: 0,
         zIndex: 200,
-        backgroundColor: '#FFFFFF',
-        borderTop: '1px solid #E5E7EB',
+        backgroundColor: 'var(--surface)',
+        borderTop: '1px solid var(--border)',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom)',
-        boxShadow: '0 -4px 12px rgba(0,0,0,0.06)',
+        boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
       }}
       className="lg:hidden"
     >
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(href + '/');
+        const base = href.split('/').slice(0, 2).join('/');
+        const active = pathname === href || pathname.startsWith(base + '/') || pathname === base;
         return (
           <Link
             key={href}
@@ -48,12 +49,22 @@ export function MobileBottomNav() {
               padding: '10px 4px 8px',
               gap: 3,
               textDecoration: 'none',
-              color: active ? '#7367F0' : '#9CA3AF',
+              color: active ? '#6366F1' : 'var(--text-muted)',
               transition: 'color 0.15s',
             }}
           >
+            {active && (
+              <span style={{
+                position: 'absolute',
+                width: 32,
+                height: 3,
+                borderRadius: '0 0 4px 4px',
+                background: '#6366F1',
+                top: 0,
+              }} />
+            )}
             <Icon size={22} strokeWidth={active ? 2.2 : 1.8} />
-            <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, lineHeight: 1 }}>
+            <span style={{ fontSize: 10, fontWeight: active ? 700 : 400, lineHeight: 1 }}>
               {label}
             </span>
           </Link>

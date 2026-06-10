@@ -1,26 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import IconButton from '@mui/material/IconButton';
-import Badge from '@mui/material/Badge';
-import Popover from '@mui/material/Popover';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
 import InputBase from '@mui/material/InputBase';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import ListItemText from '@mui/material/ListItemText';
+import Popover from '@mui/material/Popover';
 import Avatar from '@mui/material/Avatar';
 import {
   Menu as MenuIcon, Search, Bell, Settings, HelpCircle,
-  LogOut, User, ChevronDown,
+  LogOut, User, ChevronDown, Sun, Moon,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { useNotificationStore } from '../../lib/store/useNotificationStore';
-import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './MaterioSidebar';
+import { useThemeMode } from '../../lib/theme/ThemeContext';
 
 interface TopbarProps {
   collapsed: boolean;
@@ -31,42 +29,49 @@ interface TopbarProps {
 export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: TopbarProps) {
   const { user, logout } = useAuthStore();
   const { notifications } = useNotificationStore();
-  const [query, setQuery]       = useState('');
-  const [userAnchor, setUA]     = useState<null | HTMLElement>(null);
-  const [notifAnchor, setNA]    = useState<null | HTMLElement>(null);
+  const { mode, toggle: toggleTheme } = useThemeMode();
+  const [query, setQuery]    = useState('');
+  const [userAnchor, setUA]  = useState<null | HTMLElement>(null);
+  const [notifAnchor, setNA] = useState<null | HTMLElement>(null);
 
   const unread = notifications?.length ?? 0;
+  const isDark = mode === 'dark';
+
+  const iconBtnStyle: React.CSSProperties = {
+    width: 36, height: 36, borderRadius: 9, border: 'none',
+    background: 'transparent', cursor: 'pointer',
+    color: 'var(--text-muted)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'all 0.15s', flexShrink: 0,
+  };
+
+  function hoverOn(e: React.MouseEvent<HTMLButtonElement>) {
+    (e.currentTarget as HTMLElement).style.background = 'var(--brand-light)';
+    (e.currentTarget as HTMLElement).style.color = '#6366F1';
+  }
+  function hoverOff(e: React.MouseEvent<HTMLButtonElement>) {
+    (e.currentTarget as HTMLElement).style.background = 'transparent';
+    (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)';
+  }
 
   return (
     <header
       style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 99,
+        position: 'sticky', top: 0, zIndex: 99,
         background: 'var(--surface)',
         borderBottom: '1px solid var(--border)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '0 16px',
-        height: 64,
-        flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '0 16px', height: 64, flexShrink: 0,
       }}
     >
       {/* Hamburger — desktop */}
       <button
         onClick={onToggleSidebar}
         className="hidden lg:flex"
-        style={{
-          width: 36, height: 36, borderRadius: 9, border: '1px solid var(--border)',
-          background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)',
-          alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
-          flexShrink: 0,
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--brand-light)'; (e.currentTarget as HTMLElement).style.color = '#6366F1'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
+        style={{ ...iconBtnStyle, border: '1px solid var(--border)' }}
+        onMouseEnter={hoverOn} onMouseLeave={hoverOff}
       >
         <MenuIcon size={17} strokeWidth={2} />
       </button>
@@ -75,12 +80,7 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
       <button
         onClick={onToggleMobileSidebar}
         className="flex lg:hidden"
-        style={{
-          width: 36, height: 36, borderRadius: 9, border: '1px solid var(--border)',
-          background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)',
-          alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
-          flexShrink: 0,
-        }}
+        style={{ ...iconBtnStyle, border: '1px solid var(--border)' }}
       >
         <MenuIcon size={17} strokeWidth={2} />
       </button>
@@ -89,18 +89,12 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
       <div
         className="hidden md:flex"
         style={{
-          alignItems: 'center',
-          gap: 8,
+          alignItems: 'center', gap: 8,
           background: 'var(--surface-sunken)',
           border: '1px solid var(--border)',
-          borderRadius: 10,
-          padding: '0 12px',
-          height: 38,
-          width: 280,
-          transition: 'all 0.2s',
-          flexShrink: 0,
+          borderRadius: 10, padding: '0 12px',
+          height: 38, width: 280, flexShrink: 0,
         }}
-        onFocus={() => {}}
       >
         <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
         <InputBase
@@ -121,16 +115,23 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
       {/* Right actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
 
+        {/* ☀️ / 🌙 Dark/Light toggle */}
+        <button
+          onClick={toggleTheme}
+          title={isDark ? 'Mode Terang' : 'Mode Gelap'}
+          style={iconBtnStyle}
+          onMouseEnter={hoverOn} onMouseLeave={hoverOff}
+        >
+          {isDark
+            ? <Sun size={18} strokeWidth={1.8} />
+            : <Moon size={18} strokeWidth={1.8} />}
+        </button>
+
         {/* Help */}
         <button
           className="hidden sm:flex"
-          style={{
-            width: 36, height: 36, borderRadius: 9, border: 'none',
-            background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)',
-            alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--brand-light)'; (e.currentTarget as HTMLElement).style.color = '#6366F1'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
+          style={iconBtnStyle}
+          onMouseEnter={hoverOn} onMouseLeave={hoverOff}
         >
           <HelpCircle size={18} strokeWidth={1.8} />
         </button>
@@ -138,13 +139,8 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
         {/* Settings */}
         <button
           className="hidden sm:flex"
-          style={{
-            width: 36, height: 36, borderRadius: 9, border: 'none',
-            background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)',
-            alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--brand-light)'; (e.currentTarget as HTMLElement).style.color = '#6366F1'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
+          style={iconBtnStyle}
+          onMouseEnter={hoverOn} onMouseLeave={hoverOff}
         >
           <Settings size={18} strokeWidth={1.8} />
         </button>
@@ -152,25 +148,16 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
         {/* Notif */}
         <button
           onClick={e => { setNA(e.currentTarget); setUA(null); }}
-          style={{
-            width: 36, height: 36, borderRadius: 9, border: 'none',
-            background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
-            position: 'relative',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--brand-light)'; (e.currentTarget as HTMLElement).style.color = '#6366F1'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
+          style={{ ...iconBtnStyle, position: 'relative' }}
+          onMouseEnter={hoverOn} onMouseLeave={hoverOff}
         >
           <Bell size={18} strokeWidth={1.8} />
           {unread > 0 && (
-            <span
-              style={{
-                position: 'absolute', top: 6, right: 6,
-                width: 8, height: 8, borderRadius: '50%',
-                background: '#EF4444',
-                border: '2px solid var(--surface)',
-              }}
-            />
+            <span style={{
+              position: 'absolute', top: 6, right: 6,
+              width: 8, height: 8, borderRadius: '50%',
+              background: '#EF4444', border: '2px solid var(--surface)',
+            }} />
           )}
         </button>
 
@@ -189,21 +176,19 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)'}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
         >
-          <div
-            style={{
-              width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: 12, color: '#fff',
-            }}
-          >
+          <div style={{
+            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 800, fontSize: 12, color: '#fff',
+          }}>
             {user?.name?.[0]?.toUpperCase() ?? 'A'}
           </div>
           <div className="hidden sm:block" style={{ textAlign: 'left' }}>
             <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
               {user?.name ?? 'Admin'}
             </p>
-            <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-muted)', lineHeight: 1, marginTop: 1 }}>
+            <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'var(--text-muted)', lineHeight: 1 }}>
               {Array.isArray(user?.roles) ? user?.roles[0] : 'Administrator'}
             </p>
           </div>
@@ -211,7 +196,7 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
         </button>
       </div>
 
-      {/* ── Notification popover ──────────────────────────────────────── */}
+      {/* ── Notification popover ─────────────────────────────────── */}
       <Popover
         open={Boolean(notifAnchor)}
         anchorEl={notifAnchor}
@@ -259,25 +244,48 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
         </div>
       </Popover>
 
-      {/* ── User menu popover ─────────────────────────────────────────── */}
+      {/* ── User menu popover ─────────────────────────────────────── */}
       <Popover
         open={Boolean(userAnchor)}
         anchorEl={userAnchor}
         onClose={() => setUA(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { width: 210, mt: 1 } } }}
+        slotProps={{ paper: { sx: { width: 220, mt: 1 } } }}
       >
         <div style={{ padding: '14px 18px', background: 'var(--brand-light)' }}>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{user?.name ?? 'Admin'}</p>
           <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>{user?.email ?? 'admin@example.com'}</p>
         </div>
         <Divider />
+        {/* Dark/light toggle inside user menu */}
+        <div style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            {isDark ? <Moon size={14} /> : <Sun size={14} />}
+            {isDark ? 'Mode Gelap' : 'Mode Terang'}
+          </span>
+          <button
+            onClick={toggleTheme}
+            style={{
+              width: 42, height: 24, borderRadius: 100, border: 'none',
+              background: isDark ? '#6366F1' : '#E2E8F0',
+              cursor: 'pointer', position: 'relative', transition: 'background 0.25s',
+            }}
+          >
+            <span style={{
+              position: 'absolute', top: 3, left: isDark ? 20 : 3,
+              width: 18, height: 18, borderRadius: '50%',
+              background: isDark ? '#fff' : '#94A3B8',
+              transition: 'left 0.25s',
+            }} />
+          </button>
+        </div>
+        <Divider />
         <MenuList sx={{ py: 0.5 }}>
           {[
-            { label: 'Profil Saya',  Icon: User     },
-            { label: 'Pengaturan',   Icon: Settings  },
-            { label: 'Bantuan',      Icon: HelpCircle},
+            { label: 'Profil Saya', Icon: User },
+            { label: 'Pengaturan',  Icon: Settings },
+            { label: 'Bantuan',     Icon: HelpCircle },
           ].map(({ label, Icon }) => (
             <MenuItem
               key={label}
