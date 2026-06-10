@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import {
   ShoppingCart, FileText, Users,
-  Zap, Bell, LogOut, Home, Menu, X,
+  Zap, Bell, LogOut, Menu, X,
   Star, Phone, LayoutGrid, BarChart2, Settings, CreditCard,
 } from 'lucide-react';
 
@@ -22,7 +22,6 @@ const C = {
 };
 
 const NAV = [
-  { href: '/sales',               label: 'Dashboard',    icon: Home },
   { href: '/sales/smart-order',   label: 'Smart Order',  icon: Zap },
   { href: '/sales/quotations',    label: 'Quotation',    icon: FileText },
   { href: '/sales/orders',        label: 'Sales Order',  icon: ShoppingCart },

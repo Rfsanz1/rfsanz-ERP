@@ -48,7 +48,6 @@ const navGroups: NavGroup[] = [
       {
         label: 'Penjualan', icon: ShoppingCart,
         children: [
-          { href: '/sales',              label: 'Dashboard Sales'  },
           { href: '/sales/smart-order',  label: 'Smart Order Input'},
           { href: '/sales/quotations',   label: 'Quotation'        },
           { href: '/sales/orders',       label: 'Sales Orders'     },
