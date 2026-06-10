@@ -51,11 +51,12 @@ export function SalesLayout({ children, title, subtitle }: SalesLayoutProps) {
     // Jika token belum ada di store, coba rehydrate dari localStorage (sinkron)
     if (!token) {
       const stored = localStorage.getItem('erp_token');
-      if (!stored) { router.replace('/dashboard'); return; }
-      useAuthStore.getState().rehydrate(); // sinkron, langsung update store
+      if (!stored) { router.replace('/login'); return; }
+      useAuthStore.getState().rehydrate();
       return;
     }
-    if (!user) loadProfile().catch(() => { logout(); router.replace('/dashboard'); });
+    // Muat profil jika belum ada — jangan redirect saat gagal, biarkan halaman tetap tampil
+    if (!user) loadProfile().catch(() => { /* silent — jangan paksa logout */ });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 

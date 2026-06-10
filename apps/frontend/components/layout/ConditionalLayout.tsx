@@ -27,13 +27,13 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
 
   // Fallback: redirect ke login jika benar-benar tidak ada token di store maupun localStorage
   useEffect(() => {
-    if (!isPublic && !token) {
+    if (!isPublic && !isStandalone && !token) {
       const stored = typeof window !== 'undefined' ? window.localStorage.getItem('erp_token') : null;
       if (!stored) {
-        router.push('/dashboard');
+        router.push('/login');
       }
     }
-  }, [token, isPublic, router]);
+  }, [token, isPublic, isStandalone, router]);
 
   // Public & standalone pages — render tanpa sidebar
   if (isPublic || isStandalone) {
