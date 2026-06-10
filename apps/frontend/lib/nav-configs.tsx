@@ -426,6 +426,13 @@ export const TAX_NAV: NavItem[] = [
   { label: 'Pengaturan',         href: '/tax/settings',      icon: Settings },
 ];
 
+export const NOTIFICATIONS_CONFIG = { appName: 'Notifikasi', appColor: '#0891B2', appGradient: 'from-cyan-600 to-blue-700', appIcon: Bell };
+export const NOTIFICATIONS_NAV: NavItem[] = [
+  { label: 'Semua Notifikasi',   href: '/notifications',               icon: Bell },
+  { label: 'Belum Dibaca',       href: '/notifications?status=unread', icon: AlertTriangle },
+  { label: 'Sudah Dibaca',       href: '/notifications?status=read',   icon: CheckCircle2 },
+];
+
 export const SETTINGS_CONFIG = { appName: 'Pengaturan', appColor: '#546E7A', appGradient: 'from-slate-500 to-slate-700', appIcon: Settings };
 export const SETTINGS_NAV: NavItem[] = [
   { label: 'Umum',               href: '/settings',                    icon: Settings },
