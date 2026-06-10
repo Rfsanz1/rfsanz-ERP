@@ -27,7 +27,7 @@ const PLATFORM_COLORS: Record<string, string> = { Shopee: '#EE4D2D', Tokopedia: 
 export default function StockReservationPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const insufficient = SAMPLE.filter(i => i.status === 'insufficient');

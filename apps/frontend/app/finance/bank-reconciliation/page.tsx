@@ -24,7 +24,7 @@ export default function BankReconciliationPage() {
   const [period, setPeriod] = useState('2025-06');
   const [bankAccount, setBankAccount] = useState('BCA - 1234567890');
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const matched = statements.filter(s => s.matched).length;

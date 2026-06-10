@@ -33,7 +33,7 @@ export default function AiReportGeneratorPage() {
   const [format, setFormat] = useState('pdf');
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

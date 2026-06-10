@@ -35,7 +35,7 @@ export default function CommissionPage() {
   const [period, setPeriod] = useState('Juni 2025');
   const [showScheme, setShowScheme] = useState(false);
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const totalCommission = SAMPLE.reduce((s, i) => s + i.total, 0);

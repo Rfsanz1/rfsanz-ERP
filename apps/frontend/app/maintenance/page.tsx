@@ -49,7 +49,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
 export default function MaintenanceDashboard() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   return (

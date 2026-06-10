@@ -30,7 +30,7 @@ export default function AiForecastPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

@@ -27,7 +27,7 @@ export default function WorkflowSettingsPage() {
     leave:          { requireApproval: true,  minAmount: 0 },
   });
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const fetchConfig = async () => {
     setLoading(true);

@@ -34,7 +34,7 @@ export default function POSManagementPage() {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const fetchSummary = async () => {
     try {

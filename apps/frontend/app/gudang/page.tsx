@@ -16,7 +16,7 @@ export default function GudangDashboardPage() {
   const [stats, setStats] = useState<GudangStats>({ picking: 5, incoming: 12, outgoing: 8, transfers: 3, stockOpname: 2, pending: 4 });
 
   useEffect(() => {
-    if (!token) { router.replace('/login'); return; }
+    if (!token) { router.replace('/dashboard'); return; }
     api.get('/inventory/summary').then(r => {
       const d = r.data ?? {};
       setStats({ picking: d.picking_orders ?? 5, incoming: d.incoming_orders ?? 12, outgoing: d.outgoing_orders ?? 8, transfers: d.transfers ?? 3, stockOpname: d.stock_opname ?? 2, pending: d.pending_orders ?? 4 });

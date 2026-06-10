@@ -21,7 +21,7 @@ const TYPE_COLOR = { call: '#2196F3', email: '#4CAF50', meeting: '#FF9800' };
 export default function CrmActivitiesPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   return (

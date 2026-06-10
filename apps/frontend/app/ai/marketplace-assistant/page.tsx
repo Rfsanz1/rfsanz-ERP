@@ -35,7 +35,7 @@ export default function AiMarketplaceAssistantPage() {
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

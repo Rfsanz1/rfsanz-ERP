@@ -24,7 +24,7 @@ export default function TaxConfigPage() {
   const [form, setForm] = useState({ name: '', type: 'sale', rate: '', account: '', scope: '' });
   const [msg, setMsg] = useState('');
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const save = () => {

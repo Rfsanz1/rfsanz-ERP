@@ -31,7 +31,7 @@ export default function DeliveriesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) { router.replace('/login'); return; }
+    if (!token) { router.replace('/dashboard'); return; }
     api.get('/fleet/delivery/my-tasks').then(r => setDeliveries(r.data ?? [])).catch(() => setDeliveries(DEMO)).finally(() => setLoading(false));
   }, [token]);
 

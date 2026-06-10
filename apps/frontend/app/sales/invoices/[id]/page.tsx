@@ -36,7 +36,7 @@ export default function InvoiceDetailPage() {
   const [actionLoading, setActionLoading] = useState('');
   const [msg, setMsg] = useState('');
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     if (!token || !id) return;

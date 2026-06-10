@@ -36,7 +36,7 @@ export default function AiFinancialAnalysisPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

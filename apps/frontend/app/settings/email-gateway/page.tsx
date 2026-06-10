@@ -26,7 +26,7 @@ export default function EmailGatewayPage() {
   const [msgType, setMsgType] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

@@ -28,7 +28,7 @@ export default function ContactsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);

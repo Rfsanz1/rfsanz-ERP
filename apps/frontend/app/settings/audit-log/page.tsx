@@ -34,7 +34,7 @@ export default function AuditLogPage() {
   const [actionFilter, setActionFilter] = useState('all');
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

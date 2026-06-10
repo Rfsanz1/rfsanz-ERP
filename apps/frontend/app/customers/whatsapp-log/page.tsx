@@ -23,7 +23,7 @@ const STATUS_STYLE: Record<string, { color: string; bg: string; icon: any; label
 export default function WhatsappLogPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
   return (
     <AppShell {...CRM_CONFIG} navItems={CRM_NAV} activeHref="/customers/whatsapp-log">

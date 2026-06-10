@@ -12,7 +12,7 @@ export default function NotificationsPage() {
   const { loadNotifications } = useNotificationStore();
   const router = useRouter();
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     void loadProfile();
     void loadNotifications();
   }, [token]);

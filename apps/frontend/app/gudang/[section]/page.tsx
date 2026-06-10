@@ -14,7 +14,7 @@ export default function GudangSectionPage() {
   const section = rawSection ?? 'dashboard';
 
   useEffect(() => {
-    if (!token) router.push('/login');
+    if (!token) router.push('/dashboard');
   }, [token, router]);
 
   if (!token) return null;

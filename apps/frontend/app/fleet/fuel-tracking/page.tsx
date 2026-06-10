@@ -23,7 +23,7 @@ export default function FuelTrackingPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ date: '', vehicle: '', driver: '', qty: '', price_per_liter: '', odometer: '', station: '' });
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const totalLiters = items.reduce((s, i) => s + i.qty, 0);

@@ -20,7 +20,7 @@ export default function LaporanPajakPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const fetchData = async () => {
     setLoading(true);

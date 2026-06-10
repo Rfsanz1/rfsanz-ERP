@@ -17,7 +17,7 @@ const DAILY = [
 export default function PosReportsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
   return (
     <AppShell {...POS_CONFIG} navItems={POS_NAV} activeHref="/pos/reports">

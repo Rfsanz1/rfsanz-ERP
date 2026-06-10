@@ -27,7 +27,7 @@ export default function RekonsiliasiPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   useEffect(() => {
     if (!token) return;

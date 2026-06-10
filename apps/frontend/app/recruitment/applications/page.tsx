@@ -37,7 +37,7 @@ export default function ApplicationsPage() {
     { id: 5, name: 'Hendra Wijaya', position: 'Sales Executive', email: 'hendra.w@email.com', phone: '085678901234', stage: 'Ditolak', score: 45, applied_date: '2025-06-18', source: 'Walk-in' },
   ];
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);

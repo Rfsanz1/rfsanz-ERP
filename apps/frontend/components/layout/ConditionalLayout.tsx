@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { MaterioLayout } from './MaterioLayout';
 
-const PUBLIC_PATHS = ['/', '/login', '/install'];
+const PUBLIC_PATHS = ['/', '/install'];
 const STANDALONE_PREFIXES = ['/sales', '/gudang', '/driver'];
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
@@ -32,7 +32,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
           ? window.localStorage.getItem('erp_token')
           : null;
       if (!stored) {
-        router.push('/login');
+        router.push('/dashboard');
       }
     }
   }, [token, isPublic, router]);

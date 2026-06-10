@@ -49,7 +49,7 @@ export default function DeliveryDetailPage() {
   const [showFail, setShowFail] = useState(false);
 
   useEffect(() => {
-    if (!token) { router.replace('/login'); return; }
+    if (!token) { router.replace('/dashboard'); return; }
     api.get(`/fleet/delivery/${id}`).then(r => setDelivery(r.data)).catch(() => setDelivery(DEMO)).finally(() => setLoading(false));
   }, [token, id]);
 

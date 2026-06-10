@@ -23,7 +23,7 @@ export default function FinanceReportsPage() {
 
   useEffect(() => {
     if (!token) {
-      router.push('/login');
+      router.push('/dashboard');
       return;
     }
 

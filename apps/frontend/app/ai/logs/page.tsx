@@ -33,7 +33,7 @@ export default function AiLogsPage() {
   const [moduleFilter, setModuleFilter] = useState('all');
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

@@ -24,7 +24,7 @@ export default function KledoPage() {
   const [loading, setLoading] = useState(true);
   const [activeSyncs, setActiveSyncs] = useState<Set<string>>(new Set());
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const loadLogs = useCallback(async () => {
     try {

@@ -25,7 +25,7 @@ export default function CurrenciesPage() {
   const [updating, setUpdating] = useState(false);
   const [editRates, setEditRates] = useState<Record<string, string>>({});
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const updateRates = () => {

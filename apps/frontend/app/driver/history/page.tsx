@@ -23,7 +23,7 @@ export default function DriverHistoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) { router.replace('/login'); return; }
+    if (!token) { router.replace('/dashboard'); return; }
     api.get('/fleet/delivery/history').then(r => setHistory(r.data?.data ?? r.data ?? [])).catch(() => setHistory(DEMO)).finally(() => setLoading(false));
   }, [token]);
 

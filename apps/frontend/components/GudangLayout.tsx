@@ -46,11 +46,11 @@ export function GudangLayout({ children, title, subtitle }: GudangLayoutProps) {
 
   useEffect(() => {
     setMounted(true);
-    if (!token) { router.replace('/login'); return; }
-    if (!user) loadProfile().catch(() => { logout(); router.replace('/login'); });
+    if (!token) { router.replace('/dashboard'); return; }
+    if (!user) loadProfile().catch(() => { logout(); router.replace('/dashboard'); });
   }, [token]);
 
-  const handleLogout = () => { logout(); router.replace('/login'); };
+  const handleLogout = () => { logout(); router.replace('/dashboard'); };
   if (!token) return null;
 
   return (

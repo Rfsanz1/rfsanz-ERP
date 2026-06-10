@@ -35,7 +35,7 @@ export default function SalesTeamsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', leader: '' });
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   return (

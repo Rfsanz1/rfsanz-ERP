@@ -13,7 +13,7 @@ export default function DeliveryAreasPage() {
   const [areas, setAreas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   useEffect(() => {
     if (token) api.get('/driver-areas').then(r => setAreas(r.data ?? [])).catch(() => {}).finally(() => setLoading(false));
   }, [token]);

@@ -25,7 +25,7 @@ export default function RecruitmentPositionsPage() {
   const [form, setForm] = useState({ title: '', department: '', location: '', type: 'Full-time', quota: '1', salary_min: '', salary_max: '', requirements: '', description: '' });
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const SAMPLE = [
     { id: 1, title: 'Staff Produksi', department: 'Operasional', location: 'Jakarta', type: 'Full-time', quota: 3, applicants: 12, status: 'open', posted: '2025-06-01', salary_range: 'Rp 4.5jt - 5.5jt' },

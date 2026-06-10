@@ -30,7 +30,7 @@ export default function AiInventoryPredictionPage() {
   const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

@@ -36,7 +36,7 @@ export default function AiNotificationsPage() {
   const [rules, setRules] = useState(AI_NOTIFICATION_RULES);
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

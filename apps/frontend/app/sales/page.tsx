@@ -15,7 +15,7 @@ export default function SalesDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) { router.replace('/login'); return; }
+    if (!token) { router.replace('/dashboard'); return; }
     api.get('/sales/dashboard-summary')
       .then(r => setStats(r.data))
       .catch(() => setStats({ total_orders: 42, total_revenue: 185000000, target_pct: 73, pending_followup: 8 }))

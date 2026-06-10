@@ -32,7 +32,7 @@ export default function SalesReturnsPage() {
   const [creating, setCreating] = useState(false);
   const [msg, setMsg] = useState('');
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);

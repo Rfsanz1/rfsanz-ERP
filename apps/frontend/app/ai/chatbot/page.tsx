@@ -63,7 +63,7 @@ function AiChatbotPageContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     const q = searchParams.get('q');
     if (q) {
       setTimeout(() => send(q), 500);

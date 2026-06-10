@@ -9,7 +9,7 @@ import { Save } from 'lucide-react';
 export default function InvoiceSettingsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
   return (
     <AppShell {...INVOICE_CONFIG} navItems={INVOICE_NAV} activeHref="/invoice/settings">

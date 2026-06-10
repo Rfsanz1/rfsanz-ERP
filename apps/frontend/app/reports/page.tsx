@@ -128,7 +128,7 @@ export default function ReportsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const filteredCategories = REPORT_CATEGORIES.map(cat => ({

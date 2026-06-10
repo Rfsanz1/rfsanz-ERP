@@ -20,7 +20,7 @@ const SAMPLE = [
 export default function InvoiceAgingPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const totalOverdue = SAMPLE.reduce((s, i) => s + i.amount, 0);

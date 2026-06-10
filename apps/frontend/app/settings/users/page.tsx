@@ -66,7 +66,7 @@ export default function UserManagementPage() {
 
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const showToast = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });

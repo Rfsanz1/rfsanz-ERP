@@ -29,7 +29,7 @@ export default function BudgetPage() {
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [form, setForm] = useState({ name: '', periodeAwal: '', periodeAkhir: '', departemen: '', notes: '' });
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = useCallback(async () => {
     setLoading(true);

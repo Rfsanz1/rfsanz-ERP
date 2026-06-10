@@ -33,7 +33,7 @@ export default function OpportunitiesPage() {
   });
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);

@@ -28,7 +28,7 @@ export default function WaGatewayPage() {
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

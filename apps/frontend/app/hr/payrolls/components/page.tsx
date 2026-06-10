@@ -35,7 +35,7 @@ export default function PayrollComponentsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', type: 'allowance', calc: 'Nominal Tetap', amount: '', taxable: true, bpjs: false });
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const save = () => {

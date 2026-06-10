@@ -58,7 +58,7 @@ export default function AiRecommendationPage() {
   const [dismissed, setDismissed] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 

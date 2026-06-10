@@ -31,7 +31,7 @@ export default function TransfersPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ from: '', to: '', date: '', notes: '', lines: [{ product: '', qty: 1, uom: 'pcs' }] });
 
-  useEffect(() => { if (!token) router.push('/login'); }, [token]);
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const filtered = items.filter(i =>

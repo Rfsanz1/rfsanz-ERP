@@ -10,7 +10,7 @@ export default function AccessPage() {
   const { token, loadProfile } = useAuthStore();
   const router = useRouter();
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     void loadProfile();
   }, [token]);
   if (!token) return null;

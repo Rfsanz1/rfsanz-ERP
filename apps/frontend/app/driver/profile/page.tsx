@@ -12,10 +12,10 @@ export default function DriverProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!token) { router.replace('/login'); }
+    if (!token) { router.replace('/dashboard'); }
   }, [token]);
 
-  const handleLogout = () => { logout(); router.replace('/login'); };
+  const handleLogout = () => { logout(); router.replace('/dashboard'); };
 
   if (!token || !user) return null;
 

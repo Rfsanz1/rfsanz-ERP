@@ -23,7 +23,7 @@ export default function BackupPage() {
   const [restoreConfirm, setRestoreConfirm] = useState(false);
 
   useEffect(() => {
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
   }, [token]);
 
