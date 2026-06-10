@@ -1,13 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ModernLayout } from '../../../components/layout/ModernLayout';
+import ModernLayout from '../../../components/layout/ModernLayout';
 import { api } from '../../../lib/api';
 import { Building2, Plus, Search, RefreshCw } from 'lucide-react';
-
-const thStyle: React.CSSProperties = {
-  padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700,
-  color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em',
-};
 
 export default function SuppliersPage() {
   const [data, setData]       = useState<any[]>([]);
@@ -28,61 +23,62 @@ export default function SuppliersPage() {
 
   return (
     <ModernLayout>
-      <div style={{ maxWidth: 1200 }} className="space-y-5">
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
 
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Data Supplier</h1>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Manajemen data dan kontak supplier</p>
+            <h1 className="text-2xl font-bold text-gray-900">Data Supplier</h1>
+            <p className="text-sm text-gray-500 mt-1">Manajemen data dan kontak supplier</p>
           </div>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-            <Plus size={14} /> Tambah Supplier
+          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
+            <Plus className="w-4 h-4" /> Tambah Supplier
           </button>
         </div>
 
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-center gap-3 flex-wrap" style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 320 }}>
-              <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-                style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 10, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
-                placeholder="Cari nama supplier…" />
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-3 flex-wrap px-5 py-4 border-b border-gray-100">
+            <div className="relative flex-1 min-w-48 max-w-xs">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <input
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Cari nama supplier…"
+              />
             </div>
-            <button onClick={load} style={{ padding: '8px 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <button onClick={load} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 transition-colors">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
                   {['Nama', 'Kode', 'Kontak', 'Email', 'Kota', 'Status'].map(h => (
-                    <th key={h} style={thStyle}>{h}</th>
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-50">
                 {loading ? (
-                  <tr><td colSpan={6} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Memuat…</td></tr>
+                  <tr><td colSpan={6} className="py-12 text-center text-gray-400 text-sm">Memuat…</td></tr>
                 ) : data.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: 48, textAlign: 'center' }}>
-                      <Building2 size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block' }} />
-                      <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Belum ada supplier terdaftar</p>
+                    <td colSpan={6} className="py-12 text-center">
+                      <Building2 className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-400">Belum ada supplier terdaftar</p>
                     </td>
                   </tr>
                 ) : data.map(s => (
-                  <tr key={s.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-                    <td style={{ padding: '13px 16px', fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{s.name}</td>
-                    <td style={{ padding: '13px 16px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{s.code || '–'}</td>
-                    <td style={{ padding: '13px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>{s.phone || '–'}</td>
-                    <td style={{ padding: '13px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>{s.email || '–'}</td>
-                    <td style={{ padding: '13px 16px', fontSize: 13, color: 'var(--text-muted)' }}>{s.city || '–'}</td>
-                    <td style={{ padding: '13px 16px' }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100, color: s.active ? '#10B981' : '#94A3B8', background: s.active ? 'rgba(16,185,129,0.10)' : 'rgba(148,163,184,0.12)' }}>
+                  <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-gray-900">{s.name}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-400">{s.code || '–'}</td>
+                    <td className="px-4 py-3 text-gray-600">{s.phone || '–'}</td>
+                    <td className="px-4 py-3 text-gray-600">{s.email || '–'}</td>
+                    <td className="px-4 py-3 text-gray-500">{s.city || '–'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${s.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                         {s.active ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
@@ -92,14 +88,14 @@ export default function SuppliersPage() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between" style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
+          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 text-xs text-gray-500">
             <span>Total: {total} supplier</span>
-            <div className="flex gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}
-                style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', cursor: 'pointer', opacity: page === 1 ? 0.4 : 1 }}>←</button>
-              <span style={{ padding: '5px 10px', fontWeight: 600, color: 'var(--text-primary)' }}>Hal {page}</span>
-              <button onClick={() => setPage(p => p+1)} disabled={data.length < 20}
-                style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', cursor: 'pointer', opacity: data.length < 20 ? 0.4 : 1 }}>→</button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors">←</button>
+              <span className="px-3 py-1.5 font-semibold text-gray-700">Hal {page}</span>
+              <button onClick={() => setPage(p => p + 1)} disabled={data.length < 20}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors">→</button>
             </div>
           </div>
         </div>

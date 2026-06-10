@@ -10,9 +10,9 @@ import {
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 const STATUS_CONFIG = {
-  DRAFT:    { label: 'Draft',    color: 'bg-gray-100 text-gray-600',    icon: Clock },
-  UPLOADED: { label: 'Uploaded', color: 'bg-blue-100 text-blue-700',    icon: Upload },
-  APPROVED: { label: 'Approved', color: 'bg-green-100 text-green-700',  icon: CheckCircle },
+  DRAFT:    { label: 'Draft',      color: 'bg-gray-100 text-gray-600',    icon: Clock },
+  UPLOADED: { label: 'Diunggah',   color: 'bg-blue-100 text-blue-700',    icon: Upload },
+  APPROVED: { label: 'Disetujui',  color: 'bg-green-100 text-green-700',  icon: CheckCircle },
 };
 
 function fmt(n: number) {
@@ -199,13 +199,13 @@ export default function EFakturPage() {
                             {ef.status === 'DRAFT' && (
                               <button onClick={() => changeStatus(ef.id, 'UPLOADED')}
                                 className="px-2 py-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md font-medium transition-colors">
-                                Upload
+                                Unggah
                               </button>
                             )}
                             {ef.status === 'UPLOADED' && (
                               <button onClick={() => changeStatus(ef.id, 'APPROVED')}
                                 className="px-2 py-1 text-xs bg-green-50 hover:bg-green-100 text-green-700 rounded-md font-medium transition-colors">
-                                Approve
+                                Setujui
                               </button>
                             )}
                             {ef.status === 'DRAFT' && (
