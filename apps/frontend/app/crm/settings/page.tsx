@@ -6,24 +6,42 @@ import AppShell from '../../../components/layout/AppShell';
 import { CRM_CONFIG, CRM_NAV } from '../../../lib/nav-configs';
 import { Save } from 'lucide-react';
 
+const FIELDS = [
+  { label: 'Stage Pipeline Default',   placeholder: 'Prospek, Kualifikasi, Proposal, Won' },
+  { label: 'Target Revenue Bulanan',   placeholder: 'Rp 500.000.000' },
+  { label: 'Rotasi Lead Otomatis',     placeholder: 'Aktif / Nonaktif' },
+];
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '9px 12px', borderRadius: 9, outline: 'none',
+  border: '1px solid var(--border)', fontSize: 13,
+  background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box',
+};
+
 export default function CrmSettingsPage() {
   const { token } = useAuthStore();
-  const router = useRouter();
+  const router    = useRouter();
   useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
+
   return (
     <AppShell {...CRM_CONFIG} navItems={CRM_NAV} activeHref="/crm/settings">
-      <div className="p-6 space-y-6 max-w-2xl mx-auto">
-        <div><h1 className="text-xl font-bold" style={{ color: '#1E1B4B' }}>Pengaturan CRM</h1><p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Konfigurasi modul CRM dan pipeline</p></div>
-        <div className="bg-white rounded-2xl p-6 space-y-5" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
-          {[{ label: 'Stage Pipeline Default' }, { label: 'Target Revenue Bulanan' }, { label: 'Rotasi Lead Otomatis' }].map(f => (
+      <div style={{ maxWidth: 640 }} className="space-y-5">
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Pengaturan CRM</h1>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Konfigurasi modul CRM dan pipeline</p>
+        </div>
+        <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 24, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }} className="space-y-4">
+          {FIELDS.map(f => (
             <div key={f.label}>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: '#1E1B4B' }}>{f.label}</label>
-              <input className="w-full rounded-lg px-4 py-2.5 text-sm" style={{ border: '1.5px solid #EDE8F5', color: '#1E1B4B', outline: 'none' }} placeholder={f.label} />
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>{f.label}</label>
+              <input style={inputStyle} placeholder={f.placeholder}
+                onFocus={e => { e.target.style.borderColor = CRM_CONFIG.appColor; }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
             </div>
           ))}
-          <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: CRM_CONFIG.appColor }}>
-            <Save className="h-4 w-4" /> Simpan
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 10, border: 'none', background: CRM_CONFIG.appColor, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}>
+            <Save size={13} /> Simpan
           </button>
         </div>
       </div>

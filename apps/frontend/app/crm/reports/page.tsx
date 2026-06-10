@@ -14,60 +14,69 @@ const MONTHLY = [
   { bulan: 'Mei', baru: 24, kualifikasi: 18, won: 23, nilai: 'Rp 156 Jt' },
 ];
 
+const thStyle: React.CSSProperties = {
+  padding: '11px 20px', textAlign: 'left', fontSize: 10, fontWeight: 700,
+  color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em',
+};
+
 export default function CrmReportsPage() {
   const { token } = useAuthStore();
-  const router = useRouter();
+  const router    = useRouter();
   useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   return (
     <AppShell {...CRM_CONFIG} navItems={CRM_NAV} activeHref="/crm/reports">
-      <div className="p-6 space-y-6 max-w-5xl mx-auto">
+      <div style={{ maxWidth: 1000 }} className="space-y-5">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#1E1B4B' }}>Laporan CRM</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Performa pipeline dan konversi prospek</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Laporan CRM</h1>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Performa pipeline dan konversi prospek</p>
         </div>
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Total Prospek (YTD)', value: '93',       icon: Star,       color: '#8E24AA', bg: 'rgba(142,36,170,.1)' },
-            { label: 'Won (YTD)',           value: '50',       icon: TrendingUp, color: '#4CAF50', bg: 'rgba(76,175,80,.1)' },
-            { label: 'Conversion Rate',    value: '53.8%',    icon: Users,      color: '#2196F3', bg: 'rgba(33,150,243,.1)' },
-            { label: 'Revenue Pipeline',   value: 'Rp 638 Jt',icon: DollarSign, color: '#FF9800', bg: 'rgba(255,152,0,.1)' },
+            { label: 'Total Prospek (YTD)', value: '93',        icon: Star,       accent: '#8B5CF6' },
+            { label: 'Won (YTD)',           value: '50',        icon: TrendingUp, accent: '#10B981' },
+            { label: 'Conversion Rate',     value: '53.8%',     icon: Users,      accent: '#3B82F6' },
+            { label: 'Revenue Pipeline',    value: 'Rp 638 Jt', icon: DollarSign, accent: '#F59E0B' },
           ].map(s => (
-            <div key={s.label} className="bg-white rounded-2xl p-5" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
+            <div key={s.label} style={{ background: 'var(--surface)', borderRadius: 12, padding: '14px 16px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{s.label}</p>
-                  <p className="text-xl font-bold mt-1" style={{ color: '#1E1B4B' }}>{s.value}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 4px' }}>{s.label}</p>
+                  <p style={{ fontSize: 20, fontWeight: 800, color: s.accent, margin: 0 }}>{s.value}</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: s.bg }}>
-                  <s.icon className="h-5 w-5" style={{ color: s.color }} />
+                <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: s.accent + '1A' }}>
+                  <s.icon size={16} style={{ color: s.accent }} />
                 </div>
               </div>
             </div>
           ))}
         </div>
-        <div className="bg-white rounded-2xl" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
-          <div className="px-6 py-4" style={{ borderBottom: '1px solid #EDE8F5' }}>
-            <h2 className="text-sm font-bold" style={{ color: '#1E1B4B' }}>Pipeline per Bulan</h2>
+
+        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Pipeline per Bulan</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead><tr style={{ borderBottom: '1px solid #EDE8F5' }}>
-                {['Bulan', 'Prospek Baru', 'Kualifikasi', 'Won', 'Nilai Tertutup'].map(h => (
-                  <th key={h} className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>{h}</th>
-                ))}
-              </tr></thead>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Bulan','Prospek Baru','Kualifikasi','Won','Nilai Tertutup'].map(h => (
+                    <th key={h} style={thStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
                 {MONTHLY.map((m, i) => (
-                  <tr key={m.bulan} style={{ borderBottom: i < MONTHLY.length - 1 ? '1px solid #F5F2FB' : 'none' }}
-                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FDFCFF'; }}
-                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                    <td className="px-6 py-3.5 text-sm font-semibold" style={{ color: '#1E1B4B' }}>{m.bulan}</td>
-                    <td className="px-6 py-3.5 text-sm" style={{ color: '#1E1B4B' }}>{m.baru}</td>
-                    <td className="px-6 py-3.5 text-sm" style={{ color: '#1E1B4B' }}>{m.kualifikasi}</td>
-                    <td className="px-6 py-3.5 text-sm font-semibold" style={{ color: '#4CAF50' }}>{m.won}</td>
-                    <td className="px-6 py-3.5 text-sm font-semibold" style={{ color: '#1E1B4B' }}>{m.nilai}</td>
+                  <tr key={m.bulan} style={{ borderBottom: i < MONTHLY.length - 1 ? '1px solid var(--border)' : 'none', transition: 'background .12s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                    <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{m.bulan}</td>
+                    <td style={{ padding: '12px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>{m.baru}</td>
+                    <td style={{ padding: '12px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>{m.kualifikasi}</td>
+                    <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 700, color: '#10B981' }}>{m.won}</td>
+                    <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{m.nilai}</td>
                   </tr>
                 ))}
               </tbody>

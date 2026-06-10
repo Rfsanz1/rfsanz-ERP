@@ -1,102 +1,136 @@
 'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '../../../lib/store/useAuthStore';
+import { useState } from 'react';
 import AppShell from '../../../components/layout/AppShell';
 import { CRM_CONFIG, CRM_NAV } from '../../../lib/nav-configs';
-import { Star, Plus, Search, Phone, Mail } from 'lucide-react';
+import { Plus, Search, Phone, Mail, TrendingUp } from 'lucide-react';
 
 const LEADS = [
-  { name: 'Budi Santoso',   company: 'PT Maju Sejahtera',  stage: 'Negosiasi',   value: 'Rp 24 Jt', prob: 80, phone: '0812-3456-7890', email: 'budi@majusejahtera.co.id' },
-  { name: 'Siti Rahayu',    company: 'CV Berkah Utama',    stage: 'Proposal',    value: 'Rp 18 Jt', prob: 60, phone: '0813-2345-6789', email: 'siti@berkahutama.com' },
-  { name: 'Ahmad Fauzi',    company: 'UD Karya Bersama',   stage: 'Kualifikasi', value: 'Rp 9 Jt',  prob: 35, phone: '0815-3456-7891', email: 'ahmad@karyabersama.id' },
-  { name: 'Dewi Kusuma',    company: 'PT Global Mandiri',  stage: 'Proposal',    value: 'Rp 32 Jt', prob: 55, phone: '0811-4567-8902', email: 'dewi@globalmandiri.co.id' },
-  { name: 'Hari Pratama',   company: 'CV Sentosa Jaya',    stage: 'Baru',        value: 'Rp 12 Jt', prob: 20, phone: '0817-5678-9013', email: 'hari@sentosajaya.com' },
-  { name: 'Lestari Wulan',  company: 'PT Nusantara Abadi', stage: 'Kualifikasi', value: 'Rp 45 Jt', prob: 40, phone: '0819-6789-0124', email: 'lestari@nusantara.co.id' },
+  { name: 'Budi Santoso',  company: 'PT Maju Sejahtera',  stage: 'Negosiasi',   value: 'Rp 24 Jt', prob: 80, phone: '0812-3456-7890', email: 'budi@maju.co.id' },
+  { name: 'Siti Rahayu',   company: 'CV Berkah Utama',    stage: 'Proposal',    value: 'Rp 18 Jt', prob: 60, phone: '0813-2345-6789', email: 'siti@berkah.com' },
+  { name: 'Ahmad Fauzi',   company: 'UD Karya Bersama',   stage: 'Kualifikasi', value: 'Rp 9 Jt',  prob: 35, phone: '0815-3456-7891', email: 'ahmad@karya.id' },
+  { name: 'Dewi Kusuma',   company: 'PT Global Mandiri',  stage: 'Proposal',    value: 'Rp 32 Jt', prob: 55, phone: '0811-4567-8902', email: 'dewi@global.co.id' },
+  { name: 'Hari Pratama',  company: 'CV Sentosa Jaya',    stage: 'Baru',        value: 'Rp 12 Jt', prob: 20, phone: '0817-5678-9013', email: 'hari@sentosa.com' },
+  { name: 'Lestari Wulan', company: 'PT Nusantara Abadi', stage: 'Kualifikasi', value: 'Rp 45 Jt', prob: 40, phone: '0819-6789-0124', email: 'lestari@nusantara.co.id' },
 ];
 
-const STAGE_STYLE: Record<string, { color: string; bg: string }> = {
-  'Baru':        { color: '#9CA3AF', bg: 'rgba(165,163,174,.12)' },
-  'Kualifikasi': { color: '#2196F3', bg: 'rgba(33,150,243,.1)' },
-  'Proposal':    { color: '#FF9800', bg: 'rgba(255,152,0,.1)' },
-  'Negosiasi':   { color: '#8E24AA', bg: 'rgba(142,36,170,.1)' },
-  'Won':         { color: '#4CAF50', bg: 'rgba(76,175,80,.1)' },
+const STAGE: Record<string, { color: string; bg: string }> = {
+  'Baru':        { color: '#94A3B8', bg: 'rgba(148,163,184,.12)' },
+  'Kualifikasi': { color: '#3B82F6', bg: 'rgba(59,130,246,.10)' },
+  'Proposal':    { color: '#F59E0B', bg: 'rgba(245,158,11,.10)' },
+  'Negosiasi':   { color: '#8B5CF6', bg: 'rgba(139,92,246,.10)' },
+  'Menang':      { color: '#10B981', bg: 'rgba(16,185,129,.10)' },
+};
+
+const TH_STYLE: React.CSSProperties = {
+  padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700,
+  color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em',
 };
 
 export default function CrmLeadsPage() {
-  const { token } = useAuthStore();
-  const router = useRouter();
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
-  if (!token) return null;
+  const [search, setSearch] = useState('');
+  const filtered = LEADS.filter(l =>
+    l.name.toLowerCase().includes(search.toLowerCase()) ||
+    l.company.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <AppShell {...CRM_CONFIG} navItems={CRM_NAV} activeHref="/crm/leads">
-      <div className="p-6 space-y-6 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between">
+      <div style={{ maxWidth: 1200 }} className="space-y-5">
+
+        {/* Header */}
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: '#1E1B4B' }}>Prospek (Leads)</h1>
-            <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Kelola pipeline prospek penjualan</p>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Prospek (Leads)</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola pipeline prospek penjualan Anda</p>
           </div>
-          <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: CRM_CONFIG.appColor }}>
-            <Plus className="h-4 w-4" /> Prospek Baru
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Plus size={15} /> Prospek Baru
           </button>
         </div>
-        <div className="bg-white rounded-2xl" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
-          <div className="px-6 py-4" style={{ borderBottom: '1px solid #EDE8F5' }}>
-            <div className="relative max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: '#B0AAB9' }} />
-              <input className="w-full rounded-lg pl-9 pr-4 py-2 text-sm" style={{ border: '1px solid #EDE8F5', color: '#1E1B4B', outline: 'none' }} placeholder="Cari prospek..." />
+
+        {/* Summary pills */}
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { label: 'Semua',        count: LEADS.length,                                        color: '#6366F1' },
+            { label: 'Proposal',     count: LEADS.filter(l => l.stage === 'Proposal').length,    color: '#F59E0B' },
+            { label: 'Negosiasi',    count: LEADS.filter(l => l.stage === 'Negosiasi').length,   color: '#8B5CF6' },
+            { label: 'Kualifikasi',  count: LEADS.filter(l => l.stage === 'Kualifikasi').length, color: '#3B82F6' },
+          ].map(p => (
+            <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 100, background: p.color + '12', border: '1px solid ' + p.color + '30' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: p.color }}>{p.count}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{p.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Table card */}
+        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ position: 'relative', maxWidth: 320 }}>
+              <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 10, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                placeholder="Cari nama / perusahaan…" />
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #EDE8F5' }}>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['Kontak', 'Perusahaan', 'Stage', 'Nilai', 'Probabilitas', 'Aksi'].map(h => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>{h}</th>
+                    <th key={h} style={TH_STYLE}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {LEADS.map((l, i) => {
-                  const st = STAGE_STYLE[l.stage] ?? STAGE_STYLE['Baru'];
+                {filtered.map(l => {
+                  const st = STAGE[l.stage] ?? STAGE['Baru'];
                   return (
-                    <tr key={l.name} style={{ borderBottom: i < LEADS.length - 1 ? '1px solid #F5F2FB' : 'none' }}
-                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FDFCFF'; }}
-                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                      <td className="px-6 py-3.5">
+                    <tr key={l.name} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                      <td style={{ padding: '13px 16px' }}>
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: CRM_CONFIG.appColor }}>{l.name.charAt(0)}</div>
+                          <div style={{ width: 32, height: 32, borderRadius: 10, background: '#6366F11A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#6366F1', flexShrink: 0 }}>
+                            {l.name.charAt(0)}
+                          </div>
                           <div>
-                            <p className="text-sm font-semibold" style={{ color: '#1E1B4B' }}>{l.name}</p>
-                            <p className="text-xs" style={{ color: '#9CA3AF' }}>{l.phone}</p>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{l.name}</p>
+                            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{l.phone}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-3.5 text-sm" style={{ color: '#1E1B4B' }}>{l.company}</td>
-                      <td className="px-6 py-3.5">
-                        <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold" style={{ color: st.color, backgroundColor: st.bg }}>{l.stage}</span>
+                      <td style={{ padding: '13px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>{l.company}</td>
+                      <td style={{ padding: '13px 16px' }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100, color: st.color, background: st.bg }}>{l.stage}</span>
                       </td>
-                      <td className="px-6 py-3.5 text-sm font-semibold" style={{ color: '#1E1B4B' }}>{l.value}</td>
-                      <td className="px-6 py-3.5">
+                      <td style={{ padding: '13px 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{l.value}</td>
+                      <td style={{ padding: '13px 16px' }}>
                         <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-16 rounded-full" style={{ backgroundColor: '#F5F2FB' }}>
-                            <div className="h-1.5 rounded-full" style={{ backgroundColor: '#4CAF50', width: `${l.prob}%` }} />
+                          <div style={{ height: 6, width: 64, borderRadius: 100, background: 'var(--border)' }}>
+                            <div style={{ height: '100%', borderRadius: 100, background: l.prob >= 60 ? '#10B981' : l.prob >= 35 ? '#F59E0B' : '#94A3B8', width: `${l.prob}%` }} />
                           </div>
-                          <span className="text-xs font-bold" style={{ color: '#4CAF50' }}>{l.prob}%</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: l.prob >= 60 ? '#10B981' : l.prob >= 35 ? '#F59E0B' : '#94A3B8', minWidth: 32 }}>{l.prob}%</span>
                         </div>
                       </td>
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <button className="p-1.5 rounded-lg" style={{ border: '1px solid #EDE8F5', color: '#9CA3AF' }} title="Telepon"><Phone className="h-3.5 w-3.5" /></button>
-                          <button className="p-1.5 rounded-lg" style={{ border: '1px solid #EDE8F5', color: '#9CA3AF' }} title="Email"><Mail className="h-3.5 w-3.5" /></button>
+                      <td style={{ padding: '13px 16px' }}>
+                        <div className="flex gap-2">
+                          <button style={{ padding: '5px 8px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }} title="Telepon"><Phone size={13} /></button>
+                          <button style={{ padding: '5px 8px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }} title="Email"><Mail size={13} /></button>
                         </div>
                       </td>
                     </tr>
                   );
                 })}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={6} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Tidak ada prospek ditemukan</td></tr>
+                )}
               </tbody>
             </table>
+          </div>
+          <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
+            {filtered.length} prospek
           </div>
         </div>
       </div>

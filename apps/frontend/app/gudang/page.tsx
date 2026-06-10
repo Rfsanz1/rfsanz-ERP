@@ -6,8 +6,6 @@ import { useAuthStore } from '@/lib/store/useAuthStore';
 import api from '@/lib/api';
 import { Package, ArrowDownRight, ArrowUpRight, ClipboardList, ClipboardCheck, ArrowLeftRight, Clock } from 'lucide-react';
 
-const APP_COLOR = '#D97706';
-
 interface GudangStats { picking: number; incoming: number; outgoing: number; transfers: number; stockOpname: number; pending: number; }
 
 export default function GudangDashboardPage() {
@@ -24,59 +22,71 @@ export default function GudangDashboardPage() {
   }, [token]);
 
   const CARDS = [
-    { label: 'Picking Order', value: stats.picking, icon: ClipboardList, color: '#F57C00', bg: 'rgba(245,124,0,.1)', href: '/gudang/picking' },
-    { label: 'Barang Masuk', value: stats.incoming, icon: ArrowDownRight, color: '#2563EB', bg: 'rgba(37,99,235,.1)', href: '/gudang/inbound' },
-    { label: 'Barang Keluar', value: stats.outgoing, icon: ArrowUpRight, color: '#16A34A', bg: 'rgba(22,163,74,.1)', href: '/gudang/outbound' },
-    { label: 'Transfer Stok', value: stats.transfers, icon: ArrowLeftRight, color: '#D97706', bg: 'rgba(217,119,6,.1)', href: '/gudang/transfer' },
-    { label: 'Stock Opname', value: stats.stockOpname, icon: ClipboardCheck, color: '#7C3AED', bg: 'rgba(124,58,237,.1)', href: '/gudang/stock-opname' },
-    { label: 'Order Pending', value: stats.pending, icon: Clock, color: '#DC2626', bg: 'rgba(220,38,38,.1)', href: '/gudang/picking' },
+    { label: 'Picking Order', value: stats.picking,    icon: ClipboardList,  accent: '#F59E0B', href: '/gudang/picking' },
+    { label: 'Barang Masuk',  value: stats.incoming,   icon: ArrowDownRight, accent: '#3B82F6', href: '/gudang/inbound' },
+    { label: 'Barang Keluar', value: stats.outgoing,   icon: ArrowUpRight,   accent: '#10B981', href: '/gudang/outbound' },
+    { label: 'Transfer Stok', value: stats.transfers,  icon: ArrowLeftRight, accent: '#8B5CF6', href: '/gudang/transfer' },
+    { label: 'Stok Opname',   value: stats.stockOpname,icon: ClipboardCheck, accent: '#6366F1', href: '/gudang/stock-opname' },
+    { label: 'Order Pending', value: stats.pending,    icon: Clock,          accent: '#EF4444', href: '/gudang/picking' },
+  ];
+
+  const ACTIONS = [
+    { label: 'Buat Picking Order', href: '/gudang/picking',       icon: ClipboardList,  accent: '#F59E0B' },
+    { label: 'Terima Barang',      href: '/gudang/inbound',       icon: ArrowDownRight, accent: '#3B82F6' },
+    { label: 'Kirim Barang',       href: '/gudang/outbound',      icon: ArrowUpRight,   accent: '#10B981' },
+    { label: 'Transfer Stok',      href: '/gudang/transfer',      icon: ArrowLeftRight, accent: '#8B5CF6' },
+    { label: 'Cek Stok',           href: '/gudang/products',      icon: Package,        accent: '#F59E0B' },
   ];
 
   return (
     <GudangLayout title="Dashboard Gudang">
-      <div style={{ marginBottom: 24 }}>
-        <p style={{ fontSize: 11.5, fontWeight: 600, color: APP_COLOR, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 4px' }}>Gudang</p>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#78350F', margin: '0 0 6px' }}>Dashboard Gudang</h1>
-        <p style={{ color: '#6B7280', fontSize: 13.5, margin: 0 }}>Selamat datang, {user?.name?.split(' ')[0] || 'Staff'}. Berikut ringkasan aktivitas gudang hari ini.</p>
+      {/* Header */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+          Halo, {user?.name?.split(' ')[0] || 'Staff'}! 👋
+        </h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Berikut ringkasan aktivitas gudang hari ini.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 14, marginBottom: 24 }}>
-        {CARDS.map(card => (
-          <button key={card.label} onClick={() => router.push(card.href)}
-            style={{ padding: 20, borderRadius: 16, backgroundColor: '#fff', border: '1.5px solid #FEF3C7', cursor: 'pointer', textAlign: 'left', transition: 'all .2s', display: 'flex', alignItems: 'flex-start', gap: 14 }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = card.color; (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 6px 20px ${card.color}22`; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#FEF3C7'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none'; (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}
-          >
-            <div style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <card.icon size={18} style={{ color: card.color }} />
-            </div>
-            <div>
-              <p style={{ fontSize: 11.5, color: '#9CA3AF', fontWeight: 500, margin: '0 0 4px' }}>{card.label}</p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: '#78350F', margin: 0, lineHeight: 1 }}>{card.value}</p>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <div style={{ backgroundColor: '#fff', borderRadius: 16, border: '1px solid #FEF3C7', padding: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#78350F', margin: '0 0 16px' }}>Aksi Cepat</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 10 }}>
-          {[
-            { label: 'Buat Picking Order', href: '/gudang/picking', icon: ClipboardList, color: '#F57C00' },
-            { label: 'Terima Barang', href: '/gudang/inbound', icon: ArrowDownRight, color: '#2563EB' },
-            { label: 'Kirim Barang', href: '/gudang/outbound', icon: ArrowUpRight, color: '#16A34A' },
-            { label: 'Transfer Stok', href: '/gudang/transfer', icon: ArrowLeftRight, color: '#7C3AED' },
-            { label: 'Cek Stok', href: '/gudang/products', icon: Package, color: '#D97706' },
-          ].map(a => (
-            <button key={a.href} onClick={() => router.push(a.href)}
-              style={{ padding: '12px 14px', borderRadius: 12, backgroundColor: `${a.color}10`, border: `1.5px solid ${a.color}25`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'all .2s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${a.color}20`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${a.color}10`; }}
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 12, marginBottom: 20 }}>
+        {CARDS.map(c => {
+          const Icon = c.icon;
+          return (
+            <button key={c.label} onClick={() => router.push(c.href)}
+              style={{ padding: '16px 18px', borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', display: 'flex', alignItems: 'flex-start', gap: 12, boxShadow: 'var(--shadow-xs)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = c.accent + '60'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-xs)'; }}
             >
-              <a.icon size={16} style={{ color: a.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#374151' }}>{a.label}</span>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: c.accent + '1A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon size={16} style={{ color: c.accent }} strokeWidth={2} />
+              </div>
+              <div>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, margin: '0 0 4px' }}>{c.label}</p>
+                <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1, letterSpacing: '-0.02em' }}>{c.value}</p>
+              </div>
             </button>
-          ))}
+          );
+        })}
+      </div>
+
+      {/* Quick Actions */}
+      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', padding: '18px 20px', boxShadow: 'var(--shadow-sm)' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Aksi Cepat</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 10 }}>
+          {ACTIONS.map(a => {
+            const Icon = a.icon;
+            return (
+              <button key={a.href} onClick={() => router.push(a.href)}
+                style={{ padding: '10px 14px', borderRadius: 10, background: a.accent + '0D', border: '1px solid ' + a.accent + '25', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'all .15s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = a.accent + '1A'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = a.accent + '0D'; }}
+              >
+                <Icon size={14} style={{ color: a.accent, flexShrink: 0 }} strokeWidth={2} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{a.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </GudangLayout>

@@ -1,95 +1,97 @@
 'use client';
-
 import { useState, useEffect } from 'react';
-import ModernLayout from '@/components/layout/ModernLayout';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '../../../lib/store/useAuthStore';
+import AppShell from '../../../components/layout/AppShell';
+import { HR_CONFIG, HR_NAV } from '../../../lib/nav-configs';
 import api from '@/lib/api';
 
-const P = '#7367F0';
-
-const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  draft:     { label: 'Draft',     color: '#A5A3AE', bg: 'rgba(165,163,174,.1)' },
-  confirmed: { label: 'Menunggu',  color: '#FF9F43', bg: 'rgba(255,159,67,.1)' },
-  validated: { label: 'Disetujui', color: '#28C76F', bg: 'rgba(40,199,111,.1)' },
-  refused:   { label: 'Ditolak',   color: '#EA5455', bg: 'rgba(234,84,85,.1)' },
+const STATUS_MAP: Record<string, { label: string; color: string }> = {
+  draft:     { label: 'Draf',      color: '#94A3B8' },
+  confirmed: { label: 'Menunggu', color: '#F59E0B' },
+  validated: { label: 'Disetujui', color: '#10B981' },
+  refused:   { label: 'Ditolak',   color: '#EF4444' },
 };
 
 type Tab = 'requests' | 'types' | 'allocations';
 
-export default function LeavesPage() {
-  const [tab, setTab] = useState<Tab>('requests');
-  const [requests, setRequests] = useState<any[]>([]);
-  const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
-  const [allocations, setAllocations] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [showTypeForm, setShowTypeForm] = useState(false);
-  const [form, setForm] = useState({ employeeId: '', leaveTypeId: '', dateFrom: '', dateTo: '', numberOfDays: '', reason: '' });
-  const [typeForm, setTypeForm] = useState({ name: '', requiresApproval: true, maxDays: '' });
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '8px 12px', borderRadius: 9, outline: 'none',
+  border: '1px solid var(--border)', fontSize: 13,
+  background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box',
+};
 
-  useEffect(() => { fetchAll(); }, []);
+const thStyle: React.CSSProperties = {
+  padding: '11px 20px', textAlign: 'left', fontSize: 10, fontWeight: 700,
+  color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em',
+};
+
+export default function LeavesPage() {
+  const { token }   = useAuthStore();
+  const router      = useRouter();
+  const [tab, setTab]                 = useState<Tab>('requests');
+  const [requests, setRequests]       = useState<any[]>([]);
+  const [leaveTypes, setLeaveTypes]   = useState<any[]>([]);
+  const [allocations, setAllocations] = useState<any[]>([]);
+  const [stats, setStats]             = useState<any>(null);
+  const [loading, setLoading]         = useState(true);
+  const [showForm, setShowForm]       = useState(false);
+  const [showTypeForm, setShowTypeForm] = useState(false);
+  const [form, setForm]               = useState({ employeeId: '', leaveTypeId: '', dateFrom: '', dateTo: '', numberOfDays: '', reason: '' });
+  const [typeForm, setTypeForm]       = useState({ name: '', requiresApproval: true, maxDays: '' });
+
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   async function fetchAll() {
     setLoading(true);
     try {
       const [reqRes, typeRes, allocRes, statsRes] = await Promise.all([
-        api.get('/leave/requests'),
-        api.get('/leave/types'),
-        api.get('/leave/allocations'),
-        api.get('/leave/stats'),
+        api.get('/leave/requests'), api.get('/leave/types'), api.get('/leave/allocations'), api.get('/leave/stats'),
       ]);
       setRequests(reqRes.data.data ?? []);
       setLeaveTypes(typeRes.data ?? []);
       setAllocations(allocRes.data ?? []);
       setStats(statsRes.data);
-    } catch { } finally { setLoading(false); }
+    } catch {} finally { setLoading(false); }
   }
+  useEffect(() => { if (token) fetchAll(); }, [token]);
+  if (!token) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
       await api.post('/leave/requests', { ...form, numberOfDays: parseFloat(form.numberOfDays) });
-      setShowForm(false);
-      setForm({ employeeId: '', leaveTypeId: '', dateFrom: '', dateTo: '', numberOfDays: '', reason: '' });
+      setShowForm(false); setForm({ employeeId: '', leaveTypeId: '', dateFrom: '', dateTo: '', numberOfDays: '', reason: '' });
       fetchAll();
-    } catch { }
+    } catch {}
   }
-
   async function handleTypeSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
       await api.post('/leave/types', { ...typeForm, maxDays: typeForm.maxDays ? parseInt(typeForm.maxDays) : null });
-      setShowTypeForm(false);
-      setTypeForm({ name: '', requiresApproval: true, maxDays: '' });
+      setShowTypeForm(false); setTypeForm({ name: '', requiresApproval: true, maxDays: '' });
       fetchAll();
-    } catch { }
+    } catch {}
   }
-
-  async function approveRequest(id: string) { await api.post(`/leave/requests/${id}/approve`); fetchAll(); }
-  async function refuseRequest(id: string) { await api.post(`/leave/requests/${id}/refuse`); fetchAll(); }
-
-  const inputCls = 'w-full rounded-lg px-3 py-2 text-sm outline-none';
-  const inputStyle = { border: '1.5px solid #EDE8F5', color: '#1E1B4B', backgroundColor: '#FAFAFA' };
+  const approve = async (id: string) => { await api.post(`/leave/requests/${id}/approve`); fetchAll(); };
+  const refuse  = async (id: string) => { await api.post(`/leave/requests/${id}/refuse`);  fetchAll(); };
 
   return (
-    <ModernLayout>
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <AppShell {...HR_CONFIG} navItems={HR_NAV} activeHref="/hr/leaves">
+      <div style={{ maxWidth: 1100 }} className="space-y-5">
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: '#1E1B4B' }}>Cuti & Izin</h1>
-            <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Kelola pengajuan cuti karyawan</p>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Cuti &amp; Izin</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola pengajuan cuti karyawan</p>
           </div>
           <div className="flex gap-2">
             {tab === 'requests' && (
-              <button onClick={() => setShowForm(true)} className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: P }}>
-                + Ajukan Cuti
-              </button>
+              <button onClick={() => setShowForm(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Ajukan Cuti</button>
             )}
             {tab === 'types' && (
-              <button onClick={() => setShowTypeForm(true)} className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: P }}>
-                + Jenis Cuti
-              </button>
+              <button onClick={() => setShowTypeForm(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Jenis Cuti</button>
             )}
           </div>
         </div>
@@ -98,61 +100,61 @@ export default function LeavesPage() {
         {stats && (
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Total Pengajuan', value: stats.total, color: P },
-              { label: 'Menunggu', value: stats.pending, color: '#FF9F43' },
-              { label: 'Disetujui', value: stats.approved, color: '#28C76F' },
+              { label: 'Total Pengajuan', value: stats.total,    color: '#6366F1' },
+              { label: 'Menunggu',        value: stats.pending,  color: '#F59E0B' },
+              { label: 'Disetujui',       value: stats.approved, color: '#10B981' },
             ].map(s => (
-              <div key={s.label} className="bg-white rounded-2xl p-5" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
-                <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{s.label}</p>
-                <p className="text-2xl font-bold mt-1" style={{ color: s.color }}>{s.value}</p>
+              <div key={s.label} style={{ background: 'var(--surface)', borderRadius: 12, padding: '16px 18px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 4px' }}>{s.label}</p>
+                <p style={{ fontSize: 24, fontWeight: 800, color: s.color, margin: 0 }}>{s.value}</p>
               </div>
             ))}
           </div>
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ backgroundColor: '#F5F3FF', border: '1px solid #EDE8F5' }}>
-          {([['requests', 'Pengajuan'], ['types', 'Jenis Cuti'], ['allocations', 'Alokasi']] as [Tab, string][]).map(([key, label]) => (
+        <div style={{ display: 'flex', gap: 3, padding: 4, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--border)', width: 'fit-content' }}>
+          {([['requests','Pengajuan'],['types','Jenis Cuti'],['allocations','Alokasi']] as [Tab, string][]).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-              style={tab === key ? { backgroundColor: P, color: '#fff' } : { color: '#9CA3AF' }}>
+              style={{ padding: '7px 16px', borderRadius: 9, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s',
+                background: tab === key ? '#6366F1' : 'transparent', color: tab === key ? '#fff' : 'var(--text-muted)' }}>
               {label}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-48" style={{ color: '#B0AAB9' }}>Memuat data...</div>
+          <div style={{ padding: 48, textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Memuat data…</div>
         ) : (
           <>
-            {/* Requests tab */}
+            {/* Requests */}
             {tab === 'requests' && (
-              <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
-                <table className="w-full text-sm">
+              <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #EDE8F5', backgroundColor: '#F5F3FF' }}>
-                      {['Karyawan', 'Jenis Cuti', 'Tanggal', 'Hari', 'Status', 'Aksi'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: '#9CA3AF' }}>{h}</th>
-                      ))}
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Karyawan','Jenis Cuti','Tanggal','Hari','Status','Aksi'].map(h => <th key={h} style={thStyle}>{h}</th>)}
                     </tr>
                   </thead>
                   <tbody>
-                    {requests.map(r => {
+                    {requests.map((r, i) => {
                       const st = STATUS_MAP[r.status] ?? STATUS_MAP.draft;
                       return (
-                        <tr key={r.id} className="hover:bg-gray-50 transition" style={{ borderBottom: '1px solid #F5F3FF' }}>
-                          <td className="px-4 py-3 font-semibold" style={{ color: '#1E1B4B' }}>{r.employee?.name ?? r.employeeId}</td>
-                          <td className="px-4 py-3" style={{ color: '#6B7280' }}>{r.leaveType?.name ?? '—'}</td>
-                          <td className="px-4 py-3 text-xs" style={{ color: '#9CA3AF' }}>{new Date(r.dateFrom).toLocaleDateString('id-ID')} – {new Date(r.dateTo).toLocaleDateString('id-ID')}</td>
-                          <td className="px-4 py-3 font-medium" style={{ color: '#1E1B4B' }}>{Number(r.numberOfDays)} hari</td>
-                          <td className="px-4 py-3">
-                            <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold" style={{ color: st.color, backgroundColor: st.bg }}>{st.label}</span>
+                        <tr key={r.id} style={{ borderBottom: i < requests.length - 1 ? '1px solid var(--border)' : 'none', transition: 'background .12s' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                          <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{r.employee?.name ?? r.employeeId}</td>
+                          <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-secondary)' }}>{r.leaveType?.name ?? '—'}</td>
+                          <td style={{ padding: '12px 20px', fontSize: 11, color: 'var(--text-muted)' }}>{new Date(r.dateFrom).toLocaleDateString('id-ID')} – {new Date(r.dateTo).toLocaleDateString('id-ID')}</td>
+                          <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{Number(r.numberOfDays)} hari</td>
+                          <td style={{ padding: '12px 20px' }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, color: st.color, background: st.color + '1A' }}>{st.label}</span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td style={{ padding: '12px 20px' }}>
                             {(r.status === 'draft' || r.status === 'confirmed') && (
                               <div className="flex gap-2">
-                                <button onClick={() => approveRequest(r.id)} className="text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ backgroundColor: 'rgba(40,199,111,.1)', color: '#28C76F' }}>✓ Setuju</button>
-                                <button onClick={() => refuseRequest(r.id)} className="text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ backgroundColor: 'rgba(234,84,85,.1)', color: '#EA5455' }}>✗ Tolak</button>
+                                <button onClick={() => approve(r.id)} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', border: 'none', background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>✓ Setuju</button>
+                                <button onClick={() => refuse(r.id)}  style={{ fontSize: 11, padding: '3px 10px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', border: 'none', background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>✗ Tolak</button>
                               </div>
                             )}
                           </td>
@@ -160,62 +162,63 @@ export default function LeavesPage() {
                       );
                     })}
                     {requests.length === 0 && (
-                      <tr><td colSpan={6} className="py-12 text-center text-sm" style={{ color: '#B0AAB9' }}>Belum ada pengajuan cuti</td></tr>
+                      <tr><td colSpan={6} style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Belum ada pengajuan cuti</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
             )}
 
-            {/* Types tab */}
+            {/* Types */}
             {tab === 'types' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {leaveTypes.map(t => (
-                  <div key={t.id} className="bg-white rounded-2xl p-5" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
-                    <p className="font-semibold" style={{ color: '#1E1B4B' }}>{t.name}</p>
-                    <div className="mt-3 space-y-1.5 text-sm">
-                      <div className="flex justify-between">
-                        <span style={{ color: '#9CA3AF' }}>Perlu Persetujuan</span>
-                        <span className="font-medium" style={{ color: '#1E1B4B' }}>{t.requiresApproval ? 'Ya' : 'Tidak'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span style={{ color: '#9CA3AF' }}>Maks. Hari</span>
-                        <span className="font-medium" style={{ color: '#1E1B4B' }}>{t.maxDays ?? 'Tidak terbatas'}</span>
-                      </div>
+                  <div key={t.id} style={{ background: 'var(--surface)', borderRadius: 14, padding: 20, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>{t.name}</p>
+                    <div className="space-y-2">
+                      {[
+                        { label: 'Perlu Persetujuan', value: t.requiresApproval ? 'Ya' : 'Tidak' },
+                        { label: 'Maks. Hari',         value: t.maxDays ?? 'Tidak terbatas' },
+                      ].map(row => (
+                        <div key={row.label} className="flex justify-between">
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.label}</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{row.value}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
                 {leaveTypes.length === 0 && (
-                  <p className="col-span-3 text-center py-10 text-sm" style={{ color: '#B0AAB9' }}>Belum ada jenis cuti. Klik "+ Jenis Cuti" untuk menambah.</p>
+                  <p style={{ gridColumn: '1/-1', padding: 40, textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Belum ada jenis cuti.</p>
                 )}
               </div>
             )}
 
-            {/* Allocations tab */}
+            {/* Allocations */}
             {tab === 'allocations' && (
-              <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
-                <table className="w-full text-sm">
+              <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #EDE8F5', backgroundColor: '#F5F3FF' }}>
-                      {['Karyawan', 'Jenis Cuti', 'Tahun', 'Jatah (Hari)', 'Status'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: '#9CA3AF' }}>{h}</th>
-                      ))}
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Karyawan','Jenis Cuti','Tahun','Jatah (Hari)','Status'].map(h => <th key={h} style={thStyle}>{h}</th>)}
                     </tr>
                   </thead>
                   <tbody>
-                    {allocations.map(a => (
-                      <tr key={a.id} className="hover:bg-gray-50 transition" style={{ borderBottom: '1px solid #F5F3FF' }}>
-                        <td className="px-4 py-3 font-semibold" style={{ color: '#1E1B4B' }}>{a.employee?.name ?? a.employeeId}</td>
-                        <td className="px-4 py-3" style={{ color: '#6B7280' }}>{a.leaveType?.name ?? '—'}</td>
-                        <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{a.year}</td>
-                        <td className="px-4 py-3 font-semibold" style={{ color: '#1E1B4B' }}>{Number(a.numberOfDays)}</td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: 'rgba(40,199,111,.1)', color: '#28C76F' }}>{a.status}</span>
+                    {allocations.map((a, i) => (
+                      <tr key={a.id} style={{ borderBottom: i < allocations.length - 1 ? '1px solid var(--border)' : 'none', transition: 'background .12s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                        <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{a.employee?.name ?? a.employeeId}</td>
+                        <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-secondary)' }}>{a.leaveType?.name ?? '—'}</td>
+                        <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-muted)' }}>{a.year}</td>
+                        <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{Number(a.numberOfDays)}</td>
+                        <td style={{ padding: '12px 20px' }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>{a.status}</span>
                         </td>
                       </tr>
                     ))}
                     {allocations.length === 0 && (
-                      <tr><td colSpan={5} className="py-12 text-center text-sm" style={{ color: '#B0AAB9' }}>Belum ada alokasi cuti</td></tr>
+                      <tr><td colSpan={5} style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Belum ada alokasi cuti</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -223,63 +226,63 @@ export default function LeavesPage() {
             )}
           </>
         )}
-
-        {/* Modal: Ajukan Cuti */}
-        {showForm && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ backgroundColor: 'rgba(47,43,61,.5)' }}>
-            <div className="bg-white rounded-2xl w-full max-w-md" style={{ boxShadow: '0 20px 60px rgba(47,43,61,.2)' }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #EDE8F5' }}>
-                <h2 className="font-bold" style={{ color: '#1E1B4B' }}>Ajukan Cuti</h2>
-                <button onClick={() => setShowForm(false)} style={{ color: '#A5A3AE' }}>✕</button>
-              </div>
-              <form onSubmit={handleSubmit} className="p-5 space-y-3">
-                <div><label className="block text-xs font-semibold mb-1" style={{ color: '#6B7280' }}>ID Karyawan *</label><input required value={form.employeeId} onChange={e => setForm(f => ({ ...f, employeeId: e.target.value }))} className={inputCls} style={inputStyle} /></div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1" style={{ color: '#6B7280' }}>Jenis Cuti *</label>
-                  <select required value={form.leaveTypeId} onChange={e => setForm(f => ({ ...f, leaveTypeId: e.target.value }))} className={inputCls} style={inputStyle}>
-                    <option value="">-- Pilih Jenis --</option>
-                    {leaveTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-semibold mb-1" style={{ color: '#6B7280' }}>Dari *</label><input required type="date" value={form.dateFrom} onChange={e => setForm(f => ({ ...f, dateFrom: e.target.value }))} className={inputCls} style={inputStyle} /></div>
-                  <div><label className="block text-xs font-semibold mb-1" style={{ color: '#6B7280' }}>Sampai *</label><input required type="date" value={form.dateTo} onChange={e => setForm(f => ({ ...f, dateTo: e.target.value }))} className={inputCls} style={inputStyle} /></div>
-                </div>
-                <div><label className="block text-xs font-semibold mb-1" style={{ color: '#6B7280' }}>Jumlah Hari *</label><input required type="number" min="0.5" step="0.5" value={form.numberOfDays} onChange={e => setForm(f => ({ ...f, numberOfDays: e.target.value }))} className={inputCls} style={inputStyle} /></div>
-                <div><label className="block text-xs font-semibold mb-1" style={{ color: '#6B7280' }}>Alasan</label><textarea value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} rows={2} className={inputCls + ' resize-none'} style={inputStyle} /></div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 rounded-lg text-sm font-semibold" style={{ border: '1.5px solid #EDE8F5', color: '#6B7280' }}>Batal</button>
-                  <button type="submit" className="flex-1 py-2 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: P }}>Ajukan</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Modal: Jenis Cuti */}
-        {showTypeForm && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ backgroundColor: 'rgba(47,43,61,.5)' }}>
-            <div className="bg-white rounded-2xl w-full max-w-sm" style={{ boxShadow: '0 20px 60px rgba(47,43,61,.2)' }}>
-              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #EDE8F5' }}>
-                <h2 className="font-bold" style={{ color: '#1E1B4B' }}>Tambah Jenis Cuti</h2>
-                <button onClick={() => setShowTypeForm(false)} style={{ color: '#A5A3AE' }}>✕</button>
-              </div>
-              <form onSubmit={handleTypeSubmit} className="p-5 space-y-3">
-                <div><label className="block text-xs font-semibold mb-1" style={{ color: '#6B7280' }}>Nama *</label><input required value={typeForm.name} onChange={e => setTypeForm(f => ({ ...f, name: e.target.value }))} className={inputCls} style={inputStyle} placeholder="Cuti Tahunan" /></div>
-                <div><label className="block text-xs font-semibold mb-1" style={{ color: '#6B7280' }}>Maks. Hari (kosong = tidak terbatas)</label><input type="number" value={typeForm.maxDays} onChange={e => setTypeForm(f => ({ ...f, maxDays: e.target.value }))} className={inputCls} style={inputStyle} /></div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={typeForm.requiresApproval} onChange={e => setTypeForm(f => ({ ...f, requiresApproval: e.target.checked }))} className="rounded" />
-                  <span className="text-sm" style={{ color: '#6B7280' }}>Perlu persetujuan atasan</span>
-                </label>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowTypeForm(false)} className="flex-1 py-2 rounded-lg text-sm font-semibold" style={{ border: '1.5px solid #EDE8F5', color: '#6B7280' }}>Batal</button>
-                  <button type="submit" className="flex-1 py-2 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: P }}>Simpan</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
-    </ModernLayout>
+
+      {/* Modal: Ajukan Cuti */}
+      {showForm && (
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16, background: 'rgba(0,0,0,.5)' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 18, width: '100%', maxWidth: 460, boxShadow: '0 20px 60px rgba(0,0,0,.2)' }}>
+            <div className="flex items-center justify-between" style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Ajukan Cuti</h2>
+              <button onClick={() => setShowForm(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)' }}>✕</button>
+            </div>
+            <form onSubmit={handleSubmit} style={{ padding: 20 }} className="space-y-3">
+              <div><label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5 }}>ID Karyawan *</label><input required value={form.employeeId} onChange={e => setForm(f => ({ ...f, employeeId: e.target.value }))} style={inputStyle} /></div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5 }}>Jenis Cuti *</label>
+                <select required value={form.leaveTypeId} onChange={e => setForm(f => ({ ...f, leaveTypeId: e.target.value }))} style={{ ...inputStyle, appearance: 'none' }}>
+                  <option value="">-- Pilih Jenis --</option>
+                  {leaveTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5 }}>Dari *</label><input required type="date" value={form.dateFrom} onChange={e => setForm(f => ({ ...f, dateFrom: e.target.value }))} style={inputStyle} /></div>
+                <div><label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5 }}>Sampai *</label><input required type="date" value={form.dateTo} onChange={e => setForm(f => ({ ...f, dateTo: e.target.value }))} style={inputStyle} /></div>
+              </div>
+              <div><label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5 }}>Jumlah Hari *</label><input required type="number" min="0.5" step="0.5" value={form.numberOfDays} onChange={e => setForm(f => ({ ...f, numberOfDays: e.target.value }))} style={inputStyle} /></div>
+              <div><label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5 }}>Alasan</label><textarea value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} rows={2} style={{ ...inputStyle, resize: 'none' as const }} /></div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => setShowForm(false)} style={{ flex: 1, padding: '9px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
+                <button type="submit" style={{ flex: 2, padding: '9px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Ajukan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Jenis Cuti */}
+      {showTypeForm && (
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16, background: 'rgba(0,0,0,.5)' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 18, width: '100%', maxWidth: 380, boxShadow: '0 20px 60px rgba(0,0,0,.2)' }}>
+            <div className="flex items-center justify-between" style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Tambah Jenis Cuti</h2>
+              <button onClick={() => setShowTypeForm(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)' }}>✕</button>
+            </div>
+            <form onSubmit={handleTypeSubmit} style={{ padding: 20 }} className="space-y-3">
+              <div><label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5 }}>Nama *</label><input required value={typeForm.name} onChange={e => setTypeForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="Cuti Tahunan" /></div>
+              <div><label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5 }}>Maks. Hari</label><input type="number" value={typeForm.maxDays} onChange={e => setTypeForm(f => ({ ...f, maxDays: e.target.value }))} style={inputStyle} /></div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+                <input type="checkbox" checked={typeForm.requiresApproval} onChange={e => setTypeForm(f => ({ ...f, requiresApproval: e.target.checked }))} />
+                Perlu persetujuan atasan
+              </label>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => setShowTypeForm(false)} style={{ flex: 1, padding: '9px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
+                <button type="submit" style={{ flex: 2, padding: '9px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </AppShell>
   );
 }

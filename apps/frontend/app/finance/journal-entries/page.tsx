@@ -1,16 +1,24 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ModernLayout } from '../../../components/layout/ModernLayout';
+import AppShell from '../../../components/layout/AppShell';
+import { ACCOUNTING_CONFIG, ACCOUNTING_NAV } from '../../../lib/nav-configs';
 import { api } from '../../../lib/api';
 import { DollarSign, Plus, Search, RefreshCw } from 'lucide-react';
 
+const fmt = (v: any) => Number(v ?? 0).toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+
+const thStyle: React.CSSProperties = {
+  padding: '11px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700,
+  color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', whiteSpace: 'nowrap',
+};
+
 export default function JournalEntriesPage() {
-  const [data, setData] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [search, setSearch] = useState('');
+  const [data, setData]       = useState<any[]>([]);
+  const [stats, setStats]     = useState<any>(null);
+  const [search, setSearch]   = useState('');
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [total, setTotal]     = useState(0);
+  const [page, setPage]       = useState(1);
 
   const load = async () => {
     setLoading(true);
@@ -27,54 +35,99 @@ export default function JournalEntriesPage() {
   useEffect(() => { load(); }, [search, page]);
 
   return (
-    <ModernLayout>
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold text-white flex items-center gap-2"><DollarSign className="h-6 w-6 text-cyan-400" /> Jurnal Akuntansi</h1><p className="text-slate-400 mt-1">Kelola jurnal entri dan transaksi keuangan</p></div>
-          <button className="flex items-center gap-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 px-4 py-2 text-sm font-medium text-white transition"><Plus className="h-4 w-4" /> Buat Jurnal</button>
+    <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/finance/journal-entries">
+      <div style={{ maxWidth: 1200 }} className="space-y-5">
+
+        {/* Header */}
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+              <DollarSign size={20} style={{ color: '#6366F1' }} /> Jurnal Akuntansi
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola jurnal entri dan transaksi keuangan</p>
+          </div>
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Plus size={14} /> Buat Jurnal
+          </button>
         </div>
+
+        {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-4 gap-4">
-            <div className="rounded-2xl bg-slate-900 border border-slate-800 p-4"><p className="text-xs text-slate-500">Total Jurnal</p><p className="text-3xl font-bold text-white mt-1">{stats.totalJurnals}</p></div>
-            <div className="rounded-2xl bg-slate-900 border border-slate-800 p-4"><p className="text-xs text-slate-500">Saldo Bank</p><p className="text-xl font-bold text-cyan-400 mt-1">{Number(stats.totalBankBalance||0).toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0})}</p></div>
-            <div className="rounded-2xl bg-emerald-900/20 border border-emerald-800/40 p-4"><p className="text-xs text-emerald-500">Cash In</p><p className="text-xl font-bold text-emerald-400 mt-1">{Number(stats.cashIn||0).toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0})}</p></div>
-            <div className="rounded-2xl bg-red-900/20 border border-red-800/40 p-4"><p className="text-xs text-red-500">Cash Out</p><p className="text-xl font-bold text-red-400 mt-1">{Number(stats.cashOut||0).toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0})}</p></div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Total Jurnal', value: stats.totalJurnals,             accent: '#6366F1', large: true },
+              { label: 'Saldo Bank',   value: fmt(stats.totalBankBalance??0), accent: '#3B82F6' },
+              { label: 'Kas Masuk',   value: fmt(stats.cashIn??0),            accent: '#10B981' },
+              { label: 'Kas Keluar',  value: fmt(stats.cashOut??0),           accent: '#EF4444' },
+            ].map(s => (
+              <div key={s.label} style={{ background: 'var(--surface)', borderRadius: 12, padding: '14px 16px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{s.label}</p>
+                <p style={{ fontSize: s.large ? 22 : 14, fontWeight: 800, color: s.accent, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.value}</p>
+              </div>
+            ))}
           </div>
         )}
-        <div className="rounded-2xl bg-slate-900 border border-slate-800">
-          <div className="flex items-center gap-3 p-4 border-b border-slate-800">
-            <div className="relative flex-1 max-w-sm"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" /><input className="w-full rounded-xl bg-slate-800 border border-slate-700 pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none" placeholder="Cari nomor jurnal..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} /></div>
-            <button onClick={load} className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition text-slate-400"><RefreshCw className="h-4 w-4" /></button>
+
+        {/* Table */}
+        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div className="flex items-center gap-3" style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+              <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Cari nomor jurnal…"
+                style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 8, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+            </div>
+            <button onClick={load} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            </button>
           </div>
-          <div className="overflow-x-auto"><table className="w-full text-sm">
-            <thead><tr className="border-b border-slate-800 text-slate-500 text-xs uppercase">
-              <th className="text-left px-4 py-3">No Jurnal</th><th className="text-left px-4 py-3">Tanggal</th><th className="text-left px-4 py-3">Keterangan</th><th className="text-left px-4 py-3">Tipe</th><th className="text-right px-4 py-3">Total</th><th className="text-center px-4 py-3">Status</th>
-            </tr></thead>
-            <tbody className="divide-y divide-slate-800">
-              {loading ? <tr><td colSpan={6} className="py-12 text-center text-slate-500">Memuat...</td></tr>
-              : data.length === 0 ? <tr><td colSpan={6} className="py-12 text-center text-slate-500">Belum ada jurnal</td></tr>
-              : data.map(j => (
-                <tr key={j.id} className="hover:bg-slate-800/50 transition">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-300">{j.noJurnal}</td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{new Date(j.tanggal).toLocaleDateString('id-ID')}</td>
-                  <td className="px-4 py-3 text-white">{j.keterangan||'-'}</td>
-                  <td className="px-4 py-3 text-slate-400">{j.type}</td>
-                  <td className="px-4 py-3 text-right text-white font-medium">{Number(j.total||0).toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0})}</td>
-                  <td className="px-4 py-3 text-center"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${j.status==='posted'?'bg-emerald-900/50 text-emerald-400':'bg-slate-800 text-slate-400'}`}>{j.status}</span></td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['No Jurnal','Tanggal','Keterangan','Tipe','Total','Status'].map(h => (
+                    <th key={h} style={thStyle}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table></div>
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800 text-sm text-slate-500">
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={6} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Memuat…</td></tr>
+                ) : data.length === 0 ? (
+                  <tr><td colSpan={6} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Belum ada jurnal</td></tr>
+                ) : data.map(j => (
+                  <tr key={j.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                    <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#6366F1' }}>{j.noJurnal}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{new Date(j.tanggal).toLocaleDateString('id-ID')}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--text-primary)', fontSize: 13 }}>{j.keterangan || '–'}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{j.type}</td>
+                    <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text-primary)', fontSize: 13 }}>{fmt(j.total ?? 0)}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100,
+                        color: j.status === 'posted' ? '#10B981' : '#94A3B8',
+                        background: j.status === 'posted' ? 'rgba(16,185,129,.10)' : 'rgba(148,163,184,.10)' }}>
+                        {j.status === 'posted' ? 'Diposting' : 'Draf'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-between" style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
             <span>Total: {total}</span>
             <div className="flex gap-2">
-              <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1} className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40">←</button>
-              <span className="px-3 py-1 text-white">Hal {page}</span>
-              <button onClick={() => setPage(p => p+1)} disabled={data.length<20} className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40">→</button>
+              <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1}
+                style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', cursor: 'pointer', opacity: page===1?0.4:1 }}>←</button>
+              <span style={{ padding: '5px 10px', fontWeight: 600, color: 'var(--text-primary)' }}>Hal {page}</span>
+              <button onClick={() => setPage(p => p+1)} disabled={data.length<20}
+                style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', cursor: 'pointer', opacity: data.length<20?0.4:1 }}>→</button>
             </div>
           </div>
         </div>
       </div>
-    </ModernLayout>
+    </AppShell>
   );
 }

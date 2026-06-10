@@ -1,21 +1,18 @@
 'use client';
-
 export const dynamic = 'force-dynamic';
 import { Suspense, useEffect, useState, useCallback } from 'react';
-import { ModernLayout } from '../../../components/layout/ModernLayout';
+import AppShell from '../../../components/layout/AppShell';
+import { ACCOUNTING_CONFIG, ACCOUNTING_NAV } from '../../../lib/nav-configs';
 import { api } from '../../../lib/api';
 import { useSearchParams } from 'next/navigation';
-import {
-  Layers, Plus, Search, RefreshCw, ChevronRight, ChevronDown,
-  Edit2, Trash2, X, Check, AlertCircle,
-} from 'lucide-react';
+import { Layers, Plus, Search, RefreshCw, ChevronRight, ChevronDown, Edit2, Trash2, X, Check, AlertCircle } from 'lucide-react';
 
 const TYPE_COLORS: Record<string, string> = {
-  ASSET: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  LIABILITY: 'bg-red-500/10 text-red-400 border-red-500/20',
-  EQUITY: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  REVENUE: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  EXPENSE: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  ASSET:     '#3B82F6',
+  LIABILITY: '#EF4444',
+  EQUITY:    '#8B5CF6',
+  REVENUE:   '#10B981',
+  EXPENSE:   '#F59E0B',
 };
 const TYPE_LABELS: Record<string, string> = {
   ASSET: 'Aset', LIABILITY: 'Liabilitas', EQUITY: 'Ekuitas',
@@ -23,78 +20,89 @@ const TYPE_LABELS: Record<string, string> = {
 };
 const ACCOUNT_TYPES = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'];
 
-function AccountRow({ acc, depth, onEdit, onDelete, allAccounts }: any) {
+const thStyle: React.CSSProperties = {
+  padding: '11px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700,
+  color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em',
+};
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '9px 12px', borderRadius: 8,
+  border: '1px solid var(--border)', outline: 'none', fontSize: 13,
+  background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box',
+};
+
+function AccountRow({ acc, depth, onEdit, onDelete }: any) {
   const [open, setOpen] = useState(depth === 0);
   const hasChildren = acc.children?.length > 0;
+  const tc = TYPE_COLORS[acc.type] ?? '#94A3B8';
   return (
     <>
-      <tr className="hover:bg-slate-800/40 transition group border-b border-slate-800/50">
-        <td className="px-4 py-2.5">
+      <tr style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+        <td style={{ padding: '10px 16px' }}>
           <div className="flex items-center gap-1" style={{ paddingLeft: depth * 20 }}>
             {hasChildren ? (
-              <button onClick={() => setOpen(!open)} className="text-slate-500 hover:text-slate-300 w-4 shrink-0">
-                {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              <button onClick={() => setOpen(!open)} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', width: 16 }}>
+                {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
               </button>
-            ) : <span className="w-4 shrink-0 text-slate-700">─</span>}
-            <span className="font-mono text-xs text-slate-300">{acc.code}</span>
+            ) : <span style={{ width: 16, display: 'inline-block', color: 'var(--text-muted)', fontSize: 11, textAlign: 'center' }}>–</span>}
+            <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>{acc.code}</span>
           </div>
         </td>
-        <td className="px-4 py-2.5 text-sm text-white">{acc.name}</td>
-        <td className="px-4 py-2.5">
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium border ${TYPE_COLORS[acc.type] || 'bg-slate-800 text-slate-400'}`}>
-            {TYPE_LABELS[acc.type] || acc.type}
+        <td style={{ padding: '10px 16px', fontWeight: 500, color: 'var(--text-primary)', fontSize: 13 }}>{acc.name}</td>
+        <td style={{ padding: '10px 16px' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100, color: tc, background: tc + '1A', border: `1px solid ${tc}30` }}>
+            {TYPE_LABELS[acc.type] ?? acc.type}
           </span>
         </td>
-        <td className="px-4 py-2.5">
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${acc.normalBalance === 'DEBIT' ? 'bg-blue-900/30 text-blue-400' : 'bg-violet-900/30 text-violet-400'}`}>
+        <td style={{ padding: '10px 16px' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100,
+            color: acc.normalBalance === 'DEBIT' ? '#3B82F6' : '#8B5CF6',
+            background: acc.normalBalance === 'DEBIT' ? 'rgba(59,130,246,.10)' : 'rgba(139,92,246,.10)' }}>
             {acc.normalBalance}
           </span>
         </td>
-        <td className="px-4 py-2.5">
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs ${acc.isActive ? 'bg-emerald-900/30 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+        <td style={{ padding: '10px 16px' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100,
+            color: acc.isActive ? '#10B981' : '#94A3B8',
+            background: acc.isActive ? 'rgba(16,185,129,.10)' : 'rgba(148,163,184,.10)' }}>
             {acc.isActive ? 'Aktif' : 'Nonaktif'}
           </span>
         </td>
-        <td className="px-4 py-2.5">
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-            <button onClick={() => onEdit(acc)} className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white"><Edit2 className="h-3.5 w-3.5" /></button>
-            <button onClick={() => onDelete(acc)} className="p-1 rounded hover:bg-red-900/40 text-slate-400 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+        <td style={{ padding: '10px 16px' }}>
+          <div className="flex items-center gap-1">
+            <button onClick={() => onEdit(acc)} title="Edit" style={{ padding: 5, borderRadius: 6, border: 'none', background: 'transparent', color: '#6366F1', cursor: 'pointer' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.10)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+              <Edit2 size={12} />
+            </button>
+            <button onClick={() => onDelete(acc)} title="Nonaktifkan" style={{ padding: 5, borderRadius: 6, border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.08)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
+              <Trash2 size={12} />
+            </button>
           </div>
         </td>
       </tr>
       {open && hasChildren && acc.children.map((child: any) => (
-        <AccountRow key={child.id} acc={child} depth={depth + 1} onEdit={onEdit} onDelete={onDelete} allAccounts={allAccounts} />
+        <AccountRow key={child.id} acc={child} depth={depth + 1} onEdit={onEdit} onDelete={onDelete} />
       ))}
     </>
   );
 }
 
-function Modal({ title, children, onClose }: any) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-lg mx-4 shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-          <h3 className="text-base font-semibold text-white">{title}</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-slate-800 text-slate-400"><X className="h-4 w-4" /></button>
-        </div>
-        <div className="p-6">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 function ChartOfAccountsPageContent() {
   const searchParams = useSearchParams();
-  const [tree, setTree] = useState<any[]>([]);
-  const [flat, setFlat] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [tree, setTree]           = useState<any[]>([]);
+  const [flat, setFlat]           = useState<any[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState('');
   const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || '');
   const [showModal, setShowModal] = useState(false);
-  const [editAcc, setEditAcc] = useState<any>(null);
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ code: '', name: '', type: 'ASSET', parentId: '', description: '', isActive: true });
+  const [editAcc, setEditAcc]     = useState<any>(null);
+  const [error, setError]         = useState('');
+  const [saving, setSaving]       = useState(false);
+  const [form, setForm]           = useState({ code: '', name: '', type: 'ASSET', parentId: '', description: '', isActive: true });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,38 +123,33 @@ function ChartOfAccountsPageContent() {
     setForm({ code: '', name: '', type: typeFilter || 'ASSET', parentId: '', description: '', isActive: true });
     setError(''); setShowModal(true);
   };
-  const openEdit = (acc: any) => {
+  const openEdit   = (acc: any) => {
     setEditAcc(acc);
     setForm({ code: acc.code, name: acc.name, type: acc.type, parentId: acc.parentId || '', description: acc.description || '', isActive: acc.isActive });
     setError(''); setShowModal(true);
   };
   const handleDelete = async (acc: any) => {
     if (!confirm(`Nonaktifkan akun ${acc.code} - ${acc.name}?`)) return;
-    try { await api.delete(`/finance/accounts/${acc.id}`); load(); } catch (e: any) {
-      alert(e?.response?.data?.message || 'Gagal menghapus akun');
-    }
+    try { await api.delete(`/finance/accounts/${acc.id}`); load(); }
+    catch (e: any) { alert(e?.response?.data?.message || 'Gagal menghapus akun'); }
   };
   const handleSave = async () => {
     setSaving(true); setError('');
     try {
       if (editAcc) await api.put(`/finance/accounts/${editAcc.id}`, form);
-      else await api.post('/finance/accounts', form);
+      else         await api.post('/finance/accounts', form);
       setShowModal(false); load();
-    } catch (e: any) {
-      setError(e?.response?.data?.message || 'Gagal menyimpan');
-    } finally { setSaving(false); }
+    } catch (e: any) { setError(e?.response?.data?.message || 'Gagal menyimpan'); }
+    finally { setSaving(false); }
   };
 
-  // Filter tree view
   const filterTree = (nodes: any[]): any[] => {
     if (!search && !typeFilter) return nodes;
     return nodes.reduce((acc: any[], node: any) => {
       const filteredChildren = filterTree(node.children || []);
       const match = (!search || node.code.toLowerCase().includes(search.toLowerCase()) || node.name.toLowerCase().includes(search.toLowerCase()))
         && (!typeFilter || node.type === typeFilter);
-      if (match || filteredChildren.length > 0) {
-        acc.push({ ...node, children: filteredChildren });
-      }
+      if (match || filteredChildren.length > 0) acc.push({ ...node, children: filteredChildren });
       return acc;
     }, []);
   };
@@ -158,64 +161,70 @@ function ChartOfAccountsPageContent() {
   };
 
   return (
-    <ModernLayout>
-      <div className="max-w-7xl mx-auto space-y-5">
+    <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/accounting/chart-of-accounts">
+      <div style={{ maxWidth: 1200 }} className="space-y-5">
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Layers className="h-6 w-6 text-emerald-400" /> Bagan Akun (Chart of Accounts)
+            <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+              <Layers size={20} style={{ color: '#6366F1' }} /> Bagan Akun
             </h1>
-            <p className="text-slate-400 mt-0.5 text-sm">Kelola akun untuk sistem double-entry accounting</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola akun untuk sistem pencatatan double-entry</p>
           </div>
-          <button onClick={openCreate} className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition">
-            <Plus className="h-4 w-4" /> Tambah Akun
+          <button onClick={openCreate}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Plus size={14} /> Tambah Akun
           </button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-6 gap-3">
-          {[{ label: 'Total Akun', val: stats.total, color: 'text-white' },
-            ...ACCOUNT_TYPES.map(t => ({ label: TYPE_LABELS[t], val: stats.byType[t] || 0, color: TYPE_COLORS[t].split(' ')[1] }))
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+          {[{ label: 'Total Akun', val: stats.total, key: '', accent: 'var(--text-primary)' },
+            ...ACCOUNT_TYPES.map(t => ({ label: TYPE_LABELS[t], val: stats.byType[t] || 0, key: t, accent: TYPE_COLORS[t] }))
           ].map(s => (
-            <div key={s.label} className="rounded-xl bg-slate-900 border border-slate-800 p-3 cursor-pointer hover:border-slate-600 transition"
-              onClick={() => setTypeFilter(s.label === 'Total Akun' ? '' : ACCOUNT_TYPES.find(t => TYPE_LABELS[t] === s.label) || '')}>
-              <p className="text-xs text-slate-500">{s.label}</p>
-              <p className={`text-2xl font-bold mt-0.5 ${s.color}`}>{s.val}</p>
-            </div>
+            <button key={s.key} onClick={() => setTypeFilter(s.key)}
+              style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--surface)', border: `1px solid ${typeFilter === s.key ? '#6366F1' : 'var(--border)'}`, cursor: 'pointer', textAlign: 'left', transition: 'border-color .15s', boxShadow: 'var(--shadow-sm)' }}>
+              <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{s.label}</p>
+              <p style={{ fontSize: 20, fontWeight: 800, color: s.accent, margin: 0, letterSpacing: '-0.02em' }}>{s.val}</p>
+            </button>
           ))}
         </div>
 
         {/* Table */}
-        <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
-          <div className="flex items-center gap-3 p-4 border-b border-slate-800 flex-wrap">
-            <div className="relative flex-1 min-w-48">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-              <input className="w-full rounded-xl bg-slate-800 border border-slate-700 pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500" placeholder="Cari kode atau nama akun..." value={search} onChange={e => setSearch(e.target.value)} />
+        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div className="flex items-center gap-3 flex-wrap" style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+              <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari kode atau nama akun…"
+                style={{ ...inputStyle, paddingLeft: 34 }} />
             </div>
-            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none">
+            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', outline: 'none', fontSize: 13, color: 'var(--text-secondary)', background: 'var(--surface-sunken)', cursor: 'pointer' }}>
               <option value="">Semua Tipe</option>
               {ACCOUNT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
             </select>
-            <button onClick={load} className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition text-slate-400"><RefreshCw className="h-4 w-4" /></button>
+            <button onClick={load}
+              style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            </button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-slate-800 text-slate-500 text-xs uppercase">
-                <th className="text-left px-4 py-3">Kode</th>
-                <th className="text-left px-4 py-3">Nama Akun</th>
-                <th className="text-left px-4 py-3">Tipe</th>
-                <th className="text-left px-4 py-3">Saldo Normal</th>
-                <th className="text-left px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr></thead>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Kode','Nama Akun','Tipe','Saldo Normal','Status',''].map(h => (
+                    <th key={h} style={thStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={6} className="py-16 text-center text-slate-500">Memuat...</td></tr>
+                  <tr><td colSpan={6} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Memuat…</td></tr>
                 ) : displayTree.length === 0 ? (
-                  <tr><td colSpan={6} className="py-16 text-center text-slate-500">Belum ada akun</td></tr>
+                  <tr><td colSpan={6} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Belum ada akun</td></tr>
                 ) : displayTree.map(acc => (
-                  <AccountRow key={acc.id} acc={acc} depth={0} onEdit={openEdit} onDelete={handleDelete} allAccounts={flat} />
+                  <AccountRow key={acc.id} acc={acc} depth={0} onEdit={openEdit} onDelete={handleDelete} />
                 ))}
               </tbody>
             </table>
@@ -225,58 +234,72 @@ function ChartOfAccountsPageContent() {
 
       {/* Modal */}
       {showModal && (
-        <Modal title={editAcc ? 'Edit Akun' : 'Tambah Akun Baru'} onClose={() => setShowModal(false)}>
-          <div className="space-y-4">
-            {error && <div className="flex items-center gap-2 rounded-lg bg-red-900/30 border border-red-800/40 p-3 text-sm text-red-400"><AlertCircle className="h-4 w-4 shrink-0" />{error}</div>}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Kode Akun *</label>
-                <input className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" placeholder="mis. 1101" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', padding: 16 }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 20, width: '100%', maxWidth: 500, boxShadow: '0 24px 64px rgba(0,0,0,.18)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>{editAcc ? 'Edit Akun' : 'Tambah Akun Baru'}</span>
+              <button onClick={() => setShowModal(false)} style={{ padding: 6, borderRadius: 7, border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {error && (
+                <div className="flex items-center gap-2" style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', fontSize: 13, color: '#991B1B' }}>
+                  <AlertCircle size={13} /> {error}
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Kode Akun *</label>
+                  <input style={inputStyle} placeholder="mis. 1101" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
+                    onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Tipe *</label>
+                  <select style={inputStyle} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+                    {ACCOUNT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
+                  </select>
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Tipe *</label>
-                <select className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
-                  {ACCOUNT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Nama Akun *</label>
+                <input style={inputStyle} placeholder="mis. Kas" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Akun Induk</label>
+                <select style={inputStyle} value={form.parentId} onChange={e => setForm(f => ({ ...f, parentId: e.target.value }))}>
+                  <option value="">— Tidak ada (akun induk) —</option>
+                  {flat.filter(a => a.id !== editAcc?.id).map(a => (
+                    <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
+                  ))}
                 </select>
               </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Nama Akun *</label>
-              <input className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" placeholder="mis. Kas" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Akun Induk</label>
-              <select className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none" value={form.parentId} onChange={e => setForm(f => ({ ...f, parentId: e.target.value }))}>
-                <option value="">— Tidak ada (akun induk) —</option>
-                {flat.filter(a => a.id !== editAcc?.id).map(a => (
-                  <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Deskripsi</label>
-              <textarea className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 resize-none" rows={2} placeholder="Opsional..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" id="isActive" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} className="rounded" />
-              <label htmlFor="isActive" className="text-sm text-slate-400">Akun Aktif</label>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition">Batal</button>
-              <button onClick={handleSave} disabled={saving || !form.code || !form.name} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm text-white disabled:opacity-50 transition">
-                <Check className="h-4 w-4" />{saving ? 'Menyimpan...' : 'Simpan'}
-              </button>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Deskripsi</label>
+                <textarea rows={2} style={{ ...inputStyle, resize: 'none', fontFamily: 'inherit' }} placeholder="Opsional…" value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+              </div>
+              <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} />
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Akun Aktif</span>
+              </label>
+              <div className="flex justify-end gap-3" style={{ paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                <button onClick={() => setShowModal(false)} style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
+                <button onClick={handleSave} disabled={saving || !form.code || !form.name}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: (saving || !form.code || !form.name) ? 0.6 : 1 }}>
+                  <Check size={13} /> {saving ? 'Menyimpan…' : 'Simpan'}
+                </button>
+              </div>
             </div>
           </div>
-        </Modal>
+        </div>
       )}
-    </ModernLayout>
+    </AppShell>
   );
 }
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="p-6 text-slate-400">Memuat data akun…</div>}>
+    <Suspense fallback={<div style={{ padding: 24, color: 'var(--text-muted)', fontSize: 13 }}>Memuat data akun…</div>}>
       <ChartOfAccountsPageContent />
     </Suspense>
   );

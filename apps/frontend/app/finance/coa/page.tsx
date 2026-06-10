@@ -1,13 +1,33 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ModernLayout } from '../../../components/layout/ModernLayout';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '../../../lib/store/useAuthStore';
+import AppShell from '../../../components/layout/AppShell';
+import { ACCOUNTING_CONFIG, ACCOUNTING_NAV } from '../../../lib/nav-configs';
 import { api } from '../../../lib/api';
 import { BookOpen, Plus, Search, RefreshCw } from 'lucide-react';
 
+const fmt = (v: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(v);
+
+const TIPE_COLOR: Record<string, string> = {
+  aset:       '#3B82F6', kewajiban: '#EF4444', ekuitas: '#8B5CF6',
+  pendapatan: '#10B981', beban:     '#F59E0B',
+};
+
+const thStyle: React.CSSProperties = {
+  padding: '11px 20px', textAlign: 'left', fontSize: 10, fontWeight: 700,
+  color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em',
+};
+
 export default function COAPage() {
-  const [data, setData] = useState<any[]>([]);
-  const [search, setSearch] = useState('');
+  const { token }   = useAuthStore();
+  const router      = useRouter();
+  const [data, setData]       = useState<any[]>([]);
+  const [search, setSearch]   = useState('');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);
@@ -17,45 +37,72 @@ export default function COAPage() {
       setData(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
     } catch {} finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, [search]);
-
-  const TIPE_COLORS: Record<string, string> = {
-    aset: 'bg-blue-900/50 text-blue-400', kewajiban: 'bg-red-900/50 text-red-400',
-    ekuitas: 'bg-purple-900/50 text-purple-400', pendapatan: 'bg-emerald-900/50 text-emerald-400', beban: 'bg-amber-900/50 text-amber-400',
-  };
+  useEffect(() => { if (token) load(); }, [search, token]);
+  if (!token) return null;
 
   return (
-    <ModernLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold text-white flex items-center gap-2"><BookOpen className="h-6 w-6 text-cyan-400" /> Chart of Accounts (CoA)</h1><p className="text-slate-400 mt-1">Daftar akun keuangan perusahaan</p></div>
-          <button className="flex items-center gap-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 px-4 py-2 text-sm font-medium text-white transition"><Plus className="h-4 w-4" /> Tambah Akun</button>
-        </div>
-        <div className="rounded-2xl bg-slate-900 border border-slate-800">
-          <div className="flex items-center gap-3 p-4 border-b border-slate-800">
-            <div className="relative flex-1 max-w-sm"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" /><input className="w-full rounded-xl bg-slate-800 border border-slate-700 pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none" placeholder="Cari akun..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-            <button onClick={load} className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition text-slate-400"><RefreshCw className="h-4 w-4" /></button>
+    <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/finance/coa">
+      <div style={{ maxWidth: 1100 }} className="space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+              <BookOpen size={18} style={{ color: '#6366F1' }} /> Chart of Accounts (CoA)
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Daftar akun keuangan perusahaan</p>
           </div>
-          <div className="overflow-x-auto"><table className="w-full text-sm">
-            <thead><tr className="border-b border-slate-800 text-slate-500 text-xs uppercase">
-              <th className="text-left px-4 py-3">Kode</th><th className="text-left px-4 py-3">Nama Akun</th><th className="text-left px-4 py-3">Tipe</th><th className="text-left px-4 py-3">Kategori</th><th className="text-right px-4 py-3">Saldo</th>
-            </tr></thead>
-            <tbody className="divide-y divide-slate-800">
-              {loading ? <tr><td colSpan={5} className="py-12 text-center text-slate-500">Memuat...</td></tr>
-              : data.length === 0 ? <tr><td colSpan={5} className="py-12 text-center text-slate-500">Belum ada akun</td></tr>
-              : data.map(a => (
-                <tr key={a.id} className="hover:bg-slate-800/50 transition">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-300">{a.kode}</td>
-                  <td className="px-4 py-3 font-medium text-white">{a.nama}</td>
-                  <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${TIPE_COLORS[a.tipe]||'bg-slate-800 text-slate-400'}`}>{a.tipe}</span></td>
-                  <td className="px-4 py-3 text-slate-400">{a.kategori||'-'}</td>
-                  <td className="px-4 py-3 text-right text-white">{Number(a.saldo||0).toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0})}</td>
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Plus size={14} /> Tambah Akun
+          </button>
+        </div>
+
+        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          {/* Toolbar */}
+          <div className="flex items-center gap-3 p-3" style={{ borderBottom: '1px solid var(--border)' }}>
+            <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
+              <Search size={13} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari akun…"
+                style={{ width: '100%', padding: '8px 12px 8px 32px', borderRadius: 9, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+            </div>
+            <button onClick={load} style={{ padding: '8px 10px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>
+              <RefreshCw size={13} />
+            </button>
+          </div>
+
+          {/* Table */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Kode','Nama Akun','Tipe','Kategori','Saldo'].map(h => <th key={h} style={{ ...thStyle, textAlign: h === 'Saldo' ? 'right' : 'left' }}>{h}</th>)}
                 </tr>
-              ))}
-            </tbody>
-          </table></div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={5} style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Memuat…</td></tr>
+                ) : data.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Belum ada akun</td></tr>
+                ) : data.map((a, i) => {
+                  const color = TIPE_COLOR[a.tipe] ?? '#94A3B8';
+                  return (
+                    <tr key={a.id} style={{ borderBottom: i < data.length - 1 ? '1px solid var(--border)' : 'none', transition: 'background .12s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                      <td style={{ padding: '12px 20px', fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-secondary)' }}>{a.kode}</td>
+                      <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{a.nama}</td>
+                      <td style={{ padding: '12px 20px' }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, color, background: color + '1A' }}>{a.tipe}</span>
+                      </td>
+                      <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-muted)' }}>{a.kategori || '–'}</td>
+                      <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right' }}>{fmt(Number(a.saldo || 0))}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </ModernLayout>
+    </AppShell>
   );
 }

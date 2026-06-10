@@ -1,17 +1,27 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ModernLayout } from '../../../components/layout/ModernLayout';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '../../../lib/store/useAuthStore';
+import AppShell from '../../../components/layout/AppShell';
+import { HR_CONFIG, HR_NAV } from '../../../lib/nav-configs';
 import { api } from '../../../lib/api';
 import { Calendar, Plus, Search, RefreshCw } from 'lucide-react';
 
-const P = '#7367F0';
+const thStyle: React.CSSProperties = {
+  padding: '11px 20px', textAlign: 'left', fontSize: 10, fontWeight: 700,
+  color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em',
+};
 
 export default function AttendancesPage() {
-  const [data, setData] = useState<any[]>([]);
-  const [search, setSearch] = useState('');
+  const { token }   = useAuthStore();
+  const router      = useRouter();
+  const [data, setData]       = useState<any[]>([]);
+  const [search, setSearch]   = useState('');
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [page, setPage]       = useState(1);
+  const [total, setTotal]     = useState(0);
+
+  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);
@@ -21,70 +31,63 @@ export default function AttendancesPage() {
       setTotal(r.data.total ?? 0);
     } catch {} finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, [search, page]);
+  useEffect(() => { if (token) load(); }, [search, page, token]);
+  if (!token) return null;
 
   return (
-    <ModernLayout>
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <AppShell {...HR_CONFIG} navItems={HR_NAV} activeHref="/hr/attendances">
+      <div style={{ maxWidth: 1100 }} className="space-y-5">
+
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: '#1E1B4B' }}>
-              <Calendar className="h-6 w-6" style={{ color: P }} /> Absensi Karyawan
+            <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+              <Calendar size={18} style={{ color: '#6366F1' }} /> Absensi Karyawan
             </h1>
-            <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Rekap kehadiran karyawan</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Rekap kehadiran karyawan</p>
           </div>
-          <button
-            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{ backgroundColor: P }}
-          >
-            <Plus className="h-4 w-4" /> Tambah Absensi
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Plus size={14} /> Tambah Absensi
           </button>
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
-          <div className="flex items-center gap-3 p-4" style={{ borderBottom: '1px solid #EDE8F5' }}>
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: '#B0AAB9' }} />
-              <input
-                className="w-full rounded-xl pl-9 pr-4 py-2 text-sm outline-none"
-                style={{ border: '1px solid #EDE8F5', color: '#1E1B4B', backgroundColor: '#FAFAFA' }}
-                placeholder="Cari karyawan..."
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
-              />
+        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          {/* Toolbar */}
+          <div className="flex items-center gap-3 flex-wrap" style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
+              <Search size={13} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Cari karyawan…"
+                style={{ width: '100%', padding: '8px 12px 8px 32px', borderRadius: 9, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
             </div>
-            <button onClick={load} className="p-2 rounded-xl transition hover:bg-gray-50" style={{ border: '1px solid #EDE8F5', color: '#A5A3AE' }}>
-              <RefreshCw className="h-4 w-4" />
+            <button onClick={load} style={{ padding: '8px 10px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>
+              <RefreshCw size={13} />
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          {/* Table */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #EDE8F5', backgroundColor: '#F5F3FF' }}>
-                  {['Karyawan', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: '#9CA3AF' }}>{h}</th>
-                  ))}
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Karyawan','Tanggal','Jam Masuk','Jam Keluar','Status'].map(h => <th key={h} style={thStyle}>{h}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={5} className="py-12 text-center text-sm" style={{ color: '#B0AAB9' }}>Memuat...</td></tr>
+                  <tr><td colSpan={5} style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Memuat…</td></tr>
                 ) : data.length === 0 ? (
-                  <tr><td colSpan={5} className="py-12 text-center text-sm" style={{ color: '#B0AAB9' }}>Belum ada data absensi</td></tr>
+                  <tr><td colSpan={5} style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Belum ada data absensi</td></tr>
                 ) : data.map((a, i) => (
-                  <tr key={i} className="hover:bg-gray-50 transition" style={{ borderBottom: '1px solid #F5F3FF' }}>
-                    <td className="px-4 py-3 font-semibold" style={{ color: '#1E1B4B' }}>{a.employee?.name || a.employeeId || '-'}</td>
-                    <td className="px-4 py-3" style={{ color: '#6B7280' }}>{a.date ? new Date(a.date).toLocaleDateString('id-ID') : '-'}</td>
-                    <td className="px-4 py-3 text-center" style={{ color: '#6B7280' }}>{a.checkIn || '-'}</td>
-                    <td className="px-4 py-3 text-center" style={{ color: '#6B7280' }}>{a.checkOut || '-'}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                        style={{ backgroundColor: 'rgba(115,103,240,.1)', color: P }}>
-                        {a.status || 'hadir'}
-                      </span>
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                    <td style={{ padding: '12px 20px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{a.employee?.name || a.employeeId || '–'}</td>
+                    <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-muted)' }}>{a.date ? new Date(a.date).toLocaleDateString('id-ID') : '–'}</td>
+                    <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center' }}>{a.checkIn || '–'}</td>
+                    <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center' }}>{a.checkOut || '–'}</td>
+                    <td style={{ padding: '12px 20px' }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(99,102,241,0.1)', color: '#6366F1' }}>{a.status || 'hadir'}</span>
                     </td>
                   </tr>
                 ))}
@@ -92,20 +95,19 @@ export default function AttendancesPage() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between px-4 py-3 text-sm" style={{ borderTop: '1px solid #EDE8F5', color: '#9CA3AF' }}>
+          {/* Pagination */}
+          <div className="flex items-center justify-between" style={{ padding: '10px 20px', borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
             <span>Total: {total}</span>
             <div className="flex gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                className="px-3 py-1 rounded-lg transition hover:bg-gray-50 disabled:opacity-40"
-                style={{ border: '1px solid #EDE8F5' }}>←</button>
-              <span className="px-3 py-1 font-semibold" style={{ color: '#1E1B4B' }}>Hal {page}</span>
-              <button onClick={() => setPage(p => p + 1)} disabled={data.length < 20}
-                className="px-3 py-1 rounded-lg transition hover:bg-gray-50 disabled:opacity-40"
-                style={{ border: '1px solid #EDE8F5' }}>→</button>
+              <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}
+                style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', cursor: 'pointer', opacity: page === 1 ? 0.4 : 1 }}>←</button>
+              <span style={{ padding: '5px 10px', fontWeight: 600, color: 'var(--text-primary)' }}>Hal {page}</span>
+              <button onClick={() => setPage(p => p+1)} disabled={data.length < 20}
+                style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', cursor: 'pointer', opacity: data.length < 20 ? 0.4 : 1 }}>→</button>
             </div>
           </div>
         </div>
       </div>
-    </ModernLayout>
+    </AppShell>
   );
 }

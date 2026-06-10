@@ -7,8 +7,6 @@ import ContactTable from '../../components/contacts/ContactTable';
 import { api } from '../../lib/api';
 import { Users, Plus, Search, RefreshCw } from 'lucide-react';
 
-const ACCENT = '#7367F0';
-
 const TYPE_FILTERS = [
   { value: 'all',      label: 'Semua' },
   { value: 'customer', label: 'Pelanggan' },
@@ -19,14 +17,14 @@ const TYPE_FILTERS = [
 
 export default function ContactsPage() {
   const { token } = useAuthStore();
-  const router = useRouter();
-  const [data, setData] = useState<any[]>([]);
-  const [summary, setSummary] = useState<any>(null);
-  const [search, setSearch] = useState('');
+  const router    = useRouter();
+  const [data, setData]           = useState<any[]>([]);
+  const [summary, setSummary]     = useState<any>(null);
+  const [search, setSearch]       = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [loading, setLoading]     = useState(true);
+  const [total, setTotal]         = useState(0);
+  const [page, setPage]           = useState(1);
 
   useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
@@ -50,57 +48,62 @@ export default function ContactsPage() {
 
   return (
     <AppShell>
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between">
+      <div style={{ maxWidth: 1200 }} className="space-y-5">
+
+        {/* Header */}
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: '#1E1B4B' }}>Kontak</h1>
-            <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Manajemen pelanggan, pemasok & kontak bisnis terpadu</p>
+            <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+              <Users size={20} style={{ color: '#6366F1' }} /> Kontak
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Manajemen pelanggan, pemasok &amp; kontak bisnis terpadu</p>
           </div>
           <button onClick={() => router.push('/contacts/new')}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white"
-            style={{ backgroundColor: ACCENT }}>
-            <Plus className="h-4 w-4" /> Tambah Kontak
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Plus size={14} /> Tambah Kontak
           </button>
         </div>
 
+        {/* Summary */}
         {summary && (
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Total Kontak', value: summary.total,    color: ACCENT,     bg: 'rgba(115,103,240,.1)' },
-              { label: 'Aktif',        value: summary.active,   color: '#4CAF50',  bg: 'rgba(76,175,80,.1)' },
-              { label: 'Nonaktif',     value: summary.inactive, color: '#9CA3AF',  bg: 'rgba(165,163,174,.1)' },
-            ].map((s) => (
-              <div key={s.label} className="bg-white rounded-2xl p-5" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
-                <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{s.label}</p>
-                <p className="text-2xl font-bold mt-1" style={{ color: '#1E1B4B' }}>{s.value ?? 0}</p>
+              { label: 'Total Kontak', value: summary.total,    accent: '#6366F1' },
+              { label: 'Aktif',        value: summary.active,   accent: '#10B981' },
+              { label: 'Nonaktif',     value: summary.inactive, accent: '#94A3B8' },
+            ].map(s => (
+              <div key={s.label} style={{ background: 'var(--surface)', borderRadius: 12, padding: '14px 16px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{s.label}</p>
+                <p style={{ fontSize: 24, fontWeight: 800, color: s.accent, margin: 0 }}>{s.value ?? 0}</p>
               </div>
             ))}
           </div>
         )}
 
+        {/* Filters */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: '#F5F2FB' }}>
-            {TYPE_FILTERS.map((f) => (
+          <div style={{ display: 'flex', gap: 3, padding: 4, borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            {TYPE_FILTERS.map(f => (
               <button key={f.value} onClick={() => { setTypeFilter(f.value); setPage(1); }}
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold transition"
-                style={typeFilter === f.value
-                  ? { backgroundColor: 'white', color: '#1E1B4B', boxShadow: '0 1px 3px rgba(47,43,61,.1)' }
-                  : { color: '#9CA3AF' }}>
+                style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s',
+                  background: typeFilter === f.value ? '#6366F1' : 'transparent',
+                  color: typeFilter === f.value ? '#fff' : 'var(--text-muted)' }}>
                 {f.label}
               </button>
             ))}
           </div>
 
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: '#B0AAB9' }} />
-            <input className="w-full rounded-lg pl-9 pr-4 py-2 text-sm outline-none"
-              style={{ border: '1px solid #EDE8F5', color: '#1E1B4B', backgroundColor: 'white' }}
-              placeholder="Cari nama, kode, telepon, email..."
-              value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+          <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
+            <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Cari nama, kode, telepon, email…"
+              style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 9, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+              onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
           </div>
 
-          <button onClick={load} className="p-2 rounded-lg transition" style={{ border: '1px solid #EDE8F5', color: '#9CA3AF', backgroundColor: 'white' }}>
-            <RefreshCw className="h-4 w-4" />
+          <button onClick={load}
+            style={{ padding: '8px 10px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>
+            <RefreshCw size={13} />
           </button>
         </div>
 
