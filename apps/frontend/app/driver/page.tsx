@@ -37,14 +37,20 @@ export default function DriverHomePage() {
   const [mounted, setMounted]       = useState(false);
 
   useEffect(() => {
-    if (!token) { router.replace('/dashboard'); return; }
+    if (!token) {
+      const stored = localStorage.getItem('erp_token');
+      if (!stored) { router.replace('/dashboard'); return; }
+      useAuthStore.getState().rehydrate();
+      return;
+    }
     api.get('/fleet/delivery/my-tasks')
       .then(r => setDeliveries(r.data ?? []))
       .catch(() => setDeliveries(DEMO))
       .finally(() => { setLoading(false); setTimeout(() => setMounted(true), 60); });
   }, [token]);
 
-  if (!token || loading) return (
+  const hasToken = token ?? (typeof window !== 'undefined' ? localStorage.getItem('erp_token') : null);
+  if (!hasToken || loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-sunken)' }}>
       <svg style={{ width: 28, height: 28, animation: 'spin .8s linear infinite', color: C }} viewBox="0 0 24 24" fill="none">
         <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>

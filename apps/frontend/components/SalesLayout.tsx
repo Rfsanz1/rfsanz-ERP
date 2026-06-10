@@ -49,13 +49,22 @@ export function SalesLayout({ children, title, subtitle }: SalesLayoutProps) {
 
   useEffect(() => {
     setMounted(true);
-    if (!token) { router.replace('/dashboard'); return; }
+    // Jika token belum ada di store, coba rehydrate dari localStorage (sinkron)
+    if (!token) {
+      const stored = localStorage.getItem('erp_token');
+      if (!stored) { router.replace('/dashboard'); return; }
+      useAuthStore.getState().rehydrate(); // sinkron, langsung update store
+      return;
+    }
     if (!user) loadProfile().catch(() => { logout(); router.replace('/dashboard'); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const handleLogout = () => { logout(); router.replace('/dashboard'); };
 
-  if (!token) return null;
+  // Cek localStorage langsung agar tidak flicker saat store belum rehydrate
+  const hasToken = token ?? (typeof window !== 'undefined' ? localStorage.getItem('erp_token') : null);
+  if (!hasToken) return null;
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: C.bg, opacity: mounted ? 1 : 0, transition: 'opacity .3s' }}>

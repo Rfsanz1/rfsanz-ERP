@@ -46,12 +46,20 @@ export function GudangLayout({ children, title, subtitle }: GudangLayoutProps) {
 
   useEffect(() => {
     setMounted(true);
-    if (!token) { router.replace('/dashboard'); return; }
+    if (!token) {
+      const stored = localStorage.getItem('erp_token');
+      if (!stored) { router.replace('/dashboard'); return; }
+      useAuthStore.getState().rehydrate();
+      return;
+    }
     if (!user) loadProfile().catch(() => { logout(); router.replace('/dashboard'); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const handleLogout = () => { logout(); router.replace('/dashboard'); };
-  if (!token) return null;
+
+  const hasToken = token ?? (typeof window !== 'undefined' ? localStorage.getItem('erp_token') : null);
+  if (!hasToken) return null;
 
   return (
     <div style={{
