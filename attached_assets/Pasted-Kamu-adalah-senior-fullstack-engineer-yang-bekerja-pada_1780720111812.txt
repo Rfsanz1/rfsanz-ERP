@@ -1,0 +1,371 @@
+Kamu adalah senior fullstack engineer yang bekerja pada project "Gentong Mas ERP".
+
+## STACK & STRUKTUR PROJECT
+
+- Backend: NestJS 10 + Prisma 5 + PostgreSQL (port 6000)
+- Frontend: Next.js 15 + React 19 + Tailwind CSS v4 (apps/frontend)
+- Package manager: pnpm workspaces
+- Auth: JWT (JwtAuthGuard)
+- Database sudah punya: ChartOfAccount, JournalEntry, JournalEntryLine, 
+  FiscalYear, FiscalPeriod, Tax, EFaktur, BankReconciliation, BankTransaction,
+  Budget, BudgetLine, Invoice, InvoiceItem, InvoicePayment, PurchaseOrder,
+  VendorBill, semua model POS, dan 130+ model lainnya
+
+Baca dulu semua file yang relevan sebelum mulai coding.
+Ikuti pattern yang sudah ada di module lain (inventory, sales, finance).
+
+---
+
+## BAGIAN 1 — LAPORAN KEUANGAN STANDAR
+
+### 1.1 Backend: buat module `reporting` baru
+
+Buat file:
+- apps/backend/src/modules/reporting/reporting.module.ts
+- apps/backend/src/modules/reporting/reporting.controller.ts  
+- apps/backend/src/modules/reporting/reporting.service.ts
+
+Semua endpoint dilindungi JwtAuthGuard, role: ADMIN, OWNER, SUPER_ADMIN.
+
+#### Endpoint yang harus dibuat:
+
+**Laba Rugi**
+GET /reporting/laba-rugi?from=&to=&fiscalYearId=
+Logic:
+- Pendapatan: sum JournalEntryLine WHERE account.type = 'REVENUE' pada periode tsb
+- HPP: sum JournalEntryLine WHERE account.type = 'COGS'
+- Beban Operasional: sum JournalEntryLine WHERE account.type = 'EXPENSE'
+- Laba Kotor = Pendapatan - HPP
+- Laba Bersih = Laba Kotor - Beban Operasional
+- Return: struktur hierarki per akun, subtotal per grup, total akhir
+
+**Neraca (Balance Sheet)**
+GET /reporting/neraca?date=&fiscalYearId=
+Logic:
+- Aset: sum semua akun type ASSET (saldo per tanggal)
+- Kewajiban: sum semua akun type LIABILITY
+- Ekuitas: sum semua akun type EQUITY
+- Validasi: Total Aset harus = Total Kewajiban + Ekuitas
+- Return: hierarki akun dengan saldo masing-masing
+
+**Arus Kas (Cash Flow)**
+GET /reporting/arus-kas?from=&to=
+Logic:
+- Operasional: transaksi dari akun kas/bank yang terkait Invoice & VendorBill
+- Investasi: transaksi terkait FixedAsset
+- Pendanaan: transaksi modal & pinjaman
+- Return: 3 seksi + saldo awal + saldo akhir
+
+**Buku Besar**
+GET /reporting/buku-besar?accountId=&from=&to=
+Logic:
+- Ambil semua JournalEntryLine untuk akun tertentu
+- Sertakan saldo berjalan (running balance)
+- Return: array transaksi kronologis dengan debit, kredit, saldo
+
+**Trial Balance**
+GET /reporting/trial-balance?from=&to=
+Logic:
+- Semua akun aktif dengan total debit & kredit pada periode
+- Pastikan total debit = total kredit
+- Return: array akun + kolom debit + kredit + selisih
+
+**Export**
+GET /reporting/export?report=laba-rugi|neraca|arus-kas|trial-balance&format=pdf|excel&from=&to=
+- PDF: gunakan pdfkit atau puppeteer (cek yang sudah terinstall)
+- Excel: gunakan exceljs (install jika belum ada)
+- Nama file: {namaLaporan}_{from}_{to}.pdf/.xlsx
+
+### 1.2 Frontend: halaman laporan keuangan
+
+Buat halaman di apps/frontend/app/keuangan/laporan/:
+
+**/keuangan/laporan/laba-rugi**
+- Date range picker (from & to) + pilih fiscal year
+- Tampilan hierarki: Pendapatan → HPP → Laba Kotor → Beban → Laba Bersih
+- Angka negatif tampil merah, positif hijau
+- Tombol export PDF & Excel
+
+**/keuangan/laporan/neraca**
+- Date picker (per tanggal tertentu)
+- 2 kolom: Aset (kiri) dan Kewajiban + Ekuitas (kanan)
+- Indikator balance check (✓ Balanced / ✗ Unbalanced)
+- Tombol export
+
+**/keuangan/laporan/arus-kas**
+- Date range picker
+- 3 seksi: Operasional, Investasi, Pendanaan
+- Summary total + saldo akhir
+- Tombol export
+
+**/keuangan/laporan/buku-besar**
+- Dropdown pilih akun (COA)
+- Date range picker
+- Tabel: tanggal | keterangan | debit | kredit | saldo
+- Pagination
+
+**/keuangan/laporan/trial-balance**
+- Date range picker
+- Tabel semua akun: kode | nama | debit | kredit
+- Footer: total debit = total kredit (highlight merah jika tidak balance)
+- Tombol export
+
+---
+
+## BAGIAN 2 — PAJAK & E-FAKTUR
+
+### 2.1 Backend: update module `tax`
+
+Tambahkan ke apps/backend/src/modules/tax/:
+
+**Generate e-Faktur CSV**
+POST /tax/efaktur/generate
+Body: { invoiceIds: string[], periode: string }
+Logic:
+- Ambil Invoice + InvoiceItem + Customer/Contact yang ada NPWP
+- Format CSV sesuai spesifikasi DJP e-Faktur:
+  - FK (Faktur Keluaran) untuk penjualan
+  - Kolom: FK, KD_JENIS_TRANSAKSI, FG_PENGGANTI, NOMOR_FAKTUR, MASA_PAJAK, 
+    TAHUN_PAJAK, TANGGAL_FAKTUR, NPWP_PENJUAL, NAMA_PENJUAL, NPWP_PEMBELI, 
+    NAMA_PEMBELI, ALAMAT_PEMBELI, JUMLAH_DPP, JUMLAH_PPN, JUMLAH_PPNBM
+- Simpan ke model EFaktur dengan status 'generated'
+- Return: file CSV + summary count
+
+**List e-Faktur**
+GET /tax/efaktur?status=&periode=&page=&limit=
+
+**Update status e-Faktur**
+PATCH /tax/efaktur/:id/status
+Body: { status: 'uploaded' | 'approved' | 'rejected', nomorFaktur?: string }
+
+**Laporan Pajak Keluaran & Masukan**
+GET /tax/report/keluaran?from=&to=
+GET /tax/report/masukan?from=&to=
+Logic:
+- Keluaran: dari Invoice yang kena PPN
+- Masukan: dari VendorBill yang kena PPN
+- Return: daftar faktur + total DPP + total PPN
+
+### 2.2 Frontend: halaman pajak
+
+**/keuangan/pajak/efaktur**
+- Tabel e-Faktur (nomor, tanggal, pembeli, DPP, PPN, status)
+- Tombol "Generate CSV" → pilih invoice & periode → download CSV
+- Status chip: generated | uploaded | approved | rejected
+- Update status manual setelah upload ke DJP
+
+**/keuangan/pajak/laporan**
+- Tab: Pajak Keluaran / Pajak Masukan
+- Date range picker
+- Tabel transaksi + summary total DPP & PPN
+- Tombol export
+
+---
+
+## BAGIAN 3 — REKONSILIASI BANK
+
+### 3.1 Backend: update module `finance`
+
+Tambahkan endpoint di apps/backend/src/modules/finance/:
+
+**Import mutasi bank (CSV)**
+POST /finance/bank/import-mutasi
+Body: multipart/form-data { file: CSV, bankAccountId: string, format: 'bca'|'mandiri'|'bri'|'bni'|'general' }
+Logic:
+- Parse CSV sesuai format bank masing-masing
+- Kolom BCA: tanggal, keterangan, cabang, amount, db/cr, saldo
+- Kolom Mandiri: tanggal, keterangan, debet, kredit, saldo
+- Kolom BRI/BNI: sesuaikan
+- Format 'general': tanggal, keterangan, debit, kredit, saldo
+- Simpan ke BankTransaction dengan status 'unmatched'
+- Return: jumlah baris berhasil import
+
+**Auto-matching transaksi**
+POST /finance/bank/auto-match?bankAccountId=
+Logic:
+- Bandingkan BankTransaction yang 'unmatched' dengan JournalEntryLine
+- Match berdasarkan: amount sama + tanggal ±3 hari
+- Jika match ditemukan: update BankTransaction.status = 'matched', simpan referensi jurnal
+- Return: jumlah yang berhasil di-match
+
+**Manual match**
+PATCH /finance/bank/transactions/:id/match
+Body: { journalEntryLineId: string }
+
+**Unmatch**
+PATCH /finance/bank/transactions/:id/unmatch
+
+**List mutasi bank**
+GET /finance/bank/transactions?bankAccountId=&status=unmatched|matched|excluded&from=&to=
+
+**Rekonsiliasi summary**
+GET /finance/bank/reconciliation-summary?bankAccountId=&from=&to=
+Return: { saldoBuku, saldoBank, selisih, unmatchedCount, matchedCount }
+
+### 3.2 Frontend: halaman rekonsiliasi
+
+**/keuangan/rekonsiliasi**
+- Pilih rekening bank (dropdown BankAccount)
+- Pilih periode
+- Summary card: Saldo Buku | Saldo Bank | Selisih | Belum cocok
+- Tombol "Import Mutasi Bank" → upload CSV + pilih format bank
+- Tombol "Auto Match" → jalankan matching otomatis
+- Tabel 2 panel:
+  - Kiri: mutasi bank (tanggal, keterangan, amount, status)
+  - Kanan: transaksi jurnal yang bisa di-match
+- Klik baris kiri + klik baris kanan → tombol "Match Manual"
+- Transaksi sudah matched tampil dengan warna hijau
+- Tombol "Exclude" untuk transaksi yang memang tidak perlu di-match
+
+---
+
+## BAGIAN 4 — APPROVAL WORKFLOW
+
+### 4.1 Backend: buat module `workflow`
+
+Buat apps/backend/src/modules/workflow/:
+
+Model yang dipakai: WorkflowConfig (sudah ada di schema)
+
+**Get workflow config**
+GET /workflow/config?module=purchase_order|expense|vendor_bill
+
+**Update workflow config**
+PUT /workflow/config
+Body: { module, requireApproval: boolean, approverRoles: string[], minAmount?: number }
+
+**Request approval**
+POST /workflow/request
+Body: { module: string, referenceId: string, referenceType: string, amount: number }
+Logic:
+- Cek WorkflowConfig untuk module tersebut
+- Jika requireApproval = true dan amount >= minAmount:
+  - Update status dokumen menjadi 'waiting_approval'
+  - Kirim notifikasi ke semua user dengan approverRoles
+- Jika tidak perlu approval: langsung approve otomatis
+
+**Approve / Reject**
+POST /workflow/approve
+POST /workflow/reject
+Body: { module, referenceId, notes?: string }
+Logic:
+- Update status dokumen menjadi 'approved' / 'rejected'
+- Catat di AuditLog
+- Kirim notifikasi ke pembuat dokumen
+
+**List pending approvals**
+GET /workflow/pending?role=
+Return: semua dokumen yang menunggu approval untuk role user saat ini
+
+### 4.2 Integrasi ke PurchaseOrder & Expense
+
+Update apps/backend/src/modules/purchasing/purchasing.service.ts:
+- Setelah create PO, panggil WorkflowService.requestApproval()
+- Tambahkan field `approvalStatus` di response
+
+Update apps/backend/src/modules/expense/expense.service.ts:
+- Sama seperti PO
+
+### 4.3 Frontend: halaman approval
+
+**/approval**
+- Dashboard approval: semua dokumen pending yang perlu di-approve user saat ini
+- Tab: Purchase Order | Expense | Vendor Bill
+- Per item: detail dokumen, nominal, pemohon, tanggal
+- Tombol Approve (hijau) & Reject (merah) + input notes untuk reject
+- Badge counter di menu sidebar
+
+**/settings/workflow**
+- Konfigurasi per modul: aktif/nonaktif approval, role approver, minimum amount
+- Tabel konfigurasi yang bisa diedit
+
+---
+
+## BAGIAN 5 — PISAH REPO POS
+
+### 5.1 Bersihkan monorepo ini dari UI kasir
+
+Hapus halaman yang merupakan UI operasional kasir (BUKAN management):
+- Hapus: apps/frontend/app/pos/cashier/
+- Hapus: apps/frontend/app/pos/orders/ (jika isinya transaksi kasir real-time)
+
+PERTAHANKAN dan REFACTOR apps/frontend/app/pos/ menjadi POS Management Panel:
+
+**/pos** → Dashboard: omset hari ini, sesi aktif, top produk
+**/pos/products** → CRUD produk POS + tombol "Sync Stok dari Inventory"
+**/pos/categories** → CRUD kategori POS
+**/pos/users** → CRUD user kasir (PosUser), reset password
+**/pos/sessions** → Monitor sesi kasir (read-only, tidak bisa buka/tutup sesi)
+**/pos/transactions** → Monitor transaksi (read-only + tombol void khusus ADMIN)
+**/pos/reports** → Laporan penjualan by kasir, by produk, by metode bayar + export CSV
+**/pos/settings** → LoyaltyConfig, pengaturan struk
+
+### 5.2 Tambah endpoint backend untuk management panel
+
+Tambahkan di apps/backend/src/modules/pos/:
+POST /pos/management/products/sync-stock
+→ Update stok PosProduct dari ProductWarehouseStock
+GET  /pos/management/reports/summary?period=today|week|month
+GET  /pos/management/reports/by-cashier?from=&to=
+GET  /pos/management/reports/by-product?from=&to=
+GET  /pos/management/reports/by-payment?from=&to=
+GET  /pos/management/reports/export-csv?from=&to=
+PATCH /pos/management/transactions/:id/void
+
+Semua /pos/management/* wajib JwtAuthGuard + role ADMIN/OWNER/SUPER_ADMIN.
+Endpoint /pos/* yang lama (login, getProducts, createSale, session) JANGAN diubah
+karena masih dipakai Flutter POS app.
+
+### 5.3 Buat file dokumentasi API untuk Flutter
+
+Buat POS_FLUTTER_API.md di root project:
+- Semua endpoint yang dikonsumsi Flutter POS
+- Format request/response tiap endpoint
+- Cara autentikasi (POST /pos/auth/login → JWT terpisah dari ERP)
+- Catatan integrasi: Flutter sync produk dari /pos/products, kirim transaksi ke /pos/transactions
+
+---
+
+## BAGIAN 6 — UPDATE NAVIGASI & SIDEBAR
+
+Update sidebar/navigasi di apps/frontend:
+
+Tambahkan/update menu:
+- **Keuangan**
+  - Laporan Keuangan (submenu: Laba Rugi, Neraca, Arus Kas, Buku Besar, Trial Balance)
+  - Pajak & e-Faktur
+  - Rekonsiliasi Bank
+- **Approval** (dengan badge counter jika ada pending)
+- **POS Management** (ganti label dari "POS", tambahkan subtitle "Management Panel")
+
+---
+
+## ATURAN IMPLEMENTASI
+
+1. Jangan ubah schema Prisma yang sudah ada — semua model yang dibutuhkan sudah tersedia
+2. Ikuti pattern module yang sudah ada (baca inventory.service.ts atau finance.service.ts sebagai referensi gaya koding)
+3. Semua endpoint baru gunakan JwtAuthGuard
+4. Semua halaman baru gunakan komponen UI yang sudah ada di project
+5. TypeScript strict — hindari `any`
+6. Setiap aksi di frontend harus ada loading state dan toast notifikasi sukses/gagal
+7. Semua tabel harus support pagination dan filter
+8. Jangan hapus endpoint lama yang sudah ada
+
+---
+
+## URUTAN PENGERJAAN
+
+Kerjakan satu per satu, konfirmasi sebelum lanjut:
+
+1. Bagian 1 backend: module reporting (laba rugi, neraca, arus kas, buku besar, trial balance)
+2. Bagian 1 frontend: 5 halaman laporan keuangan
+3. Bagian 2 backend: pajak & e-Faktur
+4. Bagian 2 frontend: halaman pajak
+5. Bagian 3 backend: rekonsiliasi bank + import CSV
+6. Bagian 3 frontend: halaman rekonsiliasi
+7. Bagian 4 backend: workflow approval
+8. Bagian 4 frontend: halaman approval + settings workflow
+9. Bagian 5: bersihkan POS dari monorepo, buat management panel, dokumentasi Flutter API
+10. Bagian 6: update navigasi sidebar
+
+Mulai dari langkah 1. Setelah selesai, tunjukkan file apa saja yang dibuat/diubah sebelum lanjut.

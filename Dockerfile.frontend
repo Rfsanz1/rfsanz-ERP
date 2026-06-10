@@ -1,0 +1,59 @@
+# Generic Next.js Dockerfile untuk monorepo Gentong Mas ERP
+# Build args: APP_DIR (nama folder di apps/), PORT (port yang dipakai)
+# Contoh: docker build --build-arg APP_DIR=web --build-arg PORT=5000 -f Dockerfile.frontend .
+
+ARG APP_DIR=web
+ARG PORT=3000
+
+# ── Stage 1: Builder ──────────────────────────────────────────────
+FROM node:20-alpine AS builder
+ARG APP_DIR
+ARG PORT
+
+RUN corepack enable && corepack prepare pnpm@9 --activate
+WORKDIR /app
+
+# Copy workspace config & lockfile dulu agar layer cache efisien
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+
+# Copy shared packages
+COPY packages/ ./packages/
+
+# Copy package.json app target saja (bukan semua file)
+COPY apps/${APP_DIR}/package.json ./apps/${APP_DIR}/package.json
+
+# Install semua deps (termasuk devDeps untuk build)
+RUN pnpm install --frozen-lockfile
+
+# Copy source app
+COPY apps/${APP_DIR}/ ./apps/${APP_DIR}/
+
+# Build Next.js
+RUN cd apps/${APP_DIR} && pnpm build
+
+# ── Stage 2: Runner ───────────────────────────────────────────────
+FROM node:20-alpine AS runner
+ARG APP_DIR
+ARG PORT
+
+RUN corepack enable && corepack prepare pnpm@9 --activate
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/ ./packages/
+COPY apps/${APP_DIR}/package.json ./apps/${APP_DIR}/package.json
+
+# Install production deps saja
+RUN pnpm install --frozen-lockfile --prod
+
+# Copy hasil build dari stage builder
+COPY --from=builder /app/apps/${APP_DIR}/.next ./apps/${APP_DIR}/.next
+# Copy public folder jika ada
+COPY --from=builder /app/apps/${APP_DIR}/public ./apps/${APP_DIR}/public 2>/dev/null || true
+
+WORKDIR /app/apps/${APP_DIR}
+
+EXPOSE ${PORT}
+
+# Jalankan dengan script "start" dari package.json (sudah ada port di dalamnya)
+CMD ["pnpm", "start"]
