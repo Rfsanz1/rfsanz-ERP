@@ -2,27 +2,12 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '../lib/store/useAuthStore';
-
-function getRoleRedirect(roles: string[]): string {
-  const role = (roles?.[0] ?? '').toLowerCase();
-  if (role === 'sales') return '/sales';
-  if (role === 'gudang' || role === 'warehouse') return '/gudang';
-  if (role === 'driver') return '/driver';
-  return '/dashboard';
-}
 
 export default function RootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    useAuthStore.getState().rehydrate();
-    const { token, user } = useAuthStore.getState();
-    if (!token) {
-      router.replace('/login');
-    } else {
-      router.replace(getRoleRedirect(user?.roles ?? []));
-    }
+    router.replace('/dashboard');
   }, []);
 
   return (
