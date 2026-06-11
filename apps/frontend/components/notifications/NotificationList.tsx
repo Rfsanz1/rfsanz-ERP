@@ -1,178 +1,242 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Bell, CheckCircle2, Clock, Inbox } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
-import { getSocket } from '../../lib/socket';
+import { useEffect, useState } from 'react';
+import {
+  Bell, CheckCircle2, Clock, Inbox, ShoppingCart, FileText,
+  Package, AlertTriangle, Info, TrendingUp, RefreshCw, Trash2, X,
+} from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { useNotificationStore } from '../../lib/store/useNotificationStore';
+import { getSocket } from '../../lib/socket';
 
-function NotificationListInner() {
-  const { notifications, loading, error, markAsRead, setNotifications } = useNotificationStore();
+const DEMO_NOTIFICATIONS = [
+  {
+    id: 'demo-1', title: 'Order Baru Masuk', category: 'order', status: 'unread',
+    message: 'Order #SO-2025-001 dari PT Maju Bersama senilai Rp 15.000.000 telah masuk dan menunggu konfirmasi.',
+    createdAt: new Date(Date.now() - 5 * 60_000).toISOString(),
+  },
+  {
+    id: 'demo-2', title: 'Invoice Jatuh Tempo', category: 'invoice', status: 'unread',
+    message: 'Invoice #INV-2025-089 dari CV Raya Mandiri senilai Rp 8.500.000 akan jatuh tempo dalam 3 hari.',
+    createdAt: new Date(Date.now() - 30 * 60_000).toISOString(),
+  },
+  {
+    id: 'demo-3', title: 'Stok Hampir Habis', category: 'stock', status: 'unread',
+    message: 'Produk "Monitor LED 24 inch" tersisa 5 unit. Segera lakukan pemesanan ulang ke supplier.',
+    createdAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
+  },
+  {
+    id: 'demo-4', title: 'Opportunity Baru Dikualifikasi', category: 'crm', status: 'unread',
+    message: 'Lead dari PT Digital Solusi telah dikualifikasi sebagai opportunity senilai Rp 120.000.000.',
+    createdAt: new Date(Date.now() - 4 * 3_600_000).toISOString(),
+  },
+  {
+    id: 'demo-5', title: 'Pembayaran Diterima', category: 'invoice', status: 'read',
+    message: 'Pembayaran Rp 25.000.000 dari PT Global Industri untuk Invoice #INV-2025-081 telah dikonfirmasi.',
+    createdAt: new Date(Date.now() - 24 * 3_600_000).toISOString(),
+  },
+  {
+    id: 'demo-6', title: 'Purchase Order Disetujui', category: 'order', status: 'read',
+    message: 'PO #PO-2025-044 kepada Supplier PT Sumber Makmur sebesar Rp 45.000.000 telah disetujui manajer.',
+    createdAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+  },
+  {
+    id: 'demo-7', title: 'Sistem: Backup Berhasil', category: 'system', status: 'read',
+    message: 'Backup database harian telah berhasil diselesaikan pada pukul 02:00 WIB.',
+    createdAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
+  },
+];
+
+const CATEGORY_META: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+  order:   { icon: <ShoppingCart size={14} />, color: '#6366F1', label: 'Order' },
+  invoice: { icon: <FileText size={14} />,     color: '#3B82F6', label: 'Invoice' },
+  stock:   { icon: <Package size={14} />,      color: '#F59E0B', label: 'Stok' },
+  crm:     { icon: <TrendingUp size={14} />,   color: '#8B5CF6', label: 'CRM' },
+  system:  { icon: <Info size={14} />,         color: '#10B981', label: 'Sistem' },
+  default: { icon: <Bell size={14} />,         color: '#64748B', label: 'Info' },
+};
+
+function relativeTime(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60_000)      return 'Baru saja';
+  if (diff < 3_600_000)   return `${Math.floor(diff / 60_000)} menit lalu`;
+  if (diff < 86_400_000)  return `${Math.floor(diff / 3_600_000)} jam lalu`;
+  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)} hari lalu`;
+  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+export function NotificationList() {
+  const { notifications, loading, markAsRead, setNotifications } = useNotificationStore();
   const { user } = useAuthStore();
-  const searchParams = useSearchParams();
-  const statusFilter = searchParams?.get('status') ?? 'all';
+  const [filter, setFilter]     = useState<'all' | 'unread' | 'read'>('all');
   const [markingAll, setMarkingAll] = useState(false);
+  const [localDismiss, setLocalDismiss] = useState<Set<string>>(new Set());
+
+  const isDemo = !loading && notifications.length === 0;
+  const source = isDemo ? DEMO_NOTIFICATIONS : notifications;
+  const visible = source.filter(n => !localDismiss.has(n.id));
 
   useEffect(() => {
     const socket = getSocket();
     const recipient = user?.email ?? '';
     if (!recipient) return;
-
     const eventName = `notification:${recipient}`;
     socket.connect();
-    socket.on(eventName, (payload) => {
-      setNotifications((current) => [payload, ...current]);
+    socket.on(eventName, (payload: any) => {
+      setNotifications((cur) => [payload, ...cur]);
     });
-
-    return () => {
-      socket.off(eventName);
-      socket.disconnect();
-    };
+    return () => { socket.off(eventName); socket.disconnect(); };
   }, [user?.email, setNotifications]);
 
-  const unreadCount = notifications.filter((n) => n.status !== 'read').length;
-
-  const filtered = notifications.filter((n) => {
-    if (statusFilter === 'unread') return n.status !== 'read';
-    if (statusFilter === 'read') return n.status === 'read';
+  const filtered = visible.filter(n => {
+    if (filter === 'unread') return n.status !== 'read';
+    if (filter === 'read')   return n.status === 'read';
     return true;
   });
 
+  const unreadCount = visible.filter(n => n.status !== 'read').length;
+
   const handleMarkAll = async () => {
     setMarkingAll(true);
-    const unread = notifications.filter((n) => n.status !== 'read');
-    await Promise.all(unread.map((n) => markAsRead(n.id)));
-    setMarkingAll(false);
+    if (isDemo) {
+      setTimeout(() => setMarkingAll(false), 600);
+    } else {
+      const unread = notifications.filter(n => n.status !== 'read');
+      await Promise.all(unread.map(n => markAsRead(n.id)));
+      setMarkingAll(false);
+    }
   };
+
+  const handleMarkOne = async (id: string) => {
+    if (isDemo) return;
+    await markAsRead(id);
+  };
+
+  const handleDismiss = (id: string) => {
+    setLocalDismiss(prev => new Set([...prev, id]));
+  };
+
+  const TABS = [
+    { key: 'all',    label: 'Semua',         count: visible.length },
+    { key: 'unread', label: 'Belum Dibaca',  count: unreadCount },
+    { key: 'read',   label: 'Sudah Dibaca',  count: visible.length - unreadCount },
+  ] as const;
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-8 text-slate-400">
-        <Clock size={16} className="animate-spin" />
-        <span>Memuat notifikasi...</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '40px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+        <RefreshCw size={15} className="animate-spin" />
+        <span>Memuat notifikasi…</span>
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <p className="text-rose-400">{error}</p>
-      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Bell size={16} className="text-slate-400" />
-          <span className="text-sm text-slate-400">
-            {unreadCount > 0 ? (
-              <><span className="font-semibold text-white">{unreadCount}</span> belum dibaca</>
-            ) : (
-              'Semua sudah dibaca'
-            )}
-          </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* Filter tabs + actions */}
+      <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '12px 16px' }}
+        className="flex items-center justify-between flex-wrap gap-3">
+        <div style={{ display: 'flex', gap: 4 }}>
+          {TABS.map(t => (
+            <button key={t.key} onClick={() => setFilter(t.key)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, border: 'none',
+                background: filter === t.key ? '#6366F1' : 'var(--surface-sunken)',
+                color: filter === t.key ? '#fff' : 'var(--text-muted)',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' }}>
+              {t.label}
+              <span style={{ background: filter === t.key ? 'rgba(255,255,255,.25)' : 'var(--border)', borderRadius: 10, padding: '0 6px', fontSize: 10, fontWeight: 700 }}>
+                {t.count}
+              </span>
+            </button>
+          ))}
         </div>
-        {unreadCount > 0 && (
-          <Button
-            className="rounded-full bg-slate-800 px-4 py-2 text-xs font-semibold hover:bg-slate-700"
-            onClick={handleMarkAll}
-            disabled={markingAll}
-          >
-            {markingAll ? 'Memproses...' : 'Tandai Semua Dibaca'}
-          </Button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {isDemo && (
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--surface-sunken)', padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
+              Contoh data (backend offline)
+            </span>
+          )}
+          {unreadCount > 0 && (
+            <button onClick={handleMarkAll} disabled={markingAll}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: markingAll ? 0.65 : 1 }}>
+              {markingAll ? <RefreshCw size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+              Tandai Semua Dibaca
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* List */}
       {filtered.length === 0 ? (
-        <Card>
-          <div className="flex flex-col items-center gap-3 py-8 text-center">
-            <Inbox size={36} className="text-slate-600" />
-            <p className="text-slate-400">
-              {statusFilter === 'unread'
-                ? 'Tidak ada notifikasi yang belum dibaca.'
-                : statusFilter === 'read'
-                ? 'Tidak ada notifikasi yang sudah dibaca.'
-                : 'Tidak ada notifikasi terbaru.'}
-            </p>
-          </div>
-        </Card>
+        <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '48px 24px', textAlign: 'center' }}>
+          <Inbox size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block' }} />
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
+            {filter === 'unread' ? 'Tidak ada notifikasi belum dibaca' : filter === 'read' ? 'Tidak ada notifikasi yang sudah dibaca' : 'Belum ada notifikasi'}
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Semua aktivitas sistem akan muncul di sini</p>
+        </div>
       ) : (
-        filtered.map((notification) => {
-          const isUnread = notification.status !== 'read';
-          return (
-            <Card key={notification.id}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex flex-1 gap-3">
-                  <div
-                    className={`mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
-                      isUnread ? 'bg-cyan-500/15 text-cyan-400' : 'bg-slate-700 text-slate-400'
-                    }`}
-                  >
-                    <Bell size={14} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map(notif => {
+            const isUnread = notif.status !== 'read';
+            const meta = CATEGORY_META[(notif as any).category ?? 'default'] ?? CATEGORY_META.default;
+            return (
+              <div key={notif.id}
+                style={{ background: 'var(--surface)', borderRadius: 14, border: `1px solid ${isUnread ? meta.color + '30' : 'var(--border)'}`,
+                  padding: '14px 16px', transition: 'all .15s',
+                  boxShadow: isUnread ? `0 0 0 1px ${meta.color}15` : 'var(--shadow-sm)',
+                  position: 'relative', overflow: 'hidden' }}>
+                {/* Unread indicator stripe */}
+                {isUnread && (
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: meta.color, borderRadius: '14px 0 0 14px' }} />
+                )}
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  {/* Icon */}
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: meta.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', color: meta.color, flexShrink: 0 }}>
+                    {meta.icon}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          isUnread
-                            ? 'bg-cyan-500/10 text-cyan-400'
-                            : 'bg-emerald-500/10 text-emerald-400'
-                        }`}
-                      >
-                        {isUnread ? 'Baru' : 'Dibaca'}
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: meta.color, background: meta.color + '15', padding: '2px 8px', borderRadius: 6 }}>
+                        {meta.label}
                       </span>
                       {isUnread && (
-                        <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400" />
+                        <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: meta.color }} />
                       )}
                     </div>
-                    <h3 className="mt-2 text-base font-semibold text-white">{notification.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-400">{notification.message}</p>
-                    <p className="mt-2 flex items-center gap-1 text-xs text-slate-500">
-                      <Clock size={11} />
-                      {new Date(notification.createdAt).toLocaleString('id-ID', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      })}
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '6px 0 4px', lineHeight: 1.4 }}>
+                      {notif.title}
+                    </h3>
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 8px', lineHeight: 1.6 }}>
+                      {notif.message}
                     </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-muted)' }}>
+                        <Clock size={11} />
+                        {relativeTime(notif.createdAt)}
+                      </span>
+                      {isUnread && !isDemo && (
+                        <button onClick={() => handleMarkOne(notif.id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: meta.color, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
+                          <CheckCircle2 size={11} /> Tandai Dibaca
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  {/* Dismiss button */}
+                  <button onClick={() => handleDismiss(notif.id)}
+                    style={{ padding: 5, borderRadius: 7, border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0, opacity: 0.5 }}
+                    title="Tutup">
+                    <X size={13} />
+                  </button>
                 </div>
-                {isUnread && (
-                  <div className="flex-shrink-0">
-                    <Button
-                      className="rounded-full border border-slate-700 bg-transparent px-4 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
-                      onClick={() => markAsRead(notification.id)}
-                    >
-                      <CheckCircle2 size={12} className="mr-1.5 inline" />
-                      Tandai Dibaca
-                    </Button>
-                  </div>
-                )}
               </div>
-            </Card>
-          );
-        })
+            );
+          })}
+        </div>
       )}
     </div>
-  );
-}
-
-export function NotificationList() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center gap-2 py-8 text-slate-400">
-          <Clock size={16} className="animate-spin" />
-          <span>Memuat notifikasi...</span>
-        </div>
-      }
-    >
-      <NotificationListInner />
-    </Suspense>
   );
 }
