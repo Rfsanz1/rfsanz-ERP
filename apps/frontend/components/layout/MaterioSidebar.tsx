@@ -14,9 +14,8 @@ import {
   LayoutDashboard, Users, ShoppingCart, Package, FileText,
   BarChart2, Settings, Bell, ChevronDown, ChevronRight,
   Truck, DollarSign, UserCheck, BookOpen, CreditCard, Target,
-  Brain, Megaphone, Globe, LogOut, Warehouse, Navigation,
+  Brain, Megaphone, Globe, Warehouse, Navigation,
 } from 'lucide-react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
 
 export const SIDEBAR_WIDTH          = 256;
 export const SIDEBAR_COLLAPSED_WIDTH = 64;
@@ -189,7 +188,6 @@ interface SidebarProps { collapsed: boolean; mobileOpen: boolean; onMobileClose:
 /* ── Sidebar content ─────────────────────────────────────────────────── */
 function SidebarContent({ collapsed, onMobileClose }: { collapsed: boolean; onMobileClose: () => void }) {
   const pathname = usePathname();
-  const { user, logout } = useAuthStore();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
 
@@ -378,59 +376,6 @@ function SidebarContent({ collapsed, onMobileClose }: { collapsed: boolean; onMo
         ))}
       </div>
 
-      {/* User */}
-      <div
-        style={{
-          borderTop: '1px solid var(--sidebar-border)',
-          padding: collapsed ? '10px 8px' : '10px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          flexShrink: 0,
-        }}
-      >
-        <Tooltip title={collapsed ? (user?.name ?? 'Admin') : ''} placement="right">
-          <div
-            style={{
-              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: 13, color: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            {user?.name?.[0]?.toUpperCase() ?? 'A'}
-          </div>
-        </Tooltip>
-        {!collapsed && (
-          <>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
-                {user?.name ?? 'Admin'}
-              </p>
-              <p style={{ margin: 0, fontSize: 10.5, color: 'var(--text-muted)', lineHeight: 1, marginTop: 2 }}>
-                {Array.isArray(user?.roles) ? user.roles[0] : 'Administrator'}
-              </p>
-            </div>
-            <Tooltip title="Keluar">
-              <button
-                onClick={logout}
-                style={{
-                  border: 'none', background: 'transparent', cursor: 'pointer',
-                  padding: 6, borderRadius: 8, color: 'var(--text-muted)',
-                  transition: 'all 0.15s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#EF4444'; (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.08)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-              >
-                <LogOut size={15} strokeWidth={2} />
-              </button>
-            </Tooltip>
-          </>
-        )}
-      </div>
     </div>
   );
 }

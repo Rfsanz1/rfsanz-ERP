@@ -7,9 +7,8 @@ import {
   LayoutDashboard, Users, ShoppingCart, Package, FileText,
   BarChart2, Settings, Bell, ChevronDown, ChevronRight,
   Truck, DollarSign, UserCheck, Building2,
-  BookOpen, CreditCard, Target, Brain, Megaphone, Globe, LogOut,
+  BookOpen, CreditCard, Target, Brain, Megaphone, Globe,
 } from 'lucide-react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
 
 interface NavChild {
   href: string;
@@ -179,7 +178,6 @@ interface SidebarProps {
 
 export function YetiSidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuthStore();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
 
@@ -357,37 +355,6 @@ export function YetiSidebar({ collapsed, mobileOpen, onMobileClose }: SidebarPro
         ))}
       </nav>
 
-      {/* User */}
-      <div className="flex-shrink-0 border-t p-3" style={{ borderColor: '#243447' }}>
-        <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-          <div
-            className="h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold"
-            style={{ background: 'linear-gradient(135deg, #8B5CF6, #3B82F6)' }}
-          >
-            {user?.name?.[0]?.toUpperCase() ?? 'U'}
-          </div>
-          {!collapsed && (
-            <>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user?.name ?? 'Admin'}</p>
-                <p className="text-[11px] truncate" style={{ color: '#64748B' }}>
-                  {Array.isArray(user?.roles) ? user.roles[0] : 'Administrator'}
-                </p>
-              </div>
-              <button
-                onClick={logout}
-                className="p-1.5 rounded-lg transition-colors"
-                title="Logout"
-                style={{ color: '#475569' }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = '#475569'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
     </aside>
   );
 }

@@ -1,11 +1,9 @@
 'use client';
 
-import { Bell, LogOut, Menu, User, Sparkles } from 'lucide-react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { Bell, Menu, Sparkles } from 'lucide-react';
 import { useNotificationStore } from '../../lib/store/useNotificationStore';
 
 export function Topbar() {
-  const { token, user, logout } = useAuthStore();
   const { notifications } = useNotificationStore();
 
   return (
@@ -25,23 +23,6 @@ export function Topbar() {
           <button className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-4 text-sm text-slate-300 transition hover:border-[var(--primary)] hover:text-white">
             <Bell className="h-5 w-5 text-[var(--primary)]" />
             <span>{notifications.length || 0} Alerts</span>
-          </button>
-          {token && (
-            <div className="hidden items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-2 text-sm text-slate-300 sm:flex">
-              <User className="h-5 w-5 text-[var(--primary)]" />
-              <div>
-                <p className="font-medium text-slate-100">{user?.name ?? user?.email ?? 'User'}</p>
-                <p className="text-xs text-slate-500">{user?.roles?.join(', ') || 'Guest'}</p>
-              </div>
-            </div>
-          )}
-          <button
-            type="button"
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-800 bg-[var(--accent)] px-4 text-sm text-slate-950 transition hover:bg-orange-400"
-            onClick={logout}
-          >
-            <Sparkles className="h-4 w-4" />
-            {token ? 'Logout' : 'Sign In'}
           </button>
         </div>
       </div>

@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import Divider from '@mui/material/Divider';
 import Button from '@mui/material/Button';
-import MenuItem from '@mui/material/MenuItem';
-import MenuList from '@mui/material/MenuList';
 import InputBase from '@mui/material/InputBase';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -14,9 +12,8 @@ import Popover from '@mui/material/Popover';
 import Avatar from '@mui/material/Avatar';
 import {
   Menu as MenuIcon, Search, Bell, Settings, HelpCircle,
-  LogOut, User, ChevronDown, Sun, Moon,
+  Sun, Moon,
 } from 'lucide-react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
 import { useNotificationStore } from '../../lib/store/useNotificationStore';
 import { useThemeMode } from '../../lib/theme/ThemeContext';
 
@@ -27,11 +24,9 @@ interface TopbarProps {
 }
 
 export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: TopbarProps) {
-  const { user, logout } = useAuthStore();
   const { notifications } = useNotificationStore();
   const { mode, toggle: toggleTheme } = useThemeMode();
   const [query, setQuery]    = useState('');
-  const [userAnchor, setUA]  = useState<null | HTMLElement>(null);
   const [notifAnchor, setNA] = useState<null | HTMLElement>(null);
 
   const unread = notifications?.length ?? 0;
@@ -140,7 +135,7 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
 
         {/* Notif */}
         <button
-          onClick={e => { setNA(e.currentTarget); setUA(null); }}
+          onClick={e => { setNA(e.currentTarget); }}
           style={{ ...iconBtnStyle, position: 'relative' }}
           onMouseEnter={hoverOn} onMouseLeave={hoverOff}
         >
@@ -154,39 +149,6 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
           )}
         </button>
 
-        {/* Divider */}
-        <div className="hidden sm:block" style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 4px' }} />
-
-        {/* User */}
-        <button
-          onClick={e => { setUA(e.currentTarget); setNA(null); }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '5px 8px 5px 5px', borderRadius: 10,
-            border: '1px solid var(--border)',
-            background: 'transparent', cursor: 'pointer', transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-        >
-          <div style={{
-            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: 12, color: '#fff',
-          }}>
-            {user?.name?.[0]?.toUpperCase() ?? 'A'}
-          </div>
-          <div className="hidden sm:block" style={{ textAlign: 'left' }}>
-            <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-              {user?.name ?? 'Admin'}
-            </p>
-            <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'var(--text-muted)', lineHeight: 1 }}>
-              {Array.isArray(user?.roles) ? user?.roles[0] : 'Administrator'}
-            </p>
-          </div>
-          <ChevronDown size={12} style={{ color: 'var(--text-muted)' }} className="hidden sm:block" />
-        </button>
       </div>
 
       {/* ── Notification popover ─────────────────────────────────── */}
@@ -237,75 +199,6 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
         </div>
       </Popover>
 
-      {/* ── User menu popover ─────────────────────────────────────── */}
-      <Popover
-        open={Boolean(userAnchor)}
-        anchorEl={userAnchor}
-        onClose={() => setUA(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { width: 220, mt: 1 } } }}
-      >
-        <div style={{ padding: '14px 18px', background: 'var(--brand-light)' }}>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{user?.name ?? 'Admin'}</p>
-          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>{user?.email ?? 'admin@example.com'}</p>
-        </div>
-        <Divider />
-        {/* Dark/light toggle inside user menu */}
-        <div style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            {isDark ? <Moon size={14} /> : <Sun size={14} />}
-            {isDark ? 'Mode Gelap' : 'Mode Terang'}
-          </span>
-          <button
-            onClick={toggleTheme}
-            style={{
-              width: 42, height: 24, borderRadius: 100, border: 'none',
-              background: isDark ? '#6366F1' : '#E2E8F0',
-              cursor: 'pointer', position: 'relative', transition: 'background 0.25s',
-            }}
-          >
-            <span style={{
-              position: 'absolute', top: 3, left: isDark ? 20 : 3,
-              width: 18, height: 18, borderRadius: '50%',
-              background: isDark ? '#fff' : '#94A3B8',
-              transition: 'left 0.25s',
-            }} />
-          </button>
-        </div>
-        <Divider />
-        <MenuList sx={{ py: 0.5 }}>
-          {[
-            { label: 'Profil Saya', Icon: User },
-            { label: 'Pengaturan',  Icon: Settings },
-            { label: 'Bantuan',     Icon: HelpCircle },
-          ].map(({ label, Icon }) => (
-            <MenuItem
-              key={label}
-              sx={{
-                gap: 1.5, py: 1, fontSize: 13, color: 'var(--text-primary)',
-                '&:hover': { background: 'var(--brand-light)', color: '#6366F1' },
-              }}
-            >
-              <Icon size={15} strokeWidth={2} />
-              {label}
-            </MenuItem>
-          ))}
-        </MenuList>
-        <Divider />
-        <MenuList sx={{ py: 0.5 }}>
-          <MenuItem
-            onClick={logout}
-            sx={{
-              gap: 1.5, py: 1, fontSize: 13, color: '#EF4444',
-              '&:hover': { background: 'rgba(239,68,68,0.06)' },
-            }}
-          >
-            <LogOut size={15} strokeWidth={2} />
-            Keluar
-          </MenuItem>
-        </MenuList>
-      </Popover>
     </header>
   );
 }
