@@ -48,7 +48,7 @@ export default function CustomerSearchDropdown({
       const [localRes, kledoRes] = await Promise.allSettled([
         api.get('/customers', { params }),
         q && q.length >= 1
-          ? api.get('/kledo/contacts', { params: { search: q, per_page: 8 } })
+          ? api.get('/kledo/contacts', { params: { search: q, per_page: 8, type: 'customer' } })
           : Promise.resolve({ data: { data: [] } }),
       ]);
 

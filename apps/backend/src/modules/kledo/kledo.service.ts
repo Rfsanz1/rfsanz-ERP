@@ -45,9 +45,12 @@ export class KledoService {
   }
 
   async getContacts(query: any = {}) {
-    const { page = 1, per_page = 50, search } = query;
+    const { page = 1, per_page = 50, search, type } = query;
     const params: any = { page, per_page };
     if (search) params.name = search;
+    // type=customer → hanya kontak penjualan; type=vendor → hanya kontak pembelian
+    if (type === 'customer') params.is_customer = 1;
+    else if (type === 'vendor') params.is_vendor = 1;
     const res = await firstValueFrom(this.http.get(`${this.baseUrl}/finance/contacts`, { headers: this.headers, params }));
     return res.data;
   }
