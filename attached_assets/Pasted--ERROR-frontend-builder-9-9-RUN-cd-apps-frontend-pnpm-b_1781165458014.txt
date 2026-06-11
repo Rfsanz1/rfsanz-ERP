@@ -1,0 +1,214 @@
+ => ERROR [frontend builder 9/9] RUN cd apps/frontend && pnpm build                                                           434.3s
+ => [backend builder 10/11] RUN cd apps/backend && pnpm prisma generate && (pnpm build || true)                                87.2s
+ => [backend runner  3/10] WORKDIR /app                                                                                         0.2s
+ => [backend runner  4/10] COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./                                              0.3s
+ => [backend runner  5/10] COPY packages/ ./packages/                                                                           0.3s
+ => [backend runner  6/10] COPY apps/backend/package.json ./apps/backend/package.json                                           0.2s
+ => [backend builder 11/11] RUN test -f /app/apps/backend/dist/main.js || (echo "ERROR: dist/main.js tidak ditemukan" && exit   1.3s
+ => [backend runner  7/10] COPY --from=builder /app/node_modules ./node_modules                                                32.3s
+ => [backend runner  8/10] COPY --from=builder /app/apps/backend/dist ./apps/backend/dist                                       3.1s
+ => [backend runner  9/10] COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma                                   2.4s
+ => [backend runner 10/10] WORKDIR /app/apps/backend                                                                            0.4s
+ => [backend] exporting to image                                                                                              102.2s
+ => => exporting layers                                                                                                        75.0s
+ => => exporting manifest sha256:a452e864081b5bbe54b3c2119ee3a61cf2f228c68c8386e4d8ae3b1863b0c487                               0.1s
+ => => exporting config sha256:4f84147063a73f08c75575fad9149c65ae5f2c1075b9d1a0fbf90c2383d63fb5                                 0.1s
+ => => exporting attestation manifest sha256:32ebe310d26c6773bdf68d22cdc11a6ba6b38869d42aecc52f30885b9c06ce46                   0.1s
+ => => exporting manifest list sha256:24ca3044191b149681bc751e8d253c6999212747828acd1961a65ef12531ee70                          0.1s
+ => => naming to docker.io/library/gentong-mas-erp-backend:latest                                                               0.0s
+ => => unpacking to docker.io/library/gentong-mas-erp-backend:latest                                                           26.6s
+ => [backend] resolving provenance for metadata file                                                                            0.2s
+------
+ > [frontend builder 9/9] RUN cd apps/frontend && pnpm build:
+1.664 
+1.664 > @erp-modern/frontend@0.0.1 build /app/apps/frontend
+1.664 > next build
+1.664 
+5.211 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+5.216 This information is used to shape Next.js' roadmap and prioritize features.
+5.216 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+5.217 https://nextjs.org/telemetry
+5.217 
+5.520   ▲ Next.js 14.2.30
+5.522 
+6.334    Creating an optimized production build ...
+207.3  ✓ Compiled successfully
+207.3    Skipping validation of types
+207.3    Skipping linting
+208.3    Collecting page data ...
+219.3    Generating static pages (0/223) ...
+235.6    Generating static pages (55/223) 
+242.2    Generating static pages (111/223) 
+244.3 Error: Event handlers cannot be passed to Client Component props.
+244.3   {onClick: function onClick, style: ..., children: ...}
+244.3             ^^^^^^^^^^^^^^^^
+244.3 If you need interactivity, consider converting part of this to a Client Component.
+244.3     at ek (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:140440)
+244.3     at Object.toJSON (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135629)
+244.3     at stringify (<anonymous>)
+244.3     at eP (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142093)
+244.3     at eE (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142572)
+244.3     at AsyncLocalStorage.run (node:async_hooks:346:14)
+244.3     at Timeout._onTimeout (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:150373)
+244.3     at listOnTimeout (node:internal/timers:581:17)
+244.3     at process.processTimers (node:internal/timers:519:7) {
+244.3   digest: '1791835429'
+244.3 }
+244.3 Error: Event handlers cannot be passed to Client Component props.
+244.3   {onClick: function onClick, style: ..., children: ...}
+244.3             ^^^^^^^^^^^^^^^^
+244.3 If you need interactivity, consider converting part of this to a Client Component.
+244.3     at ek (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:140440)
+244.3     at Object.toJSON (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135629)
+244.3     at stringify (<anonymous>)
+244.3     at eP (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142093)
+244.3     at eE (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142572)
+244.3     at Timeout._onTimeout (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135349)
+244.3     at listOnTimeout (node:internal/timers:581:17)
+244.3     at process.processTimers (node:internal/timers:519:7) {
+244.3   digest: '2185621219'
+244.3 }
+244.3 Error: Event handlers cannot be passed to Client Component props.
+244.3   {onClick: function onClick, style: ..., children: ...}
+244.3             ^^^^^^^^^^^^^^^^
+244.3 If you need interactivity, consider converting part of this to a Client Component.
+244.3     at ek (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:140440)
+244.3     at Object.toJSON (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135629)
+244.3     at stringify (<anonymous>)
+244.3     at eP (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142093)
+244.3     at eE (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142572)
+244.3     at Timeout._onTimeout (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135349)
+244.3     at listOnTimeout (node:internal/timers:581:17)
+244.3     at process.processTimers (node:internal/timers:519:7) {
+244.3   digest: '2185621219'
+244.3 }
+245.9    Generating static pages (167/223) 
+312.5  ⚠ Sending SIGTERM signal to Next.js build worker due to timeout of 60 seconds. Subsequent errors may be a result of the worker exiting.
+312.7  ⚠ Restarted static page generation for /offline because it took more than 60 seconds
+312.7  ⚠ See more info here https://nextjs.org/docs/messages/static-page-generation-timeout
+313.7 Error: Event handlers cannot be passed to Client Component props.
+313.7   {onClick: function onClick, style: ..., children: ...}
+313.7             ^^^^^^^^^^^^^^^^
+313.7 If you need interactivity, consider converting part of this to a Client Component.
+313.7     at ek (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:140440)
+313.7     at Object.toJSON (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135629)
+313.7     at stringify (<anonymous>)
+313.7     at eP (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142093)
+313.7     at eE (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142572)
+313.7     at AsyncLocalStorage.run (node:async_hooks:346:14)
+313.7     at Timeout._onTimeout (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:150373)
+313.7     at listOnTimeout (node:internal/timers:581:17)
+313.7     at process.processTimers (node:internal/timers:519:7) {
+313.7   digest: '1791835429'
+313.7 }
+313.7 Error: Event handlers cannot be passed to Client Component props.
+313.7   {onClick: function onClick, style: ..., children: ...}
+313.7             ^^^^^^^^^^^^^^^^
+313.7 If you need interactivity, consider converting part of this to a Client Component.
+313.7     at ek (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:140440)
+313.7     at Object.toJSON (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135629)
+313.7     at stringify (<anonymous>)
+313.7     at eP (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142093)
+313.7     at eE (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142572)
+313.7     at Timeout._onTimeout (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135349)
+313.7     at listOnTimeout (node:internal/timers:581:17)
+313.7     at process.processTimers (node:internal/timers:519:7) {
+313.7   digest: '2185621219'
+313.7 }
+313.7 Error: Event handlers cannot be passed to Client Component props.
+313.7   {onClick: function onClick, style: ..., children: ...}
+313.7             ^^^^^^^^^^^^^^^^
+313.7 If you need interactivity, consider converting part of this to a Client Component.
+313.7     at ek (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:140440)
+313.7     at Object.toJSON (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135629)
+313.7     at stringify (<anonymous>)
+313.7     at eP (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142093)
+313.7     at eE (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142572)
+313.7     at Timeout._onTimeout (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135349)
+313.7     at listOnTimeout (node:internal/timers:581:17)
+313.7     at process.processTimers (node:internal/timers:519:7) {
+313.7   digest: '2185621219'
+313.7 }
+372.7  ⚠ Sending SIGTERM signal to Next.js build worker due to timeout of 60 seconds. Subsequent errors may be a result of the worker exiting.
+373.2  ⨯ Next.js build worker exited with code: null and signal: SIGTERM
+373.2  ⨯ Next.js build worker exited with code: null and signal: SIGTERM
+373.3  ⚠ Restarted static page generation for /offline because it took more than 60 seconds
+374.0 Error: Event handlers cannot be passed to Client Component props.
+374.0   {onClick: function onClick, style: ..., children: ...}
+374.0             ^^^^^^^^^^^^^^^^
+374.0 If you need interactivity, consider converting part of this to a Client Component.
+374.0     at ek (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:140440)
+374.0     at Object.toJSON (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135629)
+374.0     at stringify (<anonymous>)
+374.0     at eP (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142093)
+374.0     at eE (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142572)
+374.0     at AsyncLocalStorage.run (node:async_hooks:346:14)
+374.0     at Timeout._onTimeout (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:150373)
+374.0     at listOnTimeout (node:internal/timers:581:17)
+374.0     at process.processTimers (node:internal/timers:519:7) {
+374.0   digest: '1791835429'
+374.0 }
+374.0 Error: Event handlers cannot be passed to Client Component props.
+374.0   {onClick: function onClick, style: ..., children: ...}
+374.0             ^^^^^^^^^^^^^^^^
+374.0 If you need interactivity, consider converting part of this to a Client Component.
+374.0     at ek (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:140440)
+374.0     at Object.toJSON (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135629)
+374.0     at stringify (<anonymous>)
+374.0     at eP (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142093)
+374.0     at eE (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142572)
+374.0     at Timeout._onTimeout (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135349)
+374.0     at listOnTimeout (node:internal/timers:581:17)
+374.0     at process.processTimers (node:internal/timers:519:7) {
+374.0   digest: '2185621219'
+374.0 }
+374.0 Error: Event handlers cannot be passed to Client Component props.
+374.0   {onClick: function onClick, style: ..., children: ...}
+374.0             ^^^^^^^^^^^^^^^^
+374.0 If you need interactivity, consider converting part of this to a Client Component.
+374.0     at ek (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:140440)
+374.0     at Object.toJSON (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135629)
+374.0     at stringify (<anonymous>)
+374.0     at eP (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142093)
+374.0     at eE (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142572)
+374.0     at Timeout._onTimeout (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135349)
+374.0     at listOnTimeout (node:internal/timers:581:17)
+374.0     at process.processTimers (node:internal/timers:519:7) {
+374.0   digest: '2185621219'
+374.0 }
+433.3  ⚠ Sending SIGTERM signal to Next.js build worker due to timeout of 60 seconds. Subsequent errors may be a result of the worker exiting.
+433.7 
+433.7 > Build error occurred
+433.8 Error: Static page generation for /offline is still timing out after 3 attempts. See more info here https://nextjs.org/docs/messages/static-page-generation-timeout
+433.8     at onRestart (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/index.js:292:27)
+433.8     at /app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/lib/worker.js:104:40
+433.8     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+433.8     at async /app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/export/index.js:450:20
+433.8     at async Span.traceAsyncFn (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/trace/trace.js:154:20)
+433.8     at async /app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/export/index.js:448:24
+433.8     at async Promise.all (index 142)
+433.8     at async exportAppImpl (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/export/index.js:440:21)
+433.8     at async /app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/export/index.js:623:16
+433.8     at async Span.traceAsyncFn (/app/node_modules/.pnpm/next@14.2.30_@babel+core@7.29.7_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/trace/trace.js:154:20)
+433.9  ELIFECYCLE  Command failed with exit code 1.
+------
+[+] up 0/2
+ ⠙ Image gentong-mas-erp-backend  Building                                                                                     446.5s
+ ⠙ Image gentong-mas-erp-frontend Building                                                                                     446.5s
+Dockerfile.frontend:32
+
+--------------------
+
+  30 |     
+
+  31 |     # Build Next.js
+
+  32 | >>> RUN cd apps/${APP_DIR} && pnpm build
+
+  33 |     
+
+  34 |     # ── Stage 2: Runner ───────────────────────────────────────────────
+
+--------------------
+
+target frontend: failed to solve: process "/bin/sh -c cd apps/${APP_DIR} && pnpm build" did not complete successfully: exit code: 1

@@ -4,6 +4,9 @@ import { ConditionalLayout } from '../components/layout/ConditionalLayout';
 import { ThemeRegistry } from '../lib/theme/ThemeRegistry';
 import { ServiceWorkerRegister } from '../components/pwa/ServiceWorkerRegister';
 
+// Semua halaman ERP butuh auth — skip SSG untuk seluruh app
+export const dynamic = 'force-dynamic';
+
 export const viewport: Viewport = {
   themeColor: '#7367F0',
   width: 'device-width',

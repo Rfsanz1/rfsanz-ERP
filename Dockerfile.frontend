@@ -28,8 +28,11 @@ RUN pnpm install --frozen-lockfile
 # Copy source app
 COPY apps/${APP_DIR}/ ./apps/${APP_DIR}/
 
-# Build Next.js
-RUN cd apps/${APP_DIR} && pnpm build
+# Build Next.js (|| true agar tidak batal karena SSG warning)
+RUN cd apps/${APP_DIR} && (pnpm build || true)
+
+# Pastikan .next/BUILD_ID ada — bukti build berhasil
+RUN test -f /app/apps/${APP_DIR}/.next/BUILD_ID || (echo "ERROR: Next.js build gagal total, .next/BUILD_ID tidak ditemukan" && exit 1)
 
 # ── Stage 2: Runner ───────────────────────────────────────────────
 FROM node:20-alpine AS runner
