@@ -3,27 +3,38 @@ import { useEffect, useState } from 'react';
 import AppShell from '../../../components/layout/AppShell';
 import { INVENTORY_CONFIG, INVENTORY_NAV } from '../../../lib/nav-configs';
 import { api } from '../../../lib/api';
-import { Package, Search, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Package, Search, Plus, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 const fmt = (v: number | string) =>
   Number(v).toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
-const PER_PAGE = 50;
+const PAGE_SIZES = [15, 25, 50, 100];
+
+function getPageNumbers(current: number, last: number): (number | '...')[] {
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
+  const pages: (number | '...')[] = [1];
+  if (current > 3) pages.push('...');
+  for (let i = Math.max(2, current - 1); i <= Math.min(last - 1, current + 1); i++) pages.push(i);
+  if (current < last - 2) pages.push('...');
+  pages.push(last);
+  return pages;
+}
 
 export default function InventoryProductsPage() {
-  const [data, setData]       = useState<any[]>([]);
-  const [total, setTotal]     = useState(0);
+  const [data, setData]         = useState<any[]>([]);
+  const [total, setTotal]       = useState(0);
   const [lastPage, setLastPage] = useState(1);
-  const [search, setSearch]   = useState('');
-  const [loading, setLoading] = useState(true);
-  const [page, setPage]       = useState(1);
+  const [search, setSearch]     = useState('');
+  const [loading, setLoading]   = useState(true);
+  const [page, setPage]         = useState(1);
+  const [perPage, setPerPage]   = useState(25);
 
-  const load = async (p = 1, q = '') => {
+  const load = async (p = 1, q = '', pp = perPage) => {
     setLoading(true);
     try {
       const r = await api.get('/kledo/products', {
-        params: { page: p, per_page: PER_PAGE, ...(q ? { name: q } : {}) },
+        params: { page: p, per_page: pp, ...(q ? { name: q } : {}) },
       });
       const kd = r.data?.data ?? r.data;
       setData(Array.isArray(kd?.data) ? kd.data : []);
@@ -36,19 +47,32 @@ export default function InventoryProductsPage() {
     }
   };
 
-  useEffect(() => { load(1, ''); }, []);
+  useEffect(() => { load(1, '', perPage); }, []);
 
-  // debounce search
   useEffect(() => {
-    const t = setTimeout(() => { setPage(1); load(1, search); }, 400);
+    const t = setTimeout(() => { setPage(1); load(1, search, perPage); }, 400);
     return () => clearTimeout(t);
   }, [search]);
 
-  const goPage = (p: number) => { setPage(p); load(p, search); };
+  const goPage = (p: number) => { setPage(p); load(p, search, perPage); };
+
+  const handlePerPage = (pp: number) => {
+    setPerPage(pp);
+    setPage(1);
+    load(1, search, pp);
+  };
+
+  const pageNums = getPageNumbers(page, lastPage);
 
   const thStyle: React.CSSProperties = {
     padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700,
     color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', whiteSpace: 'nowrap',
+  };
+
+  const btnBase: React.CSSProperties = {
+    minWidth: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)',
+    fontSize: 13, cursor: 'pointer', padding: '0 8px', transition: 'all .12s',
   };
 
   return (
@@ -66,10 +90,8 @@ export default function InventoryProductsPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => load(page, search)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer' }}
-            >
+            <button onClick={() => load(page, search, perPage)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer' }}>
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             </button>
             <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -85,8 +107,9 @@ export default function InventoryProductsPage() {
             { label: 'Kategori',     href: '/inventory/products/categories', active: false },
           ].map(tab => (
             <Link key={tab.href} href={tab.href}
-              style={{ padding: '6px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, textDecoration: 'none', background: tab.active ? 'var(--surface)' : 'transparent', color: tab.active ? 'var(--text-primary)' : 'var(--text-muted)', boxShadow: tab.active ? 'var(--shadow-xs)' : 'none' }}
-            >{tab.label}</Link>
+              style={{ padding: '6px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, textDecoration: 'none', background: tab.active ? 'var(--surface)' : 'transparent', color: tab.active ? 'var(--text-primary)' : 'var(--text-muted)', boxShadow: tab.active ? 'var(--shadow-xs)' : 'none' }}>
+              {tab.label}
+            </Link>
           ))}
         </div>
 
@@ -97,16 +120,15 @@ export default function InventoryProductsPage() {
           <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', maxWidth: 340, flex: 1 }}>
               <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
+              <input value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Cari nama produk / kode…"
-                style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 10, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
-              />
+                style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 10, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
             </div>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              {total > 0 ? `${total.toLocaleString('id-ID')} produk` : ''}
-            </span>
+            {total > 0 && (
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                Total {total.toLocaleString('id-ID')} data
+              </span>
+            )}
           </div>
 
           {/* Table */}
@@ -121,7 +143,7 @@ export default function InventoryProductsPage() {
               </thead>
               <tbody>
                 {loading ? (
-                  Array.from({ length: 10 }).map((_, i) => (
+                  Array.from({ length: perPage > 25 ? 10 : perPage }).map((_, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
                       {Array.from({ length: 6 }).map((_, j) => (
                         <td key={j} style={{ padding: '13px 16px' }}>
@@ -141,12 +163,11 @@ export default function InventoryProductsPage() {
                     </td>
                   </tr>
                 ) : data.map((p: any, i: number) => {
-                  const stok   = Number(p.qty ?? 0);
-                  const habis  = stok === 0;
+                  const stok    = Number(p.qty ?? 0);
+                  const habis   = stok === 0;
                   const menipis = stok > 0 && stok < 10;
                   const satuan  = p.unit?.name ?? '–';
-                  // Ringkas daftar gudang jadi satu baris
-                  const gudangList: string = (p.warehouse_qty ?? [])
+                  const gudangList = (p.warehouse_qty ?? [])
                     .filter((w: any) => w.qty > 0)
                     .map((w: any) => `${w.name} (${w.qty})`)
                     .join(', ') || '–';
@@ -155,13 +176,11 @@ export default function InventoryProductsPage() {
                     <tr key={p.id ?? i}
                       style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s', cursor: 'pointer' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'var(--brand-hover)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}
-                    >
-                      {/* Nama & kode */}
-                      <td style={{ padding: '12px 16px' }}>
+                      onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}>
+                      <td style={{ padding: '11px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(99,102,241,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Package size={14} style={{ color: '#6366F1' }} />
+                          <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(99,102,241,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Package size={13} style={{ color: '#6366F1' }} />
                           </div>
                           <div>
                             <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</p>
@@ -169,37 +188,19 @@ export default function InventoryProductsPage() {
                           </div>
                         </div>
                       </td>
-
-                      {/* Harga beli */}
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-                        {fmt(p.base_price ?? 0)}
-                      </td>
-
-                      {/* Harga jual */}
-                      <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {fmt(p.price ?? 0)}
-                      </td>
-
-                      {/* Stok */}
-                      <td style={{ padding: '12px 16px' }}>
+                      <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>{fmt(p.base_price ?? 0)}</td>
+                      <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{fmt(p.price ?? 0)}</td>
+                      <td style={{ padding: '11px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           {menipis && !habis && <AlertTriangle size={12} style={{ color: '#F59E0B' }} />}
                           <span style={{ fontSize: 13, fontWeight: 700, color: habis ? '#EF4444' : menipis ? '#F59E0B' : 'var(--text-primary)' }}>
                             {stok.toLocaleString('id-ID')}
                           </span>
-                          {habis && (
-                            <span style={{ fontSize: 10, fontWeight: 600, color: '#EF4444', background: 'rgba(239,68,68,.1)', padding: '1px 6px', borderRadius: 10 }}>Habis</span>
-                          )}
+                          {habis && <span style={{ fontSize: 10, fontWeight: 600, color: '#EF4444', background: 'rgba(239,68,68,.1)', padding: '1px 6px', borderRadius: 10 }}>Habis</span>}
                         </div>
                       </td>
-
-                      {/* Satuan */}
-                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-muted)' }}>
-                        {satuan}
-                      </td>
-
-                      {/* Gudang */}
-                      <td style={{ padding: '12px 16px', fontSize: 11, color: 'var(--text-muted)', maxWidth: 200 }}>
+                      <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)' }}>{satuan}</td>
+                      <td style={{ padding: '11px 16px', fontSize: 11, color: 'var(--text-muted)', maxWidth: 180 }}>
                         <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {gudangList}
                         </span>
@@ -211,23 +212,59 @@ export default function InventoryProductsPage() {
             </table>
           </div>
 
-          {/* Pagination */}
-          <div style={{ padding: '10px 20px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {data.length} dari {total.toLocaleString('id-ID')} produk — hal {page} / {lastPage}
+          {/* Pagination footer */}
+          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+
+            {/* Kiri: total info */}
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              Total {total.toLocaleString('id-ID')} data
             </span>
+
+            {/* Tengah: nomor halaman */}
             {lastPage > 1 && (
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                {/* Prev */}
                 <button disabled={page <= 1 || loading} onClick={() => goPage(page - 1)}
-                  style={{ padding: '4px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', fontSize: 12, cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.45 : 1 }}>
-                  ‹ Sebelumnya
+                  style={{ ...btnBase, color: page <= 1 ? 'var(--text-muted)' : 'var(--text-primary)', opacity: page <= 1 ? 0.4 : 1 }}>
+                  <ChevronLeft size={14} />
                 </button>
+
+                {/* Nomor halaman */}
+                {pageNums.map((n, idx) =>
+                  n === '...' ? (
+                    <span key={`dots-${idx}`} style={{ width: 32, textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>…</span>
+                  ) : (
+                    <button key={n} onClick={() => goPage(n as number)}
+                      style={{
+                        ...btnBase,
+                        background: page === n ? '#6366F1' : 'var(--surface)',
+                        color:      page === n ? '#fff'     : 'var(--text-primary)',
+                        border:     page === n ? 'none'     : '1px solid var(--border)',
+                        fontWeight: page === n ? 700 : 400,
+                      }}>
+                      {n}
+                    </button>
+                  )
+                )}
+
+                {/* Next */}
                 <button disabled={page >= lastPage || loading} onClick={() => goPage(page + 1)}
-                  style={{ padding: '4px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', fontSize: 12, cursor: page >= lastPage ? 'not-allowed' : 'pointer', opacity: page >= lastPage ? 0.45 : 1 }}>
-                  Berikutnya ›
+                  style={{ ...btnBase, color: page >= lastPage ? 'var(--text-muted)' : 'var(--text-primary)', opacity: page >= lastPage ? 0.4 : 1 }}>
+                  <ChevronRight size={14} />
                 </button>
               </div>
             )}
+
+            {/* Kanan: per-page selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <select value={perPage} onChange={e => handlePerPage(Number(e.target.value))}
+                style={{ padding: '5px 28px 5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 13, cursor: 'pointer', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', outline: 'none' }}>
+                {PAGE_SIZES.map(s => (
+                  <option key={s} value={s}>{s} / halaman</option>
+                ))}
+              </select>
+            </div>
+
           </div>
         </div>
       </div>
