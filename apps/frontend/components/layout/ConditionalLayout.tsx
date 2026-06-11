@@ -6,7 +6,7 @@ import { useAuthStore } from '../../lib/store/useAuthStore';
 import { registerAutoLogin } from '../../lib/api';
 import { MaterioLayout } from './MaterioLayout';
 
-const STANDALONE_PREFIXES = ['/gudang', '/driver'];
+const STANDALONE_PREFIXES = ['/gudang', '/driver', '/docs'];
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname    = usePathname();
@@ -36,6 +36,12 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
     init();
   }, []);
 
+  const isStandalone = STANDALONE_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + '/'),
+  );
+
+  if (isStandalone) return <>{children}</>;
+
   if (!ready) {
     return (
       <div style={{
@@ -52,10 +58,5 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const isStandalone = STANDALONE_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + '/'),
-  );
-
-  if (isStandalone) return <>{children}</>;
   return <MaterioLayout>{children}</MaterioLayout>;
 }
