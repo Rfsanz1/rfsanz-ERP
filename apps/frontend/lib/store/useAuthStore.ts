@@ -3,14 +3,8 @@
 import { create } from 'zustand';
 import { api, setAuthToken } from '../api';
 
-const DEMO_TOKEN = 'demo_token_gentong_mas';
-const DEMO_USER = {
-  id: 'demo',
-  email: 'admin@example.com',
-  name: 'Admin Demo',
-  roles: ['Administrator'],
-  permissions: [],
-};
+const AUTO_EMAIL    = 'admin@example.com';
+const AUTO_PASSWORD = 'admin123';
 
 interface AuthUser {
   id: string;
@@ -28,8 +22,8 @@ interface AuthState {
   loading: boolean;
   isDemo: boolean;
   rehydrate: () => void;
+  autoLogin: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
-  loginDemo: () => void;
   logout: () => void;
   loadProfile: () => Promise<void>;
 }
@@ -54,7 +48,7 @@ function clearAuthCookies() {
   clearCookie('erp_roles');
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   refreshToken: null,
   user: null,
@@ -64,35 +58,39 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   rehydrate: () => {
     if (typeof window === 'undefined') return;
-    const storedToken = window.localStorage.getItem('erp_token');
+    const storedToken        = window.localStorage.getItem('erp_token');
     const storedRefreshToken = window.localStorage.getItem('erp_refresh_token');
-    const storedDemo = window.localStorage.getItem('erp_demo') === '1';
 
     if (storedToken) {
       setAuthToken(storedToken);
-      const roles = storedDemo ? DEMO_USER.roles : [];
-      setAuthCookies(storedToken, roles);
-    } else {
-      clearAuthCookies();
+      setAuthCookies(storedToken, []);
     }
 
     set({
-      token: storedToken,
+      token:        storedToken,
       refreshToken: storedRefreshToken,
-      user: storedDemo ? DEMO_USER : null,
-      isDemo: storedDemo,
+      user:         null,
+      isDemo:       false,
     });
   },
 
-  loginDemo: () => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('erp_token', DEMO_TOKEN);
-      window.localStorage.setItem('erp_demo', '1');
-      window.localStorage.removeItem('erp_refresh_token');
+  autoLogin: async () => {
+    const { token } = get();
+    if (token) return;
+    set({ loading: true });
+    try {
+      const res = await api.post('/auth/login', { email: AUTO_EMAIL, password: AUTO_PASSWORD });
+      const { accessToken, refreshToken, user } = res.data;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('erp_token', accessToken);
+        window.localStorage.setItem('erp_refresh_token', refreshToken ?? '');
+      }
+      setAuthToken(accessToken);
+      setAuthCookies(accessToken, user?.roles ?? []);
+      set({ token: accessToken, refreshToken: refreshToken ?? null, user, loading: false, isDemo: false });
+    } catch {
+      set({ loading: false });
     }
-    setAuthToken(DEMO_TOKEN);
-    setAuthCookies(DEMO_TOKEN, DEMO_USER.roles);
-    set({ token: DEMO_TOKEN, user: DEMO_USER, isDemo: true, error: null });
   },
 
   login: async (email: string, password: string) => {
@@ -100,22 +98,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const response = await api.post('/auth/login', { email, password });
       const { accessToken, refreshToken, user } = response.data;
-
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('erp_token', accessToken);
-        window.localStorage.setItem('erp_refresh_token', refreshToken);
-        window.localStorage.removeItem('erp_demo');
+        window.localStorage.setItem('erp_refresh_token', refreshToken ?? '');
       }
       setAuthToken(accessToken);
       setAuthCookies(accessToken, user?.roles ?? []);
       set({ token: accessToken, refreshToken, user, loading: false, isDemo: false });
       return true;
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ??
-        (err?.response?.status === 503
-          ? 'Server backend tidak aktif. Coba Demo Mode untuk melihat tampilan dashboard.'
-          : 'Login gagal. Periksa email dan password.');
+      const msg = err?.response?.data?.message ?? 'Login gagal.';
       set({ error: msg, loading: false });
       return false;
     }
@@ -125,7 +117,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem('erp_token');
       window.localStorage.removeItem('erp_refresh_token');
-      window.localStorage.removeItem('erp_demo');
     }
     setAuthToken(null);
     clearAuthCookies();
@@ -133,27 +124,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   loadProfile: async () => {
-    const isDemo = typeof window !== 'undefined' && window.localStorage.getItem('erp_demo') === '1';
-    if (isDemo) {
-      set({ user: DEMO_USER, isDemo: true });
-      return;
-    }
-    const currentToken = typeof window !== 'undefined' ? window.localStorage.getItem('erp_token') : null;
+    const currentToken = typeof window !== 'undefined'
+      ? window.localStorage.getItem('erp_token')
+      : null;
     if (!currentToken) return;
     try {
       const response = await api.get('/auth/me');
-      const userData = response.data;
-      set({ user: userData });
-      setAuthCookies(currentToken, userData?.roles ?? []);
+      set({ user: response.data });
+      setAuthCookies(currentToken, response.data?.roles ?? []);
     } catch (err: any) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
-        if (typeof window !== 'undefined') {
-          window.localStorage.removeItem('erp_token');
-          window.localStorage.removeItem('erp_refresh_token');
-        }
-        setAuthToken(null);
-        clearAuthCookies();
-        set({ token: null, refreshToken: null, user: null });
+        await get().autoLogin();
       }
     }
   },

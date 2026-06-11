@@ -1,19 +1,13 @@
 'use client';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import AppShell from '../../components/layout/AppShell';
 import { SETTINGS_CONFIG, SETTINGS_NAV } from '../../lib/nav-configs';
 import { RolePermissionPanel } from '../../components/access/RolePermissionPanel';
 
 export default function AccessPage() {
-  const { token, loadProfile } = useAuthStore();
-  const router = useRouter();
-  useEffect(() => {
-    if (!token) { router.push('/dashboard'); return; }
-    void loadProfile();
-  }, [token]);
-  if (!token) return null;
+  const { loadProfile } = useAuthStore();
+  useEffect(() => { void loadProfile(); }, []);
 
   return (
     <AppShell {...SETTINGS_CONFIG} navItems={SETTINGS_NAV} activeHref="/access">
