@@ -89,7 +89,6 @@ export default function SettingsPage() {
   const [msgType, setMsgType]   = useState<'success' | 'error'>('success');
   const [tab, setTab]           = useState('company');
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);

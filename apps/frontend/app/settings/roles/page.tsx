@@ -40,7 +40,6 @@ export default function RolesPage() {
   const [form, setForm] = useState({ name: '', desc: '' });
   const [msg, setMsg] = useState('');
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const selectRole = (role: typeof roles[0]) => {

@@ -17,7 +17,6 @@ export default function NeracaPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const fetchData = async () => {
     setLoading(true);

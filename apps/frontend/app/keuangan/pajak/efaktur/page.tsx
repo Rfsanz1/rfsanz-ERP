@@ -28,7 +28,6 @@ export default function EFakturPage() {
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const fetchList = async () => {
     setLoading(true);

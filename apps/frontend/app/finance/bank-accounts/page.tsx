@@ -22,7 +22,6 @@ export default function BankAccountsPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading]           = useState(true);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);

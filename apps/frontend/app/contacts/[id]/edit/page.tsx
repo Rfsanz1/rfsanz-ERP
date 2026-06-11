@@ -14,7 +14,6 @@ export default function EditContactPage() {
   const [contact, setContact] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   useEffect(() => {
     if (!token || !id) return;

@@ -46,7 +46,6 @@ export default function ContactDetailPage() {
   const [loading, setLoading]   = useState(true);
   const [tab, setTab]           = useState<Tab>('info');
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   useEffect(() => {
     if (!token || !id) return;
     api.get(`/contacts/${id}`)

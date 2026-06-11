@@ -31,7 +31,6 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
 export default function FleetRemindersPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const enriched = REMINDERS.map(r => {

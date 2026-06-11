@@ -40,7 +40,6 @@ export default function SalesReturnsPage() {
   const [msg, setMsg]           = useState('');
   const [msgErr, setMsgErr]     = useState(false);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);

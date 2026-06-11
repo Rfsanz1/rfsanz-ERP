@@ -55,7 +55,6 @@ export default function InvoicesPage() {
     } catch {} finally { setLoading(false); }
   };
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   useEffect(() => { if (token) load(); }, [search, page, status, token]);
   if (!token) return null;
 

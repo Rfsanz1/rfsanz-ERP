@@ -89,7 +89,6 @@ function OrgNode({ node, depth = 0 }: { node: any; depth?: number }) {
 export default function OrganizationPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const DEPT_SUMMARY = [

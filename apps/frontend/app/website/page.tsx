@@ -67,7 +67,6 @@ const LIVE_CHATS = [
 export default function WebsiteDashboard() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   return (

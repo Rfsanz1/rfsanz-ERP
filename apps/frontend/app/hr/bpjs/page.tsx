@@ -54,7 +54,6 @@ export default function BPJSPage() {
   const [calcSalary, setCalcSalary] = useState('');
   const [calcResult, setCalcResult] = useState<any>(null);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const filtered = SAMPLE_EMPLOYEES.filter(e => e.name.toLowerCase().includes(search.toLowerCase()));

@@ -50,7 +50,6 @@ export default function FixedAssetsPage() {
     finally { setLoading(false); }
   }, [search, category]);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   useEffect(() => { if (token) load(); }, [load, token]);
   if (!token) return null;
 

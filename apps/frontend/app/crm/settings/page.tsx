@@ -21,7 +21,6 @@ const inputStyle: React.CSSProperties = {
 export default function CrmSettingsPage() {
   const { token } = useAuthStore();
   const router    = useRouter();
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   return (

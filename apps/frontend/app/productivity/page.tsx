@@ -57,7 +57,6 @@ export default function ProductivityDashboard() {
   const { token } = useAuthStore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'approval' | 'docs' | 'activity'>('approval');
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });

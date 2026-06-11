@@ -24,7 +24,6 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
 export default function InvoiceListPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   return (

@@ -27,7 +27,6 @@ export default function BankExportPage() {
   const [selectedBank, setSelectedBank] = useState('Semua Bank');
   const [exported, setExported] = useState(false);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const toggleSelect = (id: number) => setEmployees(es => es.map(e => e.id === id ? { ...e, selected: !e.selected } : e));

@@ -24,7 +24,6 @@ export default function BukuBesarPage() {
   const [page, setPage] = useState(1);
   const PER_PAGE = 25;
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   useEffect(() => {
     if (!token) return;

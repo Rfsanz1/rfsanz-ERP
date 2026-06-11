@@ -23,7 +23,6 @@ const METHOD_STYLE: Record<string, { color: string; bg: string }> = {
 export default function PosOrdersPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
   return (
     <AppShell {...POS_CONFIG} navItems={POS_NAV} activeHref="/pos/orders">

@@ -38,7 +38,6 @@ export default function ActivityLogPage() {
   const [actionFilter, setActionFilter] = useState('');
   const [moduleFilter, setModuleFilter] = useState('');
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const modules = [...new Set(SAMPLE_LOGS.map(l => l.module))];

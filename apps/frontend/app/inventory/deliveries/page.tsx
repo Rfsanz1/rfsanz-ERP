@@ -21,7 +21,6 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
 export default function InventoryDeliveriesPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
   return (
     <AppShell {...INVENTORY_CONFIG} navItems={INVENTORY_NAV} activeHref="/inventory/deliveries">

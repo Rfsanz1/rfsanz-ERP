@@ -24,7 +24,6 @@ export default function CrmActivitiesPage() {
   const router    = useRouter();
   const [items, setItems] = useState(ACTIVITIES);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const toggle = (i: number) => setItems(a => a.map((x, j) => j === i ? { ...x, done: !x.done } : x));

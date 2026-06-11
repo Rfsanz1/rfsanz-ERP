@@ -29,7 +29,6 @@ export default function ServiceEstimatesPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ customer: '', device: '', wo: '', diagnosis: '', parts: [{ name: '', qty: 1, price: 0 }], labor_cost: '' });
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const partsCost = form.parts.reduce((s, p) => s + p.qty * p.price, 0);

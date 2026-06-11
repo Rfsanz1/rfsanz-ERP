@@ -34,7 +34,6 @@ export default function WorkOrdersPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ customer: '', device: '', problem: '', technician: '', est_done: '', est_cost: '', notes: '' });
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const filtered = items.filter(i =>

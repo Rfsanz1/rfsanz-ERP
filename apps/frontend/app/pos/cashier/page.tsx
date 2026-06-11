@@ -22,7 +22,6 @@ export default function PosCashierPage() {
   const router = useRouter();
   const [cart, setCart] = useState<{ id: number; name: string; price: number; qty: number }[]>([]);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const addToCart = (p: typeof PRODUCTS[0]) => {
     setCart(prev => {

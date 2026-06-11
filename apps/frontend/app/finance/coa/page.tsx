@@ -27,7 +27,6 @@ export default function COAPage() {
   const [search, setSearch]   = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);

@@ -34,7 +34,6 @@ export default function NewInvoicePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   useEffect(() => {
     if (!token) return;
     api.get('/customers', { params: { limit: 200 } }).then(r => setCustomers(r.data.data ?? [])).catch(() => {});

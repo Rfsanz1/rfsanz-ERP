@@ -33,7 +33,6 @@ export default function LotsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ product: '', type: 'lot', number: '', qty: '', uom: '', expiry: '', location: '' });
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const filtered = items.filter(i =>

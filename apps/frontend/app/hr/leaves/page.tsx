@@ -40,7 +40,6 @@ export default function LeavesPage() {
   const [form, setForm]               = useState({ employeeId: '', leaveTypeId: '', dateFrom: '', dateTo: '', numberOfDays: '', reason: '' });
   const [typeForm, setTypeForm]       = useState({ name: '', requiresApproval: true, maxDays: '' });
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   async function fetchAll() {
     setLoading(true);

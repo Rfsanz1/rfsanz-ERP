@@ -13,10 +13,6 @@ export default function GudangSectionPage() {
   const rawSection = Array.isArray(params?.section) ? params.section[0] : params?.section;
   const section = rawSection ?? 'dashboard';
 
-  useEffect(() => {
-    if (!token) router.push('/dashboard');
-  }, [token, router]);
-
   if (!token) return null;
 
   return (

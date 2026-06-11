@@ -47,7 +47,6 @@ export default function RFQPage() {
     lines: [{ product: '', qty: 1, uom: 'pcs', description: '' }],
   });
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const filtered = items.filter(i =>

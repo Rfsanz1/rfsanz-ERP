@@ -11,7 +11,6 @@ export default function DriverProfilePage() {
   const { token, user, logout } = useAuthStore();
   const router = useRouter();
 
-  useEffect(() => { if (!token) router.replace('/dashboard'); }, [token]);
   const handleLogout = () => { logout(); router.replace('/dashboard'); };
   if (!token || !user) return null;
 

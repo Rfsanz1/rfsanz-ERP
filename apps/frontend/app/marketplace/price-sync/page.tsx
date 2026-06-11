@@ -36,7 +36,6 @@ export default function PriceSyncPage() {
   const [lastSync, setLastSync] = useState('2025-06-25 10:30');
   const [search, setSearch] = useState('');
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const runSync = () => {

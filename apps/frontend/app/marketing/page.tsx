@@ -71,7 +71,6 @@ export default function MarketingDashboard() {
   const { token } = useAuthStore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'campaigns' | 'whatsapp' | 'vouchers'>('campaigns');
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   return (

@@ -22,7 +22,6 @@ export default function ScrapPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ date: '', product: '', lot: '', qty: '', uom: '', reason: '', mo: '', location: '', operator: '' });
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const totalCost = items.reduce((s, i) => s + i.cost, 0);

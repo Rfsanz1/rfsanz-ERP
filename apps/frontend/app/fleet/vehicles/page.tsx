@@ -45,7 +45,6 @@ export default function FleetVehiclesPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ plate: '', brand: '', model: '', year: '', type: '', driver: '', stnk_expire: '', kir_expire: '' });
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const filtered = items.filter(i =>

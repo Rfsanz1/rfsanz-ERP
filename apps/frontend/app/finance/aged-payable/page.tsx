@@ -26,7 +26,6 @@ export default function AgedPayablePage() {
   const [search, setSearch] = useState('');
   const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = useCallback(async () => {
     setLoading(true);

@@ -24,7 +24,6 @@ export default function ReorderRulesPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ product: '', location: '', min_qty: '', max_qty: '', order_qty: '', route: 'Purchase', supplier: '' });
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
   if (!token) return null;
 
   const triggered = items.filter(i => i.triggered && i.active);

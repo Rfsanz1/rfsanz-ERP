@@ -21,7 +21,6 @@ export default function AttendancesPage() {
   const [page, setPage]       = useState(1);
   const [total, setTotal]     = useState(0);
 
-  useEffect(() => { if (!token) router.push('/dashboard'); }, [token]);
 
   const load = async () => {
     setLoading(true);
