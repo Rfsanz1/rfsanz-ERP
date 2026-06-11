@@ -31,16 +31,16 @@ services:
       dockerfile: apps/backend/Dockerfile
     restart: unless-stopped
     ports:
-      - '6000:6000'
+      - '8000:8000'
     environment:
       NODE_ENV: production
-      PORT: 6000
+      PORT: 8000
       DATABASE_URL: postgresql://${POSTGRES_USER:-erp}:${POSTGRES_PASSWORD:-erp_password}@postgres:5432/${POSTGRES_DB:-gentong_mas_erp}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-use-openssl-rand}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-use-openssl-rand}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
-      APP_URL: http://${SERVER_IP:-localhost}:6000
+      APP_URL: http://${SERVER_IP:-localhost}:8000
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       FONNTE_TOKEN: ${FONNTE_TOKEN:-}
       FONNTE_GROUP_INVOICE: ${FONNTE_GROUP_INVOICE:-}
@@ -53,7 +53,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:6000/api/health || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8000/api/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -74,8 +74,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      BACKEND_URL: http://backend:6000
-      NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:6000
+      BACKEND_URL: http://backend:8000
+      NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:8000
       NEXT_PUBLIC_APP_NAME: "Gentong Mas ERP"
     depends_on:
       backend:

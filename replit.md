@@ -6,7 +6,7 @@ Sistem ERP terpadu — NestJS backend, PostgreSQL database, dan Next.js frontend
 
 ```
 apps/
-├── backend/   → NestJS + Prisma + PostgreSQL (port 6000)
+├── backend/   → NestJS + Prisma + PostgreSQL (port 8000)
 ├── frontend/  → Next.js 14.2.30 + Tailwind + MUI (port 5000)
 │   ├── /           → Launcher (auto-redirect by role)
 │   ├── /dashboard  → Owner & Admin
