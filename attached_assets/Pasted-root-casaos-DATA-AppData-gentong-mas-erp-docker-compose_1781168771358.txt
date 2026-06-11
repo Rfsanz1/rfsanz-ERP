@@ -1,0 +1,75 @@
+root@casaos:/DATA/AppData/gentong-mas-erp# docker compose logs backend --tail=100
+backend-1  | ==> Menjalankan prisma db push...
+backend-1  | Prisma schema loaded from prisma/schema.prisma
+backend-1  | Datasource "db": PostgreSQL database "gentong_mas_erp", schema "public" at "postgres:5432"
+backend-1  | 
+backend-1  | The database is already in sync with the Prisma schema.
+backend-1  | 
+✔ Generated Prisma Client (v5.22.0) to ./node_modules/.pnpm/@prisma+client@5.22.
+backend-1  | 0_prisma@5.22.0/node_modules/@prisma/client in 7.42s
+backend-1  | 
+backend-1  | ==> Memulai backend server...
+backend-1  | [Nest] 1  - 06/11/2026, 9:05:44 AM     LOG [NestFactory] Starting Nest application...
+backend-1  | [Nest] 1  - 06/11/2026, 9:05:44 AM     LOG [InstanceLoader] PassportModule dependencies initialized +81ms
+backend-1  | [Nest] 1  - 06/11/2026, 9:05:44 AM   ERROR [ExceptionHandler] UnknownDependenciesException [Error]: Nest can't resolve dependencies of the NotificationGateway (?). Please make sure that the argument JwtService at index [0] is available in the InvoiceModule module.
+backend-1  | 
+backend-1  | Potential solutions:
+backend-1  | - Is InvoiceModule a valid NestJS module?
+backend-1  | - If JwtService is a provider, is it part of the current InvoiceModule?
+backend-1  | - If JwtService is exported from a separate @Module, is that module imported within InvoiceModule?
+backend-1  |   @Module({
+backend-1  |     imports: [ /* the Module containing JwtService */ ]
+backend-1  |   })
+backend-1  | 
+backend-1  | For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+backend-1  |     at Injector.lookupComponentInParentModules (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/injector.js:290:19)
+backend-1  |     at async resolveParam (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/injector.js:140:38)
+backend-1  |     at async Promise.all (index 0)
+backend-1  |     at async Injector.resolveConstructorParams (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/injector.js:169:27)
+backend-1  |     at async Injector.loadInstance (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/injector.js:75:13)
+backend-1  |     at async Injector.loadProvider (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/injector.js:103:9)
+backend-1  |     at async /app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+backend-1  |     at async Promise.all (index 6)
+backend-1  |     at async InstanceLoader.createInstancesOfProviders (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+backend-1  |     at async /app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+backend-1  |     at async Promise.all (index 43)
+backend-1  |     at async InstanceLoader.createInstances (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+backend-1  |     at async InstanceLoader.createInstancesOfDependencies (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+backend-1  |     at async /app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/nest-factory.js:112:17
+backend-1  |     at async ExceptionsZone.asyncRun (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/errors/exceptions-zone.js:22:13)
+backend-1  |     at async NestFactoryStatic.initialize (/app/apps/backend/node_modules/.pnpm/@nestjs+core@11.1.19_@nestjs+common@11.1.19_class-transformer@0.5.1_class-validator@0.15.1_re_a2hul4psm7p3vqeraojxgdaaqq/node_modules/@nestjs/core/nest-factory.js:110:13) {
+backend-1  |   type: 'NotificationGateway',
+backend-1  |   context: {
+backend-1  |     index: 0,
+backend-1  |     dependencies: [
+backend-1  |       [class JwtService]
+backend-1  |     ],
+backend-1  |     name: [class JwtService]
+backend-1  |   },
+backend-1  |   metadata: {
+backend-1  |     id: '6ed7f7564de40804fee00'
+backend-1  |   },
+backend-1  |   moduleRef: {
+backend-1  |     id: '5cfbdc505b719bd8102b8'
+backend-1  |   }
+backend-1  | }
+backend-1  | ==> Menjalankan prisma db push...
+backend-1  | Prisma schema loaded from prisma/schema.prisma
+backend-1  | Datasource "db": PostgreSQL database "gentong_mas_erp", schema "public" at "postgres:5432"
+backend-1  | 
+backend-1  | The database is already in sync with the Prisma schema.
+backend-1  | 
+✔ Generated Prisma Client (v5.22.0) to ./node_modules/.pnpm/@prisma+client@5.22.
+backend-1  | 0_prisma@5.22.0/node_modules/@prisma/client in 5.99s
+backend-1  | 
+backend-1  | ┌─────────────────────────────────────────────────────────┐
+backend-1  | │  Update available 5.22.0 -> 7.8.0                       │
+backend-1  | │                                                         │
+backend-1  | │  This is a major update - please follow the guide at    │
+backend-1  | │  https://pris.ly/d/major-version-upgrade                │
+backend-1  | │                                                         │
+backend-1  | │  Run the following to update                            │
+backend-1  | │    npm i --save-dev prisma@latest                       │
+backend-1  | │    npm i @prisma/client@latest                          │
+backend-1  | └─────────────────────────────────────────────────────────┘
+backend-1  | ==> Memulai backend server...

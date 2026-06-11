@@ -4,13 +4,12 @@ import { OrdersPublicController } from './orders-public.controller.js';
 import { SalesService } from './sales.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { KledoModule } from '../kledo/kledo.module.js';
-import { NotificationService } from '../notification/notification.service.js';
-import { NotificationGateway } from '../notification/notification.gateway.js';
+import { NotificationModule } from '../notification/notification.module.js';
 
 @Module({
-  imports: [KledoModule],
+  imports: [KledoModule, NotificationModule],
   controllers: [SalesController, OrdersPublicController],
-  providers: [SalesService, PrismaService, NotificationService, NotificationGateway],
+  providers: [SalesService, PrismaService],
   exports: [SalesService],
 })
 export class SalesModule {}
