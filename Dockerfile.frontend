@@ -3,7 +3,7 @@
 # Contoh: docker build --build-arg APP_DIR=frontend --build-arg PORT=5000 -f Dockerfile.frontend .
 
 ARG APP_DIR=frontend
-ARG PORT=5000
+ARG PORT=3000
 
 # ── Stage 1: Builder ──────────────────────────────────────────────
 FROM node:20-alpine AS builder
