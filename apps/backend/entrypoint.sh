@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-PRISMA_BIN="/app/node_modules/.bin/prisma"
+PRISMA_BIN="/app/apps/backend/node_modules/.bin/prisma"
 SCHEMA="/app/apps/backend/prisma/schema.prisma"
 
 echo "==> Menjalankan prisma db push..."
