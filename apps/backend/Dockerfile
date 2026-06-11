@@ -37,4 +37,4 @@ WORKDIR /app/apps/backend
 
 EXPOSE 6000
 
-CMD ["sh", "-c", "node /app/apps/backend/dist/main.js"]
+CMD ["sh", "-c", "cd /app/apps/backend && npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && node /app/apps/backend/dist/main.js"]
