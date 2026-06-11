@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gentong Mas ERP — API Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0F172A; color: #E2E8F0; display: flex; flex-direction: column; min-height: 100vh; }
+    a { text-decoration: none; }
+    button { font-family: inherit; }
+    pre, code { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+    nav { background: #0F172A; border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; z-index: 50; padding: 0 24px; height: 60px; display: flex; align-items: center; gap: 20px; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .nav-logo-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #0041ff, #41d1ff); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .nav-logo-name { font-weight: 700; font-size: 15px; color: #F1F5F9; }
+    .nav-badge { background: rgba(65,209,255,0.15); color: #41d1ff; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; border: 1px solid rgba(65,209,255,0.3); }
+    .nav-search-wrap { flex: 1; max-width: 380px; position: relative; }
+    .nav-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748B; font-size: 14px; pointer-events: none; }
+    .nav-search { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px 8px 34px; color: #E2E8F0; font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .nav-search:focus { border-color: rgba(65,209,255,0.4); }
+    .nav-links { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+    .nav-link { color: #94A3B8; font-size: 13px; transition: color 0.15s; }
+    .nav-link:hover { color: #E2E8F0; }
+    .nav-btn { background: linear-gradient(135deg, #0041ff, #41d1ff); color: #fff; font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 8px; transition: opacity 0.2s; }
+    .nav-btn:hover { opacity: 0.9; }
+
+    .hero { background: linear-gradient(135deg, #0041ff 0%, #0066cc 40%, #41d1ff 100%); padding: 52px 48px; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -80px; right: -80px; width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+    .hero::after  { content: ''; position: absolute; bottom: -60px; left: 30%; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.04); }
+    .hero-inner { position: relative; max-width: 820px; }
+    .hero-badges { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .badge-online { background: rgba(255,255,255,0.2); color: #fff; font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.35); letter-spacing: 0.05em; }
+    .badge-version { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
+    .hero h1 { font-size: 38px; font-weight: 800; color: #fff; margin-bottom: 14px; letter-spacing: -0.02em; line-height: 1.15; }
+    .hero p { font-size: 16px; color: rgba(255,255,255,0.85); margin-bottom: 32px; max-width: 560px; line-height: 1.7; }
+    .hero-meta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .hero-meta-item { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 9px 18px; border: 1px solid rgba(255,255,255,0.25); }
+    .hero-meta-label { font-size: 10px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
+    .hero-meta-value { font-size: 13px; color: #fff; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+    .layout { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+
+    .col-modules { width: 200px; background: #0F172A; border-right: 1px solid rgba(255,255,255,0.07); overflow-y: auto; flex-shrink: 0; padding: 16px 8px; }
+    .col-label { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 12px; margin-bottom: 8px; display: block; }
+    .mod-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border-radius: 8px; border: none; cursor: pointer; text-align: left; font-size: 13px; background: transparent; color: #94A3B8; transition: all 0.15s; }
+    .mod-btn:hover { background: rgba(255,255,255,0.05); color: #CBD5E1; }
+    .mod-btn.active { background: rgba(65,209,255,0.12); color: #41d1ff; font-weight: 600; }
+
+    .col-endpoints { width: 260px; background: #111827; border-right: 1px solid rgba(255,255,255,0.07); overflow-y: auto; flex-shrink: 0; padding: 16px 0; }
+    .ep-btn { display: block; width: 100%; padding: 10px 16px; border: none; background: transparent; cursor: pointer; text-align: left; border-left: 2px solid transparent; transition: all 0.15s; }
+    .ep-btn:hover { background: rgba(255,255,255,0.03); }
+    .ep-btn.active { background: rgba(255,255,255,0.05); border-left-color: #41d1ff; }
+    .ep-method-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .method-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+    .method-GET    { background: #ECFDF5; color: #059669; }
+    .method-POST   { background: #EFF6FF; color: #2563EB; }
+    .method-PUT    { background: #EFF6FF; color: #1D4ED8; }
+    .method-PATCH  { background: #FFFBEB; color: #D97706; }
+    .method-DELETE { background: #FEF2F2; color: #DC2626; }
+    .ep-path { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: #64748B; word-break: break-all; line-height: 1.4; }
+    .ep-btn.active .ep-path { color: #E2E8F0; }
+    .ep-summary { font-size: 11px; color: #475569; margin-top: 3px; line-height: 1.3; }
+
+    .col-detail { flex: 1; overflow-y: auto; padding: 36px 44px; background: #111827; }
+    .detail-header { margin-bottom: 32px; }
+    .detail-title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .detail-method { font-size: 14px; font-weight: 700; padding: 5px 14px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; border: 1px solid; }
+    .method-GET-lg    { background: #ECFDF5; color: #059669; border-color: #6EE7B7; }
+    .method-POST-lg   { background: #EFF6FF; color: #2563EB; border-color: #93C5FD; }
+    .method-PUT-lg    { background: #EFF6FF; color: #1D4ED8; border-color: #93C5FD; }
+    .method-PATCH-lg  { background: #FFFBEB; color: #D97706; border-color: #FCD34D; }
+    .method-DELETE-lg { background: #FEF2F2; color: #DC2626; border-color: #FCA5A5; }
+    .detail-path { font-size: 18px; font-weight: 700; color: #F1F5F9; font-family: 'JetBrains Mono', monospace; }
+    .badge-auth { font-size: 11px; padding: 3px 10px; border-radius: 4px; background: rgba(245,158,11,0.15); color: #F59E0B; border: 1px solid rgba(245,158,11,0.3); }
+    .detail-title { font-size: 22px; font-weight: 700; color: #F1F5F9; margin-bottom: 8px; }
+    .detail-desc { color: #94A3B8; font-size: 14px; line-height: 1.75; }
+    .section { margin-bottom: 32px; }
+    .section-title { font-size: 14px; font-weight: 700; color: #E2E8F0; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .section-title .ic { color: #41d1ff; }
+    .section-title .ic-green { color: #10B981; }
+
+    .params-wrap { background: #0A0F1A; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; width: 100%; }
+    .params-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .params-wrap th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .params-wrap td { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .params-wrap tr:last-child td { border-bottom: none; }
+    .param-name { color: #41d1ff; font-family: 'JetBrains Mono', monospace; }
+    .param-type { background: rgba(139,92,246,0.15); color: #A78BFA; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+    .param-req { color: #F87171; font-size: 12px; font-weight: 600; }
+    .param-opt { color: #475569; font-size: 12px; }
+    .param-desc { color: #94A3B8; }
+
+    .code-block { background: #0A0F1A; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
+    .code-block-hdr { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .code-lang { font-size: 11px; color: #64748B; font-family: 'JetBrains Mono', monospace; }
+    .copy-btn { background: none; border: none; color: #475569; cursor: pointer; font-size: 11px; padding: 2px 8px; border-radius: 4px; transition: color 0.15s; }
+    .copy-btn:hover { color: #94A3B8; }
+    .copy-btn.copied { color: #10B981; }
+    .code-block pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-size: 12.5px; line-height: 1.75; color: #CBD5E1; }
+    .resp-ok { background: rgba(16,185,129,0.15); color: #10B981; font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3); font-weight: 700; margin-left: 6px; }
+
+    footer { background: #0A0F1A; border-top: 1px solid rgba(255,255,255,0.07); padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #475569; flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
+    .dot-online { width: 7px; height: 7px; border-radius: 50%; background: #10B981; box-shadow: 0 0 6px #10B981; display: inline-block; margin-right: 6px; }
+    .footer-links a { color: #41d1ff; margin-left: 16px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">&#127981;</div>
+    <span class="nav-logo-name">Gentong Mas ERP</span>
+    <span class="nav-badge">API</span>
+  </div>
+  <div class="nav-search-wrap">
+    <span class="nav-search-icon">&#128269;</span>
+    <input class="nav-search" type="text" id="searchInput" placeholder="Cari endpoint atau modul..." />
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="/docs-json" target="_blank">OpenAPI JSON</a>
+    <a class="nav-link" href="/docs-swagger" target="_blank">Swagger UI</a>
+    <a class="nav-btn" href="/">&#8592; Kembali</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badges">
+      <span class="badge-online">&#9679; ONLINE</span>
+      <span class="badge-version">REST API v1.0</span>
+    </div>
+    <h1>Gentong Mas ERP<br/>API Reference</h1>
+    <p>Dokumentasi lengkap REST API untuk mengintegrasikan modul Sales, Inventory, Finance, HR, Pajak, dan lainnya ke sistem Anda.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Base URL</div>
+        <div class="hero-meta-value">/api</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Auth</div>
+        <div class="hero-meta-value">Bearer JWT</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Format</div>
+        <div class="hero-meta-value">JSON</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Versi</div>
+        <div class="hero-meta-value">1.0.0</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="col-modules" id="modulesCol">
+    <span class="col-label">Modul</span>
+    <button class="mod-btn active" data-mod="auth">&#128272; Authentication</button>
+    <button class="mod-btn" data-mod="sales">&#128200; Penjualan</button>
+    <button class="mod-btn" data-mod="invoice">&#129534; Invoice</button>
+    <button class="mod-btn" data-mod="inventory">&#128230; Inventori</button>
+    <button class="mod-btn" data-mod="purchasing">&#128722; Pembelian</button>
+    <button class="mod-btn" data-mod="customers">&#128101; Pelanggan</button>
+    <button class="mod-btn" data-mod="finance">&#128176; Keuangan</button>
+    <button class="mod-btn" data-mod="hr">&#128084; HR &amp; Payroll</button>
+    <button class="mod-btn" data-mod="crm">&#129309; CRM</button>
+    <button class="mod-btn" data-mod="fleet">&#128666; Fleet</button>
+    <button class="mod-btn" data-mod="tax">&#128203; Pajak</button>
+    <button class="mod-btn" data-mod="pos">&#127978; POS</button>
+    <button class="mod-btn" data-mod="assets">&#127959; Aset</button>
+    <button class="mod-btn" data-mod="settings">&#9881;&#65039; Pengaturan</button>
+  </aside>
+
+  <aside class="col-endpoints" id="endpointsCol">
+    <span class="col-label" id="modTitle">Authentication</span>
+  </aside>
+
+  <main class="col-detail" id="detailPanel"></main>
+</div>
+
+<footer>
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <span><span class="dot-online"></span><span style="color:#10B981;font-weight:600;">Semua Sistem Operasional</span></span>
+    <span>API v1.0.0</span>
+    <span>NestJS &middot; Prisma &middot; PostgreSQL</span>
+  </div>
+  <div>
+    <span style="color:#475569;">&#169; 2025 Gentong Mas ERP</span>
+    <a href="/docs-json" target="_blank">OpenAPI Spec</a>
+    <a href="/docs-swagger" target="_blank">Swagger UI</a>
+  </div>
+</footer>
+
+<script>
+var MODULES = {
+  auth: {
+    label: 'Authentication',
+    endpoints: [
+      { id:'auth-register', method:'POST', path:'/api/auth/register', summary:'Daftarkan tenant & owner', auth:false,
+        desc:'Membuat tenant baru beserta akun owner pertama. Mengembalikan token akses setelah registrasi berhasil.',
+        params:[], body:'{\n  "tenantName": "PT Contoh",\n  "ownerName": "Budi Santoso",\n  "email": "budi@contoh.com",\n  "password": "Rahasia123!"\n}',
+        response:'{\n  "accessToken": "eyJhbGci...",\n  "refreshToken": "eyJhbGci...",\n  "user": {\n    "id": "uuid",\n    "name": "Budi Santoso",\n    "role": "OWNER"\n  }\n}' },
+      { id:'auth-login', method:'POST', path:'/api/auth/login', summary:'Login pengguna', auth:false,
+        desc:'Autentikasi dengan email & password. Mengembalikan accessToken dan refreshToken.',
+        params:[], body:'{\n  "email": "admin@example.com",\n  "password": "admin123"\n}',
+        response:'{\n  "accessToken": "eyJhbGci...",\n  "refreshToken": "eyJhbGci...",\n  "user": {\n    "id": "uuid",\n    "name": "Admin",\n    "role": "ADMIN"\n  }\n}' },
+      { id:'auth-logout', method:'POST', path:'/api/auth/logout', summary:'Logout & invalidasi sesi', auth:true,
+        desc:'Menginvalidasi token aktif pengguna saat ini.',
+        params:[], body:null,
+        response:'{\n  "message": "Logout berhasil."\n}' },
+      { id:'auth-me', method:'GET', path:'/api/auth/me', summary:'Profil pengguna saat ini', auth:true,
+        desc:'Mengambil informasi profil dari pengguna yang sedang login.',
+        params:[], body:null,
+        response:'{\n  "id": "uuid",\n  "name": "Admin",\n  "email": "admin@example.com",\n  "role": "ADMIN",\n  "tenantId": "tenant-uuid"\n}' }
+    ]
+  },
+  sales: {
+    label: 'Penjualan',
+    endpoints: [
+      { id:'sales-list', method:'GET', path:'/api/sales/orders', summary:'Daftar sales order', auth:true,
+        desc:'Mengambil semua sales order milik tenant. Mendukung paginasi dan filter.',
+        params:[{name:'page',type:'number',req:false,desc:'Nomor halaman (default: 1)'},{name:'limit',type:'number',req:false,desc:'Item per halaman (default: 20)'},{name:'status',type:'string',req:false,desc:'DRAFT | CONFIRMED | DELIVERED | CANCELLED'},{name:'search',type:'string',req:false,desc:'Cari nomor SO atau nama pelanggan'}],
+        body:null, response:'{\n  "data": [{ "id": "so-uuid", "soNumber": "SO-2025-001", "customer": "PT Maju", "total": 5000000, "status": "CONFIRMED" }],\n  "meta": { "total": 1, "page": 1, "limit": 20 }\n}' },
+      { id:'sales-create', method:'POST', path:'/api/sales/orders', summary:'Buat sales order baru', auth:true,
+        desc:'Membuat sales order baru. Stok divalidasi sebelum dikonfirmasi.',
+        params:[], body:'{\n  "customerId": "cust-uuid",\n  "items": [{ "productId": "prod-uuid", "qty": 5, "price": 1000000 }],\n  "notes": "Dikirim sebelum akhir bulan"\n}',
+        response:'{\n  "id": "so-uuid",\n  "soNumber": "SO-2025-002",\n  "status": "DRAFT",\n  "total": 5000000\n}' },
+      { id:'sales-update', method:'PATCH', path:'/api/sales/orders/:id', summary:'Update status SO', auth:true,
+        desc:'Mengubah status sales order.',
+        params:[{name:'id',type:'string',req:true,desc:'UUID dari sales order'}],
+        body:'{\n  "status": "CONFIRMED"\n}',
+        response:'{\n  "id": "so-uuid",\n  "status": "CONFIRMED",\n  "updatedAt": "2025-06-11T10:00:00Z"\n}' }
+    ]
+  },
+  invoice: {
+    label: 'Invoice',
+    endpoints: [
+      { id:'inv-list', method:'GET', path:'/api/invoices', summary:'Daftar invoice', auth:true,
+        desc:'Mengambil semua invoice. Filter berdasarkan status pembayaran dan tanggal.',
+        params:[{name:'status',type:'string',req:false,desc:'UNPAID | PARTIAL | PAID | OVERDUE'},{name:'from',type:'string',req:false,desc:'Tanggal mulai (YYYY-MM-DD)'},{name:'to',type:'string',req:false,desc:'Tanggal akhir (YYYY-MM-DD)'}],
+        body:null, response:'{\n  "data": [{ "id": "inv-uuid", "invoiceNumber": "INV-2025-001", "amount": 5500000, "status": "UNPAID", "dueDate": "2025-07-11" }],\n  "meta": { "total": 1 }\n}' },
+      { id:'inv-create', method:'POST', path:'/api/invoices', summary:'Buat invoice baru', auth:true,
+        desc:'Membuat invoice berdasarkan sales order yang sudah dikonfirmasi.',
+        params:[], body:'{\n  "salesOrderId": "so-uuid",\n  "dueDate": "2025-07-11",\n  "taxRate": 11\n}',
+        response:'{\n  "id": "inv-uuid",\n  "invoiceNumber": "INV-2025-002",\n  "amount": 5550000,\n  "taxAmount": 550000,\n  "status": "UNPAID"\n}' },
+      { id:'inv-pay', method:'POST', path:'/api/invoices/:id/payments', summary:'Catat pembayaran', auth:true,
+        desc:'Mencatat penerimaan pembayaran untuk invoice tertentu.',
+        params:[{name:'id',type:'string',req:true,desc:'UUID invoice'}],
+        body:'{\n  "amount": 5550000,\n  "method": "BANK_TRANSFER",\n  "reference": "TRF-001",\n  "paidAt": "2025-06-15"\n}',
+        response:'{\n  "id": "pay-uuid",\n  "invoiceId": "inv-uuid",\n  "amount": 5550000,\n  "status": "PAID"\n}' }
+    ]
+  },
+  inventory: {
+    label: 'Inventori',
+    endpoints: [
+      { id:'inv-products', method:'GET', path:'/api/inventory/products', summary:'Daftar produk & stok', auth:true,
+        desc:'Mengambil semua produk beserta stok saat ini di setiap gudang.',
+        params:[{name:'warehouseId',type:'string',req:false,desc:'Filter berdasarkan gudang'},{name:'lowStock',type:'boolean',req:false,desc:'Tampilkan hanya produk stok rendah'}],
+        body:null, response:'{\n  "data": [{ "id": "prod-uuid", "sku": "SKU-001", "name": "Produk A", "stock": 150, "unit": "pcs", "costPrice": 80000 }]\n}' },
+      { id:'inv-adjust', method:'POST', path:'/api/inventory/adjustments', summary:'Penyesuaian stok', auth:true,
+        desc:'Penyesuaian stok manual dengan alasan yang tercatat di audit log.',
+        params:[], body:'{\n  "productId": "prod-uuid",\n  "warehouseId": "wh-uuid",\n  "quantity": -5,\n  "reason": "Barang rusak"\n}',
+        response:'{\n  "id": "adj-uuid",\n  "newStock": 145,\n  "adjustedAt": "2025-06-11T10:00:00Z"\n}' }
+    ]
+  },
+  purchasing: {
+    label: 'Pembelian',
+    endpoints: [
+      { id:'po-list', method:'GET', path:'/api/purchasing/orders', summary:'Daftar purchase order', auth:true,
+        desc:'Mengambil semua PO. Filter berdasarkan status dan vendor.',
+        params:[{name:'status',type:'string',req:false,desc:'DRAFT | ORDERED | RECEIVED | CANCELLED'}],
+        body:null, response:'{\n  "data": [{ "id": "po-uuid", "poNumber": "PO-2025-001", "vendor": "PT Supplier", "total": 3000000, "status": "ORDERED" }]\n}' },
+      { id:'po-create', method:'POST', path:'/api/purchasing/orders', summary:'Buat purchase order', auth:true,
+        desc:'Membuat PO baru ke vendor.',
+        params:[], body:'{\n  "vendorId": "vendor-uuid",\n  "items": [{ "productId": "prod-uuid", "qty": 100, "price": 80000 }],\n  "expectedDate": "2025-06-20"\n}',
+        response:'{\n  "id": "po-uuid",\n  "poNumber": "PO-2025-002",\n  "status": "DRAFT",\n  "total": 8000000\n}' }
+    ]
+  },
+  customers: {
+    label: 'Pelanggan',
+    endpoints: [
+      { id:'cust-list', method:'GET', path:'/api/customers', summary:'Daftar pelanggan', auth:true,
+        desc:'Mengambil semua data pelanggan milik tenant.',
+        params:[{name:'search',type:'string',req:false,desc:'Cari berdasarkan nama atau email'}],
+        body:null, response:'{\n  "data": [{ "id": "cust-uuid", "name": "PT Maju Jaya", "email": "info@majujaya.com", "phone": "02112345678", "totalOrders": 12 }]\n}' },
+      { id:'cust-create', method:'POST', path:'/api/customers', summary:'Tambah pelanggan baru', auth:true,
+        desc:'Menambahkan data pelanggan baru ke database tenant.',
+        params:[], body:'{\n  "name": "PT Baru",\n  "email": "info@ptbaru.com",\n  "phone": "02198765432",\n  "address": "Jl. Sudirman No. 1, Jakarta"\n}',
+        response:'{\n  "id": "cust-uuid",\n  "name": "PT Baru",\n  "email": "info@ptbaru.com",\n  "createdAt": "2025-06-11T10:00:00Z"\n}' }
+    ]
+  },
+  finance: {
+    label: 'Keuangan',
+    endpoints: [
+      { id:'fin-neraca', method:'GET', path:'/api/reporting/neraca', summary:'Neraca keuangan', auth:true,
+        desc:'Menghasilkan laporan neraca (balance sheet) pada tanggal tertentu.',
+        params:[{name:'date',type:'string',req:true,desc:'Tanggal neraca (YYYY-MM-DD)'}],
+        body:null, response:'{\n  "date": "2025-06-11",\n  "assets": { "total": 500000000, "current": 300000000, "fixed": 200000000 },\n  "liabilities": { "total": 150000000 },\n  "equity": { "total": 350000000 }\n}' },
+      { id:'fin-laba', method:'GET', path:'/api/reporting/laba-rugi', summary:'Laporan laba rugi', auth:true,
+        desc:'Laporan P&L untuk periode tertentu.',
+        params:[{name:'from',type:'string',req:true,desc:'Tanggal mulai (YYYY-MM-DD)'},{name:'to',type:'string',req:true,desc:'Tanggal akhir (YYYY-MM-DD)'}],
+        body:null, response:'{\n  "revenue": 500000000,\n  "cogs": 300000000,\n  "grossProfit": 200000000,\n  "expenses": 80000000,\n  "netProfit": 120000000\n}' },
+      { id:'fin-journal', method:'POST', path:'/api/finance/journals', summary:'Buat jurnal manual', auth:true,
+        desc:'Mencatat entri jurnal akuntansi secara manual.',
+        params:[], body:'{\n  "date": "2025-06-11",\n  "description": "Beban listrik Juni",\n  "entries": [\n    { "accountId": "acc-beban", "debit": 500000 },\n    { "accountId": "acc-kas", "credit": 500000 }\n  ]\n}',
+        response:'{\n  "id": "jrn-uuid",\n  "journalNumber": "JRN-2025-100",\n  "status": "POSTED",\n  "totalDebit": 500000\n}' }
+    ]
+  },
+  hr: {
+    label: 'HR & Payroll',
+    endpoints: [
+      { id:'hr-emp', method:'GET', path:'/api/hr/employees', summary:'Daftar karyawan', auth:true,
+        desc:'Mengambil semua data karyawan aktif dan nonaktif.',
+        params:[{name:'active',type:'boolean',req:false,desc:'Filter karyawan aktif/nonaktif'}],
+        body:null, response:'{\n  "data": [{ "id": "emp-uuid", "name": "Andi Wijaya", "department": "Sales", "position": "Sales Manager", "salary": 8000000 }]\n}' },
+      { id:'hr-payroll', method:'POST', path:'/api/payroll/periods', summary:'Jalankan penggajian', auth:true,
+        desc:'Memproses penggajian untuk periode tertentu. Menghitung PPh 21 otomatis.',
+        params:[], body:'{\n  "period": "2025-06",\n  "cutoffDate": "2025-06-30"\n}',
+        response:'{\n  "id": "pay-uuid",\n  "period": "2025-06",\n  "totalGross": 85000000,\n  "totalTax": 4250000,\n  "totalNet": 80750000,\n  "employees": 12\n}' }
+    ]
+  },
+  crm: {
+    label: 'CRM',
+    endpoints: [
+      { id:'crm-leads', method:'GET', path:'/api/crm/leads', summary:'Daftar leads', auth:true,
+        desc:'Mengambil semua leads di pipeline CRM.',
+        params:[{name:'stage',type:'string',req:false,desc:'PROSPECTING | QUALIFICATION | PROPOSAL | NEGOTIATION | CLOSED_WON | CLOSED_LOST'}],
+        body:null, response:'{\n  "data": [{ "id": "lead-uuid", "name": "Peluang A", "company": "PT Prospect", "value": 50000000, "stage": "PROPOSAL", "probability": 70 }]\n}' },
+      { id:'crm-create', method:'POST', path:'/api/crm/leads', summary:'Tambah lead baru', auth:true,
+        desc:'Menambahkan lead baru ke pipeline.',
+        params:[], body:'{\n  "name": "Peluang Baru",\n  "company": "PT Target",\n  "contactName": "John Doe",\n  "email": "john@target.com",\n  "value": 100000000,\n  "stage": "PROSPECTING"\n}',
+        response:'{\n  "id": "lead-uuid",\n  "name": "Peluang Baru",\n  "stage": "PROSPECTING",\n  "createdAt": "2025-06-11T10:00:00Z"\n}' }
+    ]
+  },
+  fleet: {
+    label: 'Fleet',
+    endpoints: [
+      { id:'fleet-tasks', method:'GET', path:'/api/fleet/tasks', summary:'Daftar tugas pengiriman', auth:true,
+        desc:'Mengambil semua tugas pengiriman driver.',
+        params:[{name:'status',type:'string',req:false,desc:'PENDING | IN_PROGRESS | DELIVERED | FAILED'},{name:'driverId',type:'string',req:false,desc:'Filter berdasarkan driver'}],
+        body:null, response:'{\n  "data": [{ "id": "task-uuid", "driver": "Supir A", "destination": "Jl. Sudirman No.1", "status": "IN_PROGRESS", "eta": "2025-06-11T14:00:00Z" }]\n}' },
+      { id:'fleet-update', method:'PATCH', path:'/api/fleet/tasks/:id', summary:'Update status pengiriman', auth:true,
+        desc:'Driver memperbarui status pengiriman.',
+        params:[{name:'id',type:'string',req:true,desc:'UUID task pengiriman'}],
+        body:'{\n  "status": "DELIVERED",\n  "notes": "Diterima oleh resepsionis",\n  "deliveredAt": "2025-06-11T13:45:00Z"\n}',
+        response:'{\n  "id": "task-uuid",\n  "status": "DELIVERED",\n  "deliveredAt": "2025-06-11T13:45:00Z"\n}' }
+    ]
+  },
+  tax: {
+    label: 'Pajak',
+    endpoints: [
+      { id:'tax-faktur', method:'GET', path:'/api/tax/efaktur/export', summary:'Export e-Faktur CSV', auth:true,
+        desc:'Mengekspor data faktur pajak dalam format CSV siap impor ke aplikasi e-Faktur DJP.',
+        params:[{name:'from',type:'string',req:true,desc:'Tanggal mulai (YYYY-MM-DD)'},{name:'to',type:'string',req:true,desc:'Tanggal akhir (YYYY-MM-DD)'}],
+        body:null, response:'"NPWP","NamaLawan","JumlahDPP","JumlahPPN"\n"012345678901234","PT Maju Jaya","5000000","550000"' },
+      { id:'tax-calc', method:'POST', path:'/api/tax/calculate', summary:'Hitung pajak', auth:true,
+        desc:'Menghitung PPN, PPh 21/23 untuk transaksi tertentu.',
+        params:[], body:'{\n  "type": "PPN",\n  "amount": 10000000,\n  "rate": 11\n}',
+        response:'{\n  "grossAmount": 10000000,\n  "taxRate": 11,\n  "taxAmount": 1100000,\n  "netAmount": 11100000\n}' }
+    ]
+  },
+  pos: {
+    label: 'POS',
+    endpoints: [
+      { id:'pos-trans', method:'POST', path:'/api/pos/transactions', summary:'Buat transaksi POS', auth:true,
+        desc:'Mencatat transaksi penjualan dari kasir POS.',
+        params:[], body:'{\n  "cashierId": "emp-uuid",\n  "items": [{ "productId": "prod-uuid", "qty": 2, "price": 50000 }],\n  "payment": { "method": "CASH", "amount": 100000, "change": 0 }\n}',
+        response:'{\n  "id": "pos-uuid",\n  "receiptNumber": "RCP-2025-001",\n  "total": 100000,\n  "status": "COMPLETED"\n}' }
+    ]
+  },
+  assets: {
+    label: 'Aset Tetap',
+    endpoints: [
+      { id:'asset-list', method:'GET', path:'/api/assets', summary:'Daftar aset tetap', auth:true,
+        desc:'Mengambil semua aset tetap dengan informasi penyusutan.',
+        params:[], body:null,
+        response:'{\n  "data": [{ "id": "asset-uuid", "name": "Mesin Produksi A", "category": "Mesin", "purchaseValue": 500000000, "bookValue": 350000000 }]\n}' },
+      { id:'asset-dep', method:'POST', path:'/api/assets/depreciation/run-monthly', summary:'Jalankan penyusutan bulanan', auth:true,
+        desc:'Menjalankan perhitungan penyusutan aset untuk bulan berjalan.',
+        params:[], body:'{\n  "period": "2025-06"\n}',
+        response:'{\n  "period": "2025-06",\n  "assetsProcessed": 12,\n  "totalDepreciation": 15000000\n}' }
+    ]
+  },
+  settings: {
+    label: 'Pengaturan',
+    endpoints: [
+      { id:'set-users', method:'GET', path:'/api/users', summary:'Daftar pengguna', auth:true,
+        desc:'Mengambil semua pengguna dalam tenant.',
+        params:[], body:null,
+        response:'{\n  "data": [{ "id": "user-uuid", "name": "Admin", "email": "admin@example.com", "role": "ADMIN", "isActive": true }]\n}' },
+      { id:'set-user-create', method:'POST', path:'/api/users', summary:'Tambah pengguna', auth:true,
+        desc:'Menambahkan pengguna baru ke tenant.',
+        params:[], body:'{\n  "name": "Staf Baru",\n  "email": "staf@contoh.com",\n  "password": "Password123!",\n  "role": "SALES"\n}',
+        response:'{\n  "id": "user-uuid",\n  "name": "Staf Baru",\n  "email": "staf@contoh.com",\n  "role": "SALES",\n  "isActive": true\n}' }
+    ]
+  }
+};
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = '\u2713 Disalin';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = '\uD83D\uDCCB Salin'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function buildCurl(ep) {
+  var auth = ep.auth ? ' \\\n  -H "Authorization: Bearer <YOUR_TOKEN>"' : '';
+  var body = ep.body ? ' \\\n  -H "Content-Type: application/json" \\\n  -d \'' + ep.body.replace(/\n/g,' ') + '\'' : '';
+  return 'curl -X ' + ep.method + ' "https://your-erp.replit.app' + ep.path + '"' + auth + body;
+}
+
+function codeBlock(lang, content, id) {
+  return '<div class="code-block"><div class="code-block-hdr"><span class="code-lang">' + escHtml(lang) + '</span>' +
+    '<button class="copy-btn" id="cb-' + id + '" onclick="copyText(' + JSON.stringify(content) + ', this)">\uD83D\uDCCB Salin</button></div>' +
+    '<pre>' + escHtml(content) + '</pre></div>';
+}
+
+function renderEndpoints(modId) {
+  var mod = MODULES[modId];
+  document.getElementById('modTitle').textContent = mod.label;
+  var col = document.getElementById('endpointsCol');
+  col.innerHTML = '<span class="col-label" id="modTitle">' + escHtml(mod.label) + '</span>';
+  mod.endpoints.forEach(function(ep) {
+    var btn = document.createElement('button');
+    btn.className = 'ep-btn' + (ep.id === currentEpId ? ' active' : '');
+    btn.dataset.epid = ep.id;
+    btn.innerHTML = '<div class="ep-method-row"><span class="method-badge method-' + ep.method + '">' + ep.method + '</span></div>' +
+      '<div class="ep-path">' + escHtml(ep.path) + '</div>' +
+      '<div class="ep-summary">' + escHtml(ep.summary) + '</div>';
+    btn.onclick = function() {
+      currentEpId = ep.id;
+      renderDetail(ep);
+      col.querySelectorAll('.ep-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    };
+    col.appendChild(btn);
+  });
+}
+
+function renderDetail(ep) {
+  var html = '<div class="detail-header">' +
+    '<div class="detail-title-row">' +
+    '<span class="detail-method method-' + ep.method + '-lg">' + ep.method + '</span>' +
+    '<code class="detail-path">' + escHtml(ep.path) + '</code>' +
+    (ep.auth ? '<span class="badge-auth">\uD83D\uDD12 Butuh Auth</span>' : '') +
+    '</div>' +
+    '<div class="detail-title">' + escHtml(ep.summary) + '</div>' +
+    '<div class="detail-desc">' + escHtml(ep.desc) + '</div>' +
+    '</div>';
+
+  if (ep.params && ep.params.length) {
+    html += '<div class="section"><div class="section-title"><span class="ic">\u2699</span> Parameter</div>' +
+      '<div class="params-wrap"><table><thead><tr><th>Nama</th><th>Tipe</th><th>Wajib</th><th>Deskripsi</th></tr></thead><tbody>';
+    ep.params.forEach(function(p) {
+      html += '<tr><td><span class="param-name">' + escHtml(p.name) + '</span></td>' +
+        '<td><span class="param-type">' + escHtml(p.type) + '</span></td>' +
+        '<td>' + (p.req ? '<span class="param-req">Ya</span>' : '<span class="param-opt">Opsional</span>') + '</td>' +
+        '<td class="param-desc">' + escHtml(p.desc) + '</td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+  }
+
+  if (ep.body) {
+    html += '<div class="section"><div class="section-title"><span class="ic">\uD83D\uDCE4</span> Request Body</div>' +
+      codeBlock('application/json', ep.body, ep.id + '-body') + '</div>';
+  }
+
+  var curl = buildCurl(ep);
+  html += '<div class="section"><div class="section-title"><span class="ic">\uD83D\uDCBB</span> cURL</div>' +
+    codeBlock('bash', curl, ep.id + '-curl') + '</div>';
+
+  html += '<div class="section"><div class="section-title"><span class="ic-green">\uD83D\uDCE5</span> Response <span class="resp-ok">200 OK</span></div>' +
+    codeBlock('application/json', ep.response, ep.id + '-resp') + '</div>';
+
+  document.getElementById('detailPanel').innerHTML = html;
+}
+
+var currentModId = 'auth';
+var currentEpId  = 'auth-register';
+
+function selectMod(modId) {
+  currentModId = modId;
+  currentEpId  = MODULES[modId].endpoints[0].id;
+  document.querySelectorAll('.mod-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.mod === modId);
+  });
+  renderEndpoints(modId);
+  renderDetail(MODULES[modId].endpoints[0]);
+}
+
+document.querySelectorAll('.mod-btn').forEach(function(b) {
+  b.onclick = function() { selectMod(b.dataset.mod); };
+});
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  var q = this.value.toLowerCase().trim();
+  if (!q) { selectMod(currentModId); return; }
+  var col = document.getElementById('endpointsCol');
+  col.innerHTML = '<span class="col-label">Hasil Pencarian</span>';
+  var first = null;
+  Object.keys(MODULES).forEach(function(key) {
+    var mod = MODULES[key];
+    mod.endpoints.filter(function(e) {
+      return e.path.toLowerCase().includes(q) || e.summary.toLowerCase().includes(q) || mod.label.toLowerCase().includes(q);
+    }).forEach(function(ep) {
+      if (!first) first = ep;
+      var btn = document.createElement('button');
+      btn.className = 'ep-btn' + (ep.id === currentEpId ? ' active' : '');
+      btn.innerHTML = '<div class="ep-method-row"><span class="method-badge method-' + ep.method + '">' + ep.method + '</span></div>' +
+        '<div class="ep-path">' + escHtml(ep.path) + '</div>' +
+        '<div class="ep-summary">' + escHtml(ep.summary) + '</div>';
+      btn.onclick = function() {
+        renderDetail(ep);
+        col.querySelectorAll('.ep-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      };
+      col.appendChild(btn);
+    });
+  });
+  if (first) renderDetail(first);
+  else {
+    var msg = document.createElement('div');
+    msg.style = 'padding:16px;color:#475569;font-size:13px;';
+    msg.textContent = 'Tidak ditemukan.';
+    col.appendChild(msg);
+  }
+});
+
+selectMod('auth');
+</script>
+</body>
+</html>
