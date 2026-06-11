@@ -59,6 +59,45 @@ export class CustomersService {
   async update(id: string, dto: any) { return this.prisma.customer.update({ where: { id }, data: dto }); }
   async remove(id: string) { return this.prisma.customer.update({ where: { id }, data: { active: false } }); }
 
+  async findOrCreate(dto: { name: string; phone?: string; email?: string; kledoId?: string }) {
+    const { name, phone, email, kledoId } = dto;
+    if (!name?.trim()) throw new Error('Nama customer wajib diisi');
+
+    // 1. Cari berdasarkan kledoId jika ada
+    if (kledoId) {
+      const byKledo = await this.prisma.customer.findUnique({ where: { kledoId } });
+      if (byKledo) return byKledo;
+    }
+
+    // 2. Cari berdasarkan nama (case-insensitive)
+    const byName = await this.prisma.customer.findFirst({
+      where: { name: { equals: name.trim(), mode: 'insensitive' } },
+    });
+    if (byName) {
+      // Update kledoId jika belum ada
+      if (kledoId && !byName.kledoId) {
+        return this.prisma.customer.update({ where: { id: byName.id }, data: { kledoId } });
+      }
+      return byName;
+    }
+
+    // 3. Buat customer baru
+    const customer = await this.prisma.customer.create({
+      data: { name: name.trim(), phone: phone ?? null, email: email ?? null, kledoId: kledoId ?? null },
+    });
+
+    // Sync ke Kledo di background jika belum ada kledoId
+    if (!kledoId) {
+      this.kledo.findOrCreateContact(customer.name, customer.phone ?? undefined)
+        .then((id) => {
+          if (id) this.prisma.customer.update({ where: { id: customer.id }, data: { kledoId: id.toString() } }).catch(() => null);
+        })
+        .catch((e) => this.logger.warn('Push customer ke Kledo gagal: ' + e.message));
+    }
+
+    return customer;
+  }
+
   async getSummary() {
     const [total, active] = await Promise.all([
       this.prisma.customer.count(),

@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../../../lib/store/useAuthStore';
 import AppShell from '../../../../components/layout/AppShell';
 import { api } from '@/lib/api';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import CustomerSearchDropdown, { CustomerOption } from '../../../../components/ui/CustomerSearchDropdown';
 
 const C = '#00ACC1';
 const inputCls = 'w-full rounded-lg px-3 py-2 text-sm outline-none';
@@ -25,21 +26,49 @@ const Section = ({ title, children }: any) => (
 export default function NewInvoicePage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customerName, setCustomerName] = useState('');
+  const [customerId, setCustomerId] = useState('');
+  const [resolvingCustomer, setResolvingCustomer] = useState(false);
   const [form, setForm] = useState({
-    customerId: '', salesName: '', tanggal: new Date().toISOString().slice(0, 10),
+    salesName: '', tanggal: new Date().toISOString().slice(0, 10),
     dueDate: '', notes: '', subtotal: 0, diskon: 0, pajak: 0, grandTotal: 0,
   });
   const [items, setItems] = useState([{ nama: '', qty: 1, harga: 0, subtotal: 0 }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!token) return;
-    api.get('/customers', { params: { limit: 200 } }).then(r => setCustomers(r.data.data ?? [])).catch(() => {});
-  }, [token]);
-
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleCustomerSelect = async (customer: CustomerOption) => {
+    if (customer.source === 'local') {
+      setCustomerId(customer.id);
+      setCustomerName(customer.name);
+      return;
+    }
+    // Kontak Kledo — resolve ke local customer ID via find-or-create
+    setResolvingCustomer(true);
+    try {
+      const kledoId = customer.id.replace('kledo-', '');
+      const res = await api.post('/customers/find-or-create', {
+        name: customer.name,
+        phone: customer.phone ?? undefined,
+        email: customer.email ?? undefined,
+        kledoId,
+      });
+      setCustomerId(res.data.id);
+      setCustomerName(customer.name);
+    } catch {
+      setError('Gagal menyimpan kontak Kledo. Coba lagi.');
+    } finally {
+      setResolvingCustomer(false);
+    }
+  };
+
+  const handleCustomerNameChange = (name: string) => {
+    setCustomerName(name);
+    // Reset customerId jika nama diedit manual
+    setCustomerId('');
+  };
 
   const recalc = (newItems: any[]) => {
     const sub = newItems.reduce((s, it) => s + (Number(it.qty) * Number(it.harga)), 0);
@@ -62,13 +91,25 @@ export default function NewInvoicePage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.customerId) { setError('Pilih pelanggan'); return; }
+    if (!customerName.trim()) { setError('Nama pelanggan harus diisi'); return; }
     if (items.some(it => !it.nama)) { setError('Nama produk harus diisi'); return; }
     setLoading(true); setError('');
     try {
+      // Jika belum ada customerId (ketik nama baru), buat customer dulu
+      let resolvedId = customerId;
+      if (!resolvedId) {
+        const res = await api.post('/customers/find-or-create', { name: customerName.trim() });
+        resolvedId = res.data.id;
+      }
       const sub = items.reduce((s, it) => s + Number(it.qty) * Number(it.harga), 0);
       const grand = sub - Number(form.diskon) + Number(form.pajak);
-      const res = await api.post('/invoices', { ...form, subtotal: sub, grandTotal: grand, items: items.map(it => ({ ...it, subtotal: Number(it.qty) * Number(it.harga) })) });
+      const res = await api.post('/invoices', {
+        ...form,
+        customerId: resolvedId,
+        subtotal: sub,
+        grandTotal: grand,
+        items: items.map(it => ({ ...it, subtotal: Number(it.qty) * Number(it.harga) })),
+      });
       router.push(`/sales/invoices/${res.data.data.id}`);
     } catch (err: any) { setError(err?.response?.data?.message || 'Terjadi kesalahan'); } finally { setLoading(false); }
   };
@@ -92,10 +133,27 @@ export default function NewInvoicePage() {
           <Section title="Info Invoice">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Pelanggan" required>
-                <select className={inputCls} style={inputStyle} value={form.customerId} onChange={e => set('customerId', e.target.value)}>
-                  <option value="">-- Pilih Pelanggan --</option>
-                  {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <div className="relative">
+                  <CustomerSearchDropdown
+                    value={customerName}
+                    onChange={handleCustomerNameChange}
+                    onSelect={handleCustomerSelect}
+                    placeholder="Ketik nama pelanggan atau cari dari Kledo..."
+                    accentColor={C}
+                    required
+                  />
+                  {resolvingCustomer && (
+                    <div className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: C }}>
+                      <div className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: `${C}40`, borderTopColor: C }} />
+                      Menyimpan kontak Kledo...
+                    </div>
+                  )}
+                  {customerId && !resolvingCustomer && (
+                    <div className="mt-1 flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full w-fit font-semibold" style={{ backgroundColor: 'rgba(0,172,193,.1)', color: C }}>
+                      ✓ Pelanggan dipilih
+                    </div>
+                  )}
+                </div>
               </Field>
               <Field label="Sales">
                 <input className={inputCls} style={inputStyle} value={form.salesName} onChange={e => set('salesName', e.target.value)} placeholder="Nama sales" />
@@ -169,7 +227,7 @@ export default function NewInvoicePage() {
 
           <div className="flex gap-3 justify-end">
             <button type="button" onClick={() => router.back()} className="px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ border: '1.5px solid #EDE8F5', color: '#9CA3AF' }}>Batal</button>
-            <button type="submit" disabled={loading} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ backgroundColor: C }}>
+            <button type="submit" disabled={loading || resolvingCustomer} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ backgroundColor: C }}>
               {loading ? 'Menyimpan...' : 'Simpan Invoice'}
             </button>
           </div>
