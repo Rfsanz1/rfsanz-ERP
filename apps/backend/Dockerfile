@@ -21,20 +21,20 @@ RUN apk add --no-cache openssl wget
 
 WORKDIR /app
 
-# Copy semua file project
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/ ./packages/
 COPY apps/backend/package.json ./apps/backend/package.json
 
-# Copy node_modules dari builder (sudah include prisma generated client)
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copy hasil build dan schema prisma
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
+
+COPY apps/backend/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 WORKDIR /app/apps/backend
 
 EXPOSE 6000
 
-CMD ["sh", "-c", "cd /app/apps/backend && npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && node /app/apps/backend/dist/main.js"]
+CMD ["/app/entrypoint.sh"]
