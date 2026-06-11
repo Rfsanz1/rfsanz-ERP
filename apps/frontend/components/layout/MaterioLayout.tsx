@@ -46,8 +46,8 @@ export function MaterioLayout({ children }: MaterioLayoutProps) {
             overflowY: 'auto',
             paddingTop: { xs: 1.5, sm: 2.5, md: 3 },
             paddingBottom: {
-              xs: 'calc(env(safe-area-inset-bottom) + 72px)',
-              lg: 3,
+              xs: 'calc(env(safe-area-inset-bottom) + 80px)',
+              lg: '24px',
             },
           }}
         >

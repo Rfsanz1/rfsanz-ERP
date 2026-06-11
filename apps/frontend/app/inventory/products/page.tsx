@@ -212,61 +212,61 @@ export default function InventoryProductsPage() {
             </table>
           </div>
 
-          {/* Pagination footer */}
-          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-
-            {/* Kiri: total info */}
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              Total {total.toLocaleString('id-ID')} data
-            </span>
-
-            {/* Tengah: nomor halaman */}
-            {lastPage > 1 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                {/* Prev */}
-                <button disabled={page <= 1 || loading} onClick={() => goPage(page - 1)}
-                  style={{ ...btnBase, color: page <= 1 ? 'var(--text-muted)' : 'var(--text-primary)', opacity: page <= 1 ? 0.4 : 1 }}>
-                  <ChevronLeft size={14} />
-                </button>
-
-                {/* Nomor halaman */}
-                {pageNums.map((n, idx) =>
-                  n === '...' ? (
-                    <span key={`dots-${idx}`} style={{ width: 32, textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>…</span>
-                  ) : (
-                    <button key={n} onClick={() => goPage(n as number)}
-                      style={{
-                        ...btnBase,
-                        background: page === n ? '#6366F1' : 'var(--surface)',
-                        color:      page === n ? '#fff'     : 'var(--text-primary)',
-                        border:     page === n ? 'none'     : '1px solid var(--border)',
-                        fontWeight: page === n ? 700 : 400,
-                      }}>
-                      {n}
-                    </button>
-                  )
-                )}
-
-                {/* Next */}
-                <button disabled={page >= lastPage || loading} onClick={() => goPage(page + 1)}
-                  style={{ ...btnBase, color: page >= lastPage ? 'var(--text-muted)' : 'var(--text-primary)', opacity: page >= lastPage ? 0.4 : 1 }}>
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-            )}
-
-            {/* Kanan: per-page selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <select value={perPage} onChange={e => handlePerPage(Number(e.target.value))}
-                style={{ padding: '5px 28px 5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 13, cursor: 'pointer', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', outline: 'none' }}>
-                {PAGE_SIZES.map(s => (
-                  <option key={s} value={s}>{s} / halaman</option>
-                ))}
-              </select>
-            </div>
-
-          </div>
         </div>
+
+        {/* Pagination — di luar table card agar tidak terhalang bottom nav */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, padding: '4px 2px' }}>
+
+          {/* Kiri: total */}
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+            Total {total.toLocaleString('id-ID')} data
+          </span>
+
+          {/* Tengah: nomor halaman */}
+          {lastPage > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button disabled={page <= 1 || loading} onClick={() => goPage(page - 1)}
+                style={{ ...btnBase, color: page <= 1 ? 'var(--text-muted)' : 'var(--text-primary)', opacity: page <= 1 ? 0.4 : 1 }}>
+                <ChevronLeft size={14} />
+              </button>
+
+              {pageNums.map((n, idx) =>
+                n === '...' ? (
+                  <span key={`dots-${idx}`} style={{ width: 32, textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>…</span>
+                ) : (
+                  <button key={n} onClick={() => goPage(n as number)}
+                    style={{
+                      ...btnBase,
+                      background: page === n ? '#6366F1' : 'var(--surface)',
+                      color:      page === n ? '#fff'     : 'var(--text-primary)',
+                      border:     page === n ? 'none'     : '1px solid var(--border)',
+                      fontWeight: page === n ? 700 : 400,
+                    }}>
+                    {n}
+                  </button>
+                )
+              )}
+
+              <button disabled={page >= lastPage || loading} onClick={() => goPage(page + 1)}
+                style={{ ...btnBase, color: page >= lastPage ? 'var(--text-muted)' : 'var(--text-primary)', opacity: page >= lastPage ? 0.4 : 1 }}>
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
+
+          {/* Kanan: per-page selector */}
+          <select value={perPage} onChange={e => handlePerPage(Number(e.target.value))}
+            style={{ padding: '5px 28px 5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 13, cursor: 'pointer', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', outline: 'none' }}>
+            {PAGE_SIZES.map(s => (
+              <option key={s} value={s}>{s} / halaman</option>
+            ))}
+          </select>
+
+        </div>
+
+        {/* Spacer untuk bottom nav bar */}
+        <div style={{ height: 16 }} />
+
       </div>
     </AppShell>
   );
