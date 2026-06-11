@@ -1,0 +1,61 @@
+ => CANCELED [backend builder 10/11] RUN cd apps/backend && pnpm prisma generate && (pnpm build || true)                       80.4s
+------
+ > [frontend builder 9/9] RUN cd apps/frontend && pnpm build:
+2.036 
+2.036 > @erp-modern/frontend@0.0.1 build /app/apps/frontend
+2.036 > next build
+2.036 
+4.322 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+4.326 This information is used to shape Next.js' roadmap and prioritize features.
+4.328 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+4.329 https://nextjs.org/telemetry
+4.329 
+4.626   ▲ Next.js 14.2.30
+4.630 
+5.216    Creating an optimized production build ...
+145.5 Failed to compile.
+145.5 
+145.5 ./app/accounting/assets/[id]/page.tsx
+145.5 Module not found: Can't resolve '@/lib/utils/api'
+145.5 
+145.5 https://nextjs.org/docs/messages/module-not-found
+145.5 
+145.5 ./app/accounting/assets/new/page.tsx
+145.5 Module not found: Can't resolve '@/lib/utils/api'
+145.5 
+145.5 https://nextjs.org/docs/messages/module-not-found
+145.5 
+145.5 ./app/accounting/assets/page.tsx
+145.5 Module not found: Can't resolve '@/lib/utils/api'
+145.5 
+145.5 https://nextjs.org/docs/messages/module-not-found
+145.5 
+145.5 ./app/accounting/assets/reports/page.tsx
+145.5 Module not found: Can't resolve '@/lib/utils/api'
+145.5 
+145.5 https://nextjs.org/docs/messages/module-not-found
+145.5 
+147.0 
+147.0 > Build failed because of webpack errors
+148.0  ELIFECYCLE  Command failed with exit code 1.
+------
+[+] up 0/2
+ ⠙ Image gentong-mas-erp-backend  Building                                                                                     152.2s
+ ⠙ Image gentong-mas-erp-frontend Building                                                                                     152.2s
+Dockerfile.frontend:32
+
+--------------------
+
+  30 |     
+
+  31 |     # Build Next.js
+
+  32 | >>> RUN cd apps/${APP_DIR} && pnpm build
+
+  33 |     
+
+  34 |     # ── Stage 2: Runner ───────────────────────────────────────────────
+
+--------------------
+
+target frontend: failed to solve: process "/bin/sh -c cd apps/${APP_DIR} && pnpm build" did not complete successfully: exit code: 
