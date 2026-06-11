@@ -64,10 +64,11 @@ export class InvoiceService {
       include: { items: true, customer: { select: { id: true, name: true } } },
     });
     this.notif.notifyGrupInvoice({
+      orderId: data.id,
       noInvoice: data.noInvoice,
       namaCustomer: data.customer?.name ?? 'Customer',
-      grandTotal: Number(data.grandTotal ?? 0),
-      dueDate: data.dueDate,
+      totalHarga: Number((data as any).grandTotal ?? 0),
+      items: [],
     }).catch(() => null);
     return { data, message: 'Invoice berhasil dibuat' };
   }
@@ -111,12 +112,9 @@ export class InvoiceService {
     const newStatus = paid >= total ? 'paid' : paid > 0 ? 'partial' : 'sent';
     await this.prisma.invoice.update({ where: { id: invoiceId }, data: { status: newStatus, paidAmount: paid } });
     this.notif.notifyGrupBuktiTF({
-      noInvoice: (inv as any).noInvoice,
+      orderId: (inv as any).noInvoice ?? inv.id,
       namaCustomer: (inv as any).customer?.name ?? 'Customer',
-      amount: Number(dto.amount),
-      method: dto.method ?? 'transfer',
-      referensi: dto.reference ?? dto.referensi ?? null,
-      sisaTagihan: sisa,
+      totalHarga: Number(dto.amount),
     }).catch(() => null);
     return { data: payment, message: 'Pembayaran berhasil dicatat' };
   }

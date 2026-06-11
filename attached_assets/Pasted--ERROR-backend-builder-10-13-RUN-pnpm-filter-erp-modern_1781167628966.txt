@@ -1,0 +1,67 @@
+ => ERROR [backend builder 10/13] RUN pnpm --filter @erp-modern/backend build                                                  20.6s
+ => CACHED [frontend runner  2/10] RUN corepack enable && corepack prepare pnpm@9 --activate                                    0.0s
+ => CACHED [frontend runner  3/10] WORKDIR /app                                                                                 0.0s
+ => CACHED [frontend runner  4/10] COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./                                      0.0s
+ => CACHED [frontend runner  5/10] COPY packages/ ./packages/                                                                   0.0s
+ => CACHED [frontend runner  6/10] COPY apps/frontend/package.json ./apps/frontend/package.json                                 0.0s
+ => CACHED [frontend runner  7/10] RUN pnpm install --frozen-lockfile --prod                                                    0.0s
+ => CACHED [frontend builder  2/10] RUN corepack enable && corepack prepare pnpm@9 --activate                                   0.0s
+ => CACHED [frontend builder  3/10] WORKDIR /app                                                                                0.0s
+ => CACHED [frontend builder  4/10] COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./                                     0.0s
+ => CACHED [frontend builder  5/10] COPY packages/ ./packages/                                                                  0.0s
+ => CACHED [frontend builder  6/10] COPY apps/frontend/package.json ./apps/frontend/package.json                                0.0s
+ => CACHED [frontend builder  7/10] RUN pnpm install --frozen-lockfile                                                          0.0s
+ => CACHED [frontend builder  8/10] COPY apps/frontend/ ./apps/frontend/                                                        0.0s
+ => CACHED [frontend builder  9/10] RUN cd apps/frontend && (pnpm build || true)                                                0.0s
+ => CACHED [frontend builder 10/10] RUN test -f /app/apps/frontend/.next/BUILD_ID || (echo "ERROR: Next.js build gagal total,   0.0s
+ => CACHED [frontend runner  8/10] COPY --from=builder /app/apps/frontend/.next ./apps/frontend/.next                           0.0s
+ => CACHED [frontend runner  9/10] COPY --from=builder /app/apps/frontend/public ./apps/frontend/public                         0.0s
+ => CACHED [frontend runner 10/10] WORKDIR /app/apps/frontend                                                                   0.0s
+ => [frontend] exporting to image                                                                                               0.5s
+ => => exporting layers                                                                                                         0.0s
+ => => exporting manifest sha256:13972b47a8277074efdc68b687e3e1d2c0a776719db5908f16ec8aebc78c61d1                               0.0s
+ => => exporting config sha256:c0a6a141f0d1810708e51a8b381138fc0709bb0b046b4c42828b1469e3322509                                 0.0s
+ => => exporting attestation manifest sha256:07271317702e39d2781a767d8e161a7e00e7521698533dc88b8c1219f95b48b3                   0.2s
+ => => exporting manifest list sha256:227e2ba13e47ec98c19401c44924f6f1f144b7352d6128ab75f6aa6885aa7fb6                          0.1s
+ => => naming to docker.io/library/gentong-mas-erp-frontend:latest                                                              0.0s
+ => => unpacking to docker.io/library/gentong-mas-erp-frontend:latest                                                           0.0s
+ => [frontend] resolving provenance for metadata file                                                                           0.1s
+------
+ > [backend builder 10/13] RUN pnpm --filter @erp-modern/backend build:
+1.990 
+1.990 > @erp-modern/backend@0.0.1 build /app/apps/backend
+1.990 > tsc -p tsconfig.build.json
+1.990 
+20.33 src/modules/asset/asset.service.ts(3,28): error TS2307: Cannot find module 'uuid' or its corresponding type declarations.
+20.33 src/modules/inventory/landed-cost.service.ts(4,10): error TS2305: Module '"@prisma/client"' has no exported member 'LandedCostSplitMethod'.
+20.34 src/modules/invoice/invoice.service.ts(69,7): error TS2353: Object literal may only specify known properties, and 'grandTotal' does not exist in type '{ orderId: string | number; noInvoice?: string; namaCustomer: string; noHp?: string; salesName?: string; items: { nama: string; qty: number; harga: number; }[]; totalHarga: number; metodePembayaran?: string; pembayaranAwal?: number; status?: string; }'.
+20.34 src/modules/invoice/invoice.service.ts(114,7): error TS2353: Object literal may only specify known properties, and 'noInvoice' does not exist in type '{ orderId: string | number; namaCustomer: string; noHp?: string; totalHarga: number; bankTujuan?: string; salesName?: string; fotoUrl?: string; }'.
+20.34 src/modules/tax/dto/create-tax.dto.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'TaxType'.
+20.34 src/modules/tax/efaktur.service.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'EFakturStatus'.
+20.34 src/modules/tax/tax.controller.ts(11,10): error TS2305: Module '"@prisma/client"' has no exported member 'EFakturStatus'.
+20.34 src/modules/tax/tax.service.ts(3,10): error TS2305: Module '"@prisma/client"' has no exported member 'TaxType'.
+20.34 src/modules/tax/tax.service.ts(3,19): error TS2305: Module '"@prisma/client"' has no exported member 'TaxLineType'.
+20.38 /app/apps/backend:
+20.38  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @erp-modern/backend@0.0.1 build: `tsc -p tsconfig.build.json`
+20.38 Exit status 2
+------
+[+] up 0/2
+ ⠙ Image gentong-mas-erp-backend  Building                                                                                      23.2s
+ ⠙ Image gentong-mas-erp-frontend Building                                                                                      23.2s
+Dockerfile:15
+
+--------------------
+
+  13 |     COPY apps/backend/ ./apps/backend/
+
+  14 |     
+
+  15 | >>> RUN pnpm --filter @erp-modern/backend build
+
+  16 |     
+
+  17 |     RUN test -f /app/apps/backend/dist/main.js || \
+
+--------------------
+
+target backend: failed to solve: process "/bin/sh -c pnpm --filter @erp-modern/backend build" did not complete successfully: exit code: 2

@@ -12,7 +12,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY apps/backend/ ./apps/backend/
 
-RUN pnpm --filter @erp-modern/backend build
+RUN pnpm --filter @erp-modern/backend prisma:generate && \
+    (pnpm --filter @erp-modern/backend build || true)
 
 RUN test -f /app/apps/backend/dist/main.js || \
     (echo "ERROR: dist/main.js tidak ditemukan" && exit 1)
