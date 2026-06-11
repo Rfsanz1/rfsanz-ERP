@@ -4,7 +4,7 @@
     "declaration": true,
     "sourceMap": false,
     "incremental": false,
-    "noEmitOnError": true
+    "noEmitOnError": false
   },
   "exclude": ["node_modules", "dist", "tests"]
 }
