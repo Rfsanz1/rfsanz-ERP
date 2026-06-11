@@ -57,9 +57,10 @@ export default function CustomerSearchDropdown({
           ? (localRes.value.data?.data ?? []).map((c: any) => ({ ...c, source: 'local' as const }))
           : [];
 
+      // Kledo response: { success, data: { data: [...], total, ... }, message }
       const kledoRaw: any[] =
         kledoRes.status === 'fulfilled'
-          ? (kledoRes.value.data?.data ?? [])
+          ? (kledoRes.value.data?.data?.data ?? kledoRes.value.data?.data ?? [])
           : [];
 
       const kledoList: CustomerOption[] = kledoRaw.map((c: any) => ({

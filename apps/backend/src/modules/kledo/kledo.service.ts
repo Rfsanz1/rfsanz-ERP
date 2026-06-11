@@ -26,6 +26,13 @@ export class KledoService {
     return { Authorization: `Bearer ${this.token}`, 'Content-Type': 'application/json' };
   }
 
+  /** Ambil tenantId default (tenant pertama) untuk operasi sync */
+  private async getDefaultTenantId(): Promise<string> {
+    const tenant = await this.prisma.tenant.findFirst({ select: { id: true } });
+    if (!tenant) throw new Error('Tidak ada tenant di database');
+    return tenant.id;
+  }
+
   async getStatus() {
     if (!this.token) return { connected: false, message: 'KLEDO_TOKEN tidak dikonfigurasi' };
     try {
@@ -190,17 +197,16 @@ export class KledoService {
   async syncProducts(): Promise<{ jobId: string; message: string; total?: number }> {
     if (!this.token) return { jobId: '', message: 'KLEDO_TOKEN tidak dikonfigurasi' };
 
+    const tenantId = await this.getDefaultTenantId();
     const PER_PAGE = 100;
-    // Cek total dulu dengan per_page=PER_PAGE supaya lastPage akurat
     const { total, lastPage } = await this.fetchPage('/finance/products', 1, PER_PAGE);
     const log = await this.prisma.kledoSyncLog.create({
-      data: { type: 'products', status: 'running', message: `Sync ${total} produk dimulai (${lastPage} halaman)` },
+      data: { tenantId, type: 'products', status: 'running', message: `Sync ${total} produk dimulai (${lastPage} halaman)` },
     });
 
     this.runBackground(log.id, async () => {
       let synced = 0;
       for (let page = 1; page <= lastPage; page++) {
-        // Throttle: jeda 350ms antar halaman agar tidak kena rate limit
         if (page > 1) await this.sleep(350);
         const { items } = await this.fetchPage('/finance/products', page, PER_PAGE);
         for (const p of items) {
@@ -217,14 +223,14 @@ export class KledoService {
               stok: p.qty ?? 0,
             },
             create: {
-              sku, name: p.name ?? sku,
+              tenantId, sku, name: p.name ?? sku,
               kledoProductId: p.id?.toString(),
               hargaKledo: p.price ?? p.base_price ?? 0,
               hargaJual: p.price ?? 0,
               hargaBeli: p.base_price ?? 0,
               stok: p.qty ?? 0,
             },
-          });
+          }).catch(() => null);
           synced++;
         }
         if (page % 10 === 0) {
@@ -244,10 +250,11 @@ export class KledoService {
   async syncContacts(): Promise<{ jobId: string; message: string; total?: number }> {
     if (!this.token) return { jobId: '', message: 'KLEDO_TOKEN tidak dikonfigurasi' };
 
+    const tenantId = await this.getDefaultTenantId();
     const PER_PAGE = 100;
     const { total, lastPage } = await this.fetchPage('/finance/contacts', 1, PER_PAGE);
     const log = await this.prisma.kledoSyncLog.create({
-      data: { type: 'contacts', status: 'running', message: `Sync ${total} kontak dimulai (${lastPage} halaman)` },
+      data: { tenantId, type: 'contacts', status: 'running', message: `Sync ${total} kontak dimulai (${lastPage} halaman)` },
     });
 
     this.runBackground(log.id, async () => {
@@ -261,7 +268,7 @@ export class KledoService {
             where: { kledoId: c.id?.toString() },
             update: { name: c.name, email: c.email || null, phone: c.phone || null, address: c.address || null },
             create: {
-              name: c.name, email: c.email || null, phone: c.phone || null,
+              tenantId, name: c.name, email: c.email || null, phone: c.phone || null,
               address: c.address || null, kledoId: c.id?.toString(),
             },
           }).catch(() => null);
@@ -284,8 +291,9 @@ export class KledoService {
   async syncInvoices(limit = 500): Promise<{ jobId: string; message: string }> {
     if (!this.token) return { jobId: '', message: 'KLEDO_TOKEN tidak dikonfigurasi' };
 
+    const tenantId = await this.getDefaultTenantId();
     const log = await this.prisma.kledoSyncLog.create({
-      data: { type: 'invoices', status: 'running', message: `Sync ${limit} invoice terbaru dimulai` },
+      data: { tenantId, type: 'invoices', status: 'running', message: `Sync ${limit} invoice terbaru dimulai` },
     });
 
     this.runBackground(log.id, async () => {
