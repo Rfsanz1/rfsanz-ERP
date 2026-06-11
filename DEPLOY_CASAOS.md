@@ -5,6 +5,7 @@
 - CasaOS sudah terinstall di server/PC/NAS
 - Docker dan Docker Compose sudah aktif (bawaan CasaOS)
 - Git sudah terinstall di server CasaOS
+- Minimal RAM: 2 GB, CPU: 2 core
 
 ---
 
@@ -24,23 +25,20 @@ cp .env.example .env
 nano .env
 ```
 
-Isi nilai-nilai berikut:
+Isi nilai-nilai berikut (wajib):
 
 ```env
 # IP server CasaOS kamu di jaringan lokal
-SERVER_IP=192.168.1.xxx   # ganti dengan IP server kamu
+# Cek dengan: ip addr show | grep "inet 192"
+SERVER_IP=192.168.1.xxx
 
-# JWT Secrets (WAJIB diganti!)
-JWT_SECRET=xxxxxxxxxxxxx   # generate: openssl rand -base64 64
-JWT_REFRESH_SECRET=xxxxxxx # generate: openssl rand -base64 64
+# JWT Secrets — WAJIB diganti!
+# Generate: openssl rand -base64 64
+JWT_SECRET=xxxxxxxxxxxxx
+JWT_REFRESH_SECRET=xxxxxxx
 
 # Password database (opsional, bisa dibiarkan default)
 POSTGRES_PASSWORD=erp_password_aman
-```
-
-Untuk tahu IP server:
-```bash
-ip addr show | grep "inet 192"
 ```
 
 ### 3. Build dan jalankan semua service
@@ -49,28 +47,27 @@ ip addr show | grep "inet 192"
 docker compose up -d --build
 ```
 
-Build pertama kali akan memakan waktu ~10–20 menit tergantung koneksi dan spesifikasi server.
+> Build pertama kali memakan waktu **10–20 menit** tergantung koneksi dan spesifikasi server.
 
-### 4. Inisialisasi database (hanya pertama kali)
+### 4. Cek status semua container
 
 ```bash
-docker compose exec backend npx prisma migrate deploy --schema=/app/apps/backend/prisma/schema.prisma
+docker compose ps
 ```
+
+Semua service harus berstatus `healthy` atau `running`.
 
 ---
 
 ## Akses Aplikasi
 
-Setelah semua container berjalan, akses via browser di jaringan lokal:
+Setelah semua container berjalan, akses via browser:
 
-| Aplikasi | URL | Keterangan |
-|---|---|---|
-| **Admin (Web)** | `http://SERVER_IP:5000` | Dashboard utama owner/admin |
-| **POS Kasir** | `http://SERVER_IP:3001` | Point of Sale |
-| **Sales App** | `http://SERVER_IP:3002` | Aplikasi tim sales |
-| **Gudang App** | `http://SERVER_IP:3003` | Manajemen gudang |
-| **Driver App** | `http://SERVER_IP:4000` | Aplikasi pengemudi |
-| **API Docs** | `http://SERVER_IP:6000/docs` | Swagger dokumentasi API |
+| Aplikasi          | URL                           | Keterangan               |
+|-------------------|-------------------------------|--------------------------|
+| **Web Admin**     | `http://SERVER_IP:5000`       | Dashboard utama ERP      |
+| **API Docs**      | `http://SERVER_IP:6000/docs`  | Swagger dokumentasi API  |
+| **Health Check**  | `http://SERVER_IP:6000/api/health` | Cek status backend  |
 
 Ganti `SERVER_IP` dengan IP server CasaOS kamu.
 
@@ -85,14 +82,21 @@ docker compose ps
 # Lihat log backend
 docker compose logs -f backend
 
+# Lihat log frontend
+docker compose logs -f frontend
+
 # Restart service tertentu
-docker compose restart web
+docker compose restart frontend
 
 # Stop semua
 docker compose down
 
 # Update setelah pull kode baru
 git pull && docker compose up -d --build
+
+# Reset database (HATI-HATI: hapus semua data!)
+docker compose down -v
+docker compose up -d --build
 ```
 
 ---
@@ -101,7 +105,8 @@ git pull && docker compose up -d --build
 
 ### Browser tidak bisa akses app
 - Pastikan `SERVER_IP` di `.env` sudah benar (IP jaringan lokal, bukan `localhost`)
-- Cek firewall: port 3001, 3002, 3003, 5000, 6000 harus terbuka
+- Cek firewall: port `5000` dan `6000` harus terbuka
+- Jalankan `docker compose ps` — pastikan status `healthy`
 
 ### Error CORS
 - Tambahkan IP/domain kamu di `.env`: `CORS_ORIGINS=http://IP_KAMU:5000`
@@ -110,3 +115,8 @@ git pull && docker compose up -d --build
 ### Database tidak bisa connect
 - Tunggu sampai healthcheck postgres lulus: `docker compose ps`
 - Cek log: `docker compose logs postgres`
+- Pastikan volume postgres belum korup: `docker compose down -v && docker compose up -d --build`
+
+### Frontend tidak bisa akses API
+- Pastikan `NEXT_PUBLIC_API_URL=http://SERVER_IP:6000` di `.env` sudah benar
+- Rebuild frontend setelah ubah env: `docker compose build frontend && docker compose up -d frontend`

@@ -1,5 +1,3 @@
-version: '3.8'
-
 # =====================================================
 # Gentong Mas ERP — Docker Compose untuk CasaOS
 # =====================================================
@@ -9,6 +7,7 @@ version: '3.8'
 # =====================================================
 
 services:
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -16,8 +15,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-erp}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-erp_password}
       POSTGRES_DB: ${POSTGRES_DB:-gentong_mas_erp}
-    ports:
-      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,6 +22,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - erp-net
 
   backend:
     build:
@@ -39,10 +38,17 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-erp}:${POSTGRES_PASSWORD:-erp_password}@postgres:5432/${POSTGRES_DB:-gentong_mas_erp}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-use-openssl-rand}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-use-openssl-rand}
-      JWT_EXPIRES_IN: 7d
-      JWT_REFRESH_EXPIRES_IN: 30d
-      # Tambah IP/domain jika ada yang perlu diizinkan khusus
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      APP_URL: http://${SERVER_IP:-localhost}:6000
       CORS_ORIGINS: ${CORS_ORIGINS:-}
+      FONNTE_TOKEN: ${FONNTE_TOKEN:-}
+      FONNTE_GROUP_INVOICE: ${FONNTE_GROUP_INVOICE:-}
+      FONNTE_GROUP_BUKTI_TF: ${FONNTE_GROUP_BUKTI_TF:-}
+      KLEDO_TOKEN: ${KLEDO_TOKEN:-}
+      KLEDO_BASE_URL: ${KLEDO_BASE_URL:-https://api.kledo.com/api/v1}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,14 +57,16 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 60s
+    networks:
+      - erp-net
 
-  web:
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        APP_DIR: web
+        APP_DIR: frontend
         PORT: 5000
     restart: unless-stopped
     ports:
@@ -66,93 +74,18 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5000
-      # Untuk akses dari browser di jaringan lokal, set ke IP CasaOS server
       BACKEND_URL: http://backend:6000
       NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:6000
-      NEXT_PUBLIC_APP_NAME: Gentong Mas ERP — Admin
+      NEXT_PUBLIC_APP_NAME: "Gentong Mas ERP"
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - erp-net
 
-  sales-app:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        APP_DIR: sales-app
-        PORT: 3002
-    restart: unless-stopped
-    ports:
-      - '3002:3002'
-    environment:
-      NODE_ENV: production
-      PORT: 3002
-      BACKEND_URL: http://backend:6000
-      NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:6000
-      NEXT_PUBLIC_APP_NAME: Gentong Mas — Sales App
-    depends_on:
-      backend:
-        condition: service_healthy
-
-  gudang-app:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        APP_DIR: gudang-app
-        PORT: 3003
-    restart: unless-stopped
-    ports:
-      - '3003:3003'
-    environment:
-      NODE_ENV: production
-      PORT: 3003
-      BACKEND_URL: http://backend:6000
-      NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:6000
-      NEXT_PUBLIC_APP_NAME: Gentong Mas — Gudang App
-    depends_on:
-      backend:
-        condition: service_healthy
-
-  pos-app:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        APP_DIR: pos-app
-        PORT: 3001
-    restart: unless-stopped
-    ports:
-      - '3001:3001'
-    environment:
-      NODE_ENV: production
-      PORT: 3001
-      BACKEND_URL: http://backend:6000
-      NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:6000
-      NEXT_PUBLIC_APP_NAME: Gentong Mas — POS Kasir
-    depends_on:
-      backend:
-        condition: service_healthy
-
-  driver-app:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        APP_DIR: driver-app
-        PORT: 3000
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      BACKEND_URL: http://backend:6000
-      NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:6000
-      NEXT_PUBLIC_APP_NAME: Gentong Mas — Driver App
-    depends_on:
-      backend:
-        condition: service_healthy
+networks:
+  erp-net:
+    driver: bridge
 
 volumes:
   postgres_data:

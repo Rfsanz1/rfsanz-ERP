@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
-const BACKEND = 'http://127.0.0.1:6000';
+// Dalam Docker: BACKEND_URL=http://backend:6000
+// Dalam dev Replit: BACKEND_URL=http://127.0.0.1:6000
+const BACKEND = process.env.BACKEND_URL || 'http://127.0.0.1:6000';
 
 const config = {
   transpilePackages: ['@gm/ui', '@gm/utils', '@gm/types'],

@@ -14,6 +14,10 @@ RUN cd apps/backend && pnpm prisma generate && pnpm build
 
 FROM node:20-alpine AS runner
 RUN corepack enable && corepack prepare pnpm@9 --activate
+
+# Install wget untuk healthcheck
+RUN apk add --no-cache wget
+
 WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -24,7 +28,8 @@ RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
-COPY --from=builder /app/node_modules/.pnpm/prisma@*/node_modules/prisma ./node_modules/.pnpm/prisma/node_modules/prisma 2>/dev/null || true
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 WORKDIR /app/apps/backend
 

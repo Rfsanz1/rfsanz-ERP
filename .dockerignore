@@ -8,10 +8,13 @@ node_modules
 .replit
 replit.nix
 .local
+.agents
 *.log
 .env
 .env.*
 !.env.example
-README.md
-DEPLOY_CASAOS.md
 attached_assets
+docs
+tests
+server.js
+zipFile.zip
