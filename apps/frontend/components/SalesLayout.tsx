@@ -51,7 +51,7 @@ export function SalesLayout({ children, title, subtitle }: SalesLayoutProps) {
     // Jika token belum ada di store, coba rehydrate dari localStorage (sinkron)
     if (!token) {
       const stored = localStorage.getItem('erp_token');
-      if (!stored) { router.replace('/login'); return; }
+      if (!stored) { router.replace('/dashboard'); return; }
       useAuthStore.getState().rehydrate();
       return;
     }

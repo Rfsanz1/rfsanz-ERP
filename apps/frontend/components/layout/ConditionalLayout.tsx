@@ -30,7 +30,7 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
     if (!isPublic && !isStandalone && !token) {
       const stored = typeof window !== 'undefined' ? window.localStorage.getItem('erp_token') : null;
       if (!stored) {
-        router.push('/login');
+        router.push('/dashboard');
       }
     }
   }, [token, isPublic, isStandalone, router]);

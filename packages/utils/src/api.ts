@@ -33,11 +33,11 @@ export function createApiClient(baseURL = '/api'): AxiosInstance {
             return client(error.config);
           } catch {
             clearTokens();
-            window.location.href = '/login';
+            window.location.href = '/dashboard';
           }
         } else {
           clearTokens();
-          window.location.href = '/login';
+          window.location.href = '/dashboard';
         }
       }
       return Promise.reject(error);
