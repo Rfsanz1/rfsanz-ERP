@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
 import { ArrowLeft, Package, User, MapPin, Calendar } from 'lucide-react';
 
@@ -44,7 +43,7 @@ export default function OrderDetailPage() {
   const cfg = order ? (STATUS_CFG[order.status] ?? { label: order.status, color: '#9CA3AF' }) : null;
 
   return (
-    <SalesLayout title="Detail Order">
+    <>
       <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, padding: '8px 14px', borderRadius: 10, border: `1.5px solid ${C.border}`, background: '#fff', color: C.textMid, fontSize: 13, cursor: 'pointer' }}>
         <ArrowLeft size={14} /> Kembali
       </button>
@@ -128,6 +127,6 @@ export default function OrderDetailPage() {
       ) : (
         <div style={{ textAlign: 'center', padding: 60, color: C.textLight }}>Order tidak ditemukan</div>
       )}
-    </SalesLayout>
+    </>
   );
 }

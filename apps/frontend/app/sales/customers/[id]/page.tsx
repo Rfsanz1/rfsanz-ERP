@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
 import { ArrowLeft, Phone, MapPin, Mail, TrendingUp, ShoppingCart } from 'lucide-react';
 
@@ -31,7 +30,7 @@ export default function CustomerDetailPage() {
   const formatDate = (v: string) => v ? new Date(v).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '–';
 
   return (
-    <SalesLayout title="Detail Pelanggan">
+    <>
       <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, padding: '8px 14px', borderRadius: 10, border: `1.5px solid ${C.border}`, background: '#fff', color: C.textMid, fontSize: 13, cursor: 'pointer' }}>
         <ArrowLeft size={14} /> Kembali
       </button>
@@ -107,6 +106,6 @@ export default function CustomerDetailPage() {
       ) : (
         <div style={{ textAlign: 'center', padding: 60, color: C.textLight }}>Pelanggan tidak ditemukan</div>
       )}
-    </SalesLayout>
+    </>
   );
 }

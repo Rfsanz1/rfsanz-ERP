@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SalesLayout } from '@/components/SalesLayout';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import api from '@/lib/api';
 import { ShoppingCart, FileText, Users, TrendingUp, Target, Zap, Star, Phone, BarChart2 } from 'lucide-react';
@@ -44,55 +43,53 @@ export default function SalesDashboardPage() {
   ];
 
   return (
-    <SalesLayout title="Dashboard Penjualan">
-      <div style={{ maxWidth: 1200 }} className="space-y-5">
+    <div style={{ maxWidth: 1200 }} className="space-y-5">
 
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-            Halo, {user?.name?.split(' ')[0] || 'Sales'}! 👋
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Berikut ringkasan aktivitas penjualan hari ini.</p>
-        </div>
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+          Halo, {user?.name?.split(' ')[0] || 'Sales'}! 👋
+        </h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Berikut ringkasan aktivitas penjualan hari ini.</p>
+      </div>
 
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-          {KPI.map(k => {
-            const Icon = k.icon;
-            return (
-              <div key={k.label} style={card}>
-                <div className="flex items-center justify-between mb-3">
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: k.accent + '1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon size={18} style={{ color: k.accent }} strokeWidth={2} />
-                  </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+        {KPI.map(k => {
+          const Icon = k.icon;
+          return (
+            <div key={k.label} style={card}>
+              <div className="flex items-center justify-between mb-3">
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: k.accent + '1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon size={18} style={{ color: k.accent }} strokeWidth={2} />
                 </div>
-                <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{k.value}</p>
-                <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', margin: '6px 0 0' }}>{k.label}</p>
               </div>
+              <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{k.value}</p>
+              <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', margin: '6px 0 0' }}>{k.label}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={card}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px', letterSpacing: '-0.01em' }}>Aksi Cepat</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+          {ACTIONS.map(a => {
+            const Icon = a.icon;
+            return (
+              <button key={a.href} onClick={() => router.push(a.href)}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', transition: 'all 0.15s ease', width: '100%' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = a.accent + '0D'; (e.currentTarget as HTMLButtonElement).style.borderColor = a.accent + '44'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; }}
+              >
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: a.accent + '1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon size={16} style={{ color: a.accent }} strokeWidth={2} />
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.3 }}>{a.label}</span>
+              </button>
             );
           })}
         </div>
-
-        <div style={card}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px', letterSpacing: '-0.01em' }}>Aksi Cepat</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
-            {ACTIONS.map(a => {
-              const Icon = a.icon;
-              return (
-                <button key={a.href} onClick={() => router.push(a.href)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', transition: 'all 0.15s ease', width: '100%' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = a.accent + '0D'; (e.currentTarget as HTMLButtonElement).style.borderColor = a.accent + '44'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; }}
-                >
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: a.accent + '1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon size={16} style={{ color: a.accent }} strokeWidth={2} />
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.3 }}>{a.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
       </div>
-    </SalesLayout>
+
+    </div>
   );
 }

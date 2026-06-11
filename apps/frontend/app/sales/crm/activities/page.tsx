@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
 import { Plus, RefreshCw, Phone, Mail, Users, Calendar, MessageSquare } from 'lucide-react';
 
@@ -40,7 +39,7 @@ export default function ActivitiesPage() {
   const formatDate = (v: string) => v ? new Date(v).toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–';
 
   return (
-    <SalesLayout title="Aktivitas CRM" subtitle="Riwayat interaksi dengan pelanggan">
+    <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: C.textDark, margin: '0 0 4px' }}>Aktivitas</h2>
@@ -85,6 +84,6 @@ export default function ActivitiesPage() {
           })}
         </div>
       )}
-    </SalesLayout>
+    </>
   );
 }

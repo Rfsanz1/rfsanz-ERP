@@ -1,9 +1,8 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
-import { ShoppingCart, Search, RefreshCw, Plus, Eye } from 'lucide-react';
+import { Search, RefreshCw, Plus, Eye } from 'lucide-react';
 
 const STATUS_CFG: Record<string, { label: string; color: string }> = {
   draft:      { label: 'Draf',         color: '#94A3B8' },
@@ -63,9 +62,7 @@ export default function SalesOrdersPage() {
   const fmtDate = (v: string) => v ? new Date(v).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '–';
 
   return (
-    <SalesLayout title="Sales Order" subtitle="Kelola pesanan pelanggan">
-
-      {/* Header */}
+    <>
       <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
@@ -83,7 +80,6 @@ export default function SalesOrdersPage() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
           <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -97,7 +93,6 @@ export default function SalesOrdersPage() {
         </select>
       </div>
 
-      {/* Table */}
       <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -140,6 +135,6 @@ export default function SalesOrdersPage() {
           </div>
         )}
       </div>
-    </SalesLayout>
+    </>
   );
 }

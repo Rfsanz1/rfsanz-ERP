@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
-import { RefreshCw, TrendingUp } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 const C = { primary: '#7C3AED', border: '#EDE9FE', textDark: '#1E1B4B', textMid: '#6B7280', textLight: '#9CA3AF' };
 
@@ -42,7 +41,7 @@ export default function PipelinePage() {
   }));
 
   return (
-    <SalesLayout title="Pipeline CRM" subtitle="Pantau alur peluang penjualan">
+    <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: C.textDark, margin: '0 0 4px' }}>Pipeline CRM</h2>
@@ -92,6 +91,6 @@ export default function PipelinePage() {
           </div>
         ))}
       </div>
-    </SalesLayout>
+    </>
   );
 }

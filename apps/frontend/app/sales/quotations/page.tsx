@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
 import { Search, RefreshCw, Plus } from 'lucide-react';
 
@@ -51,9 +50,7 @@ export default function QuotationsPage() {
   );
 
   return (
-    <SalesLayout title="Penawaran Harga" subtitle="Buat dan kelola penawaran harga ke pelanggan">
-
-      {/* Header */}
+    <>
       <div className="flex items-start justify-between flex-wrap gap-3 mb-5">
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Penawaran Harga</h2>
@@ -70,7 +67,6 @@ export default function QuotationsPage() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
           <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -84,7 +80,6 @@ export default function QuotationsPage() {
         </select>
       </div>
 
-      {/* Table */}
       <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -124,6 +119,6 @@ export default function QuotationsPage() {
           </table>
         </div>
       </div>
-    </SalesLayout>
+    </>
   );
 }

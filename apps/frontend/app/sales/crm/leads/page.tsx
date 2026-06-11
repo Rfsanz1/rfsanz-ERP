@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
 import { Plus, Search, RefreshCw, Phone, Mail, Star } from 'lucide-react';
 
@@ -48,7 +47,7 @@ export default function LeadsPage() {
   );
 
   return (
-    <SalesLayout title="Leads CRM" subtitle="Kelola prospek dan lead baru">
+    <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: C.textDark, margin: '0 0 4px' }}>Leads</h2>
@@ -105,6 +104,6 @@ export default function LeadsPage() {
           {filtered.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 40, color: C.textLight }}>Tidak ada leads ditemukan</div>}
         </div>
       )}
-    </SalesLayout>
+    </>
   );
 }

@@ -1,7 +1,5 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
 import { Search, RefreshCw, AlertTriangle } from 'lucide-react';
 
@@ -57,7 +55,7 @@ export default function FakturPage() {
   const overdueCount = filtered.filter(r => r.status === 'overdue').length;
 
   return (
-    <SalesLayout title="Faktur" subtitle="Daftar invoice & piutang">
+    <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: C.textDark, margin: '0 0 4px' }}>Faktur / Invoice</h2>
@@ -141,6 +139,6 @@ export default function FakturPage() {
           </div>
         )}
       </div>
-    </SalesLayout>
+    </>
   );
 }

@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
 import { TrendingUp, ShoppingCart, Users, Target } from 'lucide-react';
 
@@ -32,7 +31,7 @@ export default function SalesReportsPage() {
   const totalCustomers = data.reduce((s, d) => s + d.newCustomers, 0);
 
   return (
-    <SalesLayout title="Laporan Sales" subtitle="Ringkasan kinerja penjualan">
+    <>
       <h2 style={{ fontSize: 20, fontWeight: 800, color: C.textDark, margin: '0 0 4px' }}>Laporan Sales</h2>
       <p style={{ fontSize: 13, color: C.textLight, margin: '0 0 20px' }}>6 bulan terakhir</p>
 
@@ -74,6 +73,6 @@ export default function SalesReportsPage() {
           </div>
         )}
       </div>
-    </SalesLayout>
+    </>
   );
 }

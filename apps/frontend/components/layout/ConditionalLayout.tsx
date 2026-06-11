@@ -6,7 +6,7 @@ import { useAuthStore } from '../../lib/store/useAuthStore';
 import { registerAutoLogin } from '../../lib/api';
 import { MaterioLayout } from './MaterioLayout';
 
-const STANDALONE_PREFIXES = ['/sales', '/gudang', '/driver'];
+const STANDALONE_PREFIXES = ['/gudang', '/driver'];
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname    = usePathname();

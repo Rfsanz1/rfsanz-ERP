@@ -1,9 +1,8 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { SalesLayout } from '@/components/SalesLayout';
 import api from '@/lib/api';
-import { Users, Search, RefreshCw, Plus, MapPin, Phone } from 'lucide-react';
+import { Search, RefreshCw, Plus, MapPin, Phone } from 'lucide-react';
 
 const C = { primary: '#7C3AED', border: '#EDE9FE', textDark: '#1E1B4B', textMid: '#6B7280', textLight: '#9CA3AF' };
 
@@ -44,7 +43,7 @@ export default function CustomersPage() {
   const formatDate = (v: string) => v ? new Date(v).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '–';
 
   return (
-    <SalesLayout title="Pelanggan" subtitle="Data dan riwayat pelanggan">
+    <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: C.textDark, margin: '0 0 4px' }}>Pelanggan</h2>
@@ -117,6 +116,6 @@ export default function CustomersPage() {
           ))}
         </div>
       )}
-    </SalesLayout>
+    </>
   );
 }
