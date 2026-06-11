@@ -17,7 +17,7 @@ const Field = ({ label, required, children }: any) => (
   </div>
 );
 const Section = ({ title, children }: any) => (
-  <div className="bg-white rounded-2xl p-6 space-y-4" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
+  <div className="bg-white rounded-2xl p-6 space-y-4" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)', overflow: 'visible' }}>
     <h3 className="text-sm font-bold" style={{ color: '#1E1B4B' }}>{title}</h3>
     {children}
   </div>
