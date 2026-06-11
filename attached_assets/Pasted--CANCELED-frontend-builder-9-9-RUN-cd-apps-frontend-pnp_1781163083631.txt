@@ -1,0 +1,389 @@
+ => CANCELED [frontend builder 9/9] RUN cd apps/frontend && pnpm build                                                         92.3s
+ => ERROR [backend builder 9/9] RUN cd apps/backend && pnpm prisma generate && pnpm build                                      89.7s
+------
+ > [backend builder 9/9] RUN cd apps/backend && pnpm prisma generate && pnpm build:
+3.426 prisma:warn Prisma failed to detect the libssl/openssl version to use, and may not work as expected. Defaulting to "openssl-1.1.x".
+3.426 Please manually install OpenSSL and try installing Prisma again.
+4.221 Prisma schema loaded from prisma/schema.prisma
+4.486 prisma:warn Prisma failed to detect the libssl/openssl version to use, and may not work as expected. Defaulting to "openssl-1.1.x".
+4.486 Please manually install OpenSSL and try installing Prisma again.
+24.52 
+24.52 ✔ Generated Prisma Client (v5.22.0) to ./../../node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client in 13.81s
+24.52 
+24.52 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+24.52 
+24.52 Tip: Want to react to database changes in your app as they happen? Discover how with Pulse: https://pris.ly/tip-1-pulse
+24.52 
+29.37 
+29.37 > @erp-modern/backend@0.0.1 build /app/apps/backend
+29.37 > tsc -p tsconfig.build.json
+29.37 
+88.73 src/common/interceptors/audit.interceptor.ts(34,13): error TS2322: Type '{ actorId: string; action: string; resource: string; tableName: string; recordId: string; newData: any; ipAddress: string; userAgent: string; branchId: string; metadata: { method: string; url: string; }; }' is not assignable to type '(Without<AuditLogCreateInput, AuditLogUncheckedCreateInput> & AuditLogUncheckedCreateInput) | (Without<...> & AuditLogCreateInput)'.
+88.73   Type '{ actorId: string; action: string; resource: string; tableName: string; recordId: string; newData: any; ipAddress: string; userAgent: string; branchId: string; metadata: { method: string; url: string; }; }' is not assignable to type 'Without<AuditLogUncheckedCreateInput, AuditLogCreateInput> & AuditLogCreateInput'.
+88.73     Type '{ actorId: string; action: string; resource: string; tableName: string; recordId: string; newData: any; ipAddress: string; userAgent: string; branchId: string; metadata: { method: string; url: string; }; }' is not assignable to type 'Without<AuditLogUncheckedCreateInput, AuditLogCreateInput>'.
+88.73       Types of property 'actorId' are incompatible.
+88.73         Type 'string' is not assignable to type 'never'.
+88.73 src/modules/asset/asset.service.ts(3,28): error TS2307: Cannot find module 'uuid' or its corresponding type declarations.
+88.73 src/modules/asset/asset.service.ts(23,7): error TS2322: Type '{ name: any; depreciationAccountId: any; accDepAccountId: any; defaultUsefulLife: any; defaultMethod: any; }' is not assignable to type '(Without<AssetCategoryCreateInput, AssetCategoryUncheckedCreateInput> & AssetCategoryUncheckedCreateInput) | (Without<...> & AssetCategoryCreateInput)'.
+88.73   Type '{ name: any; depreciationAccountId: any; accDepAccountId: any; defaultUsefulLife: any; defaultMethod: any; }' is not assignable to type 'Without<AssetCategoryUncheckedCreateInput, AssetCategoryCreateInput> & AssetCategoryCreateInput'.
+88.73     Property 'tenant' is missing in type '{ name: any; depreciationAccountId: any; accDepAccountId: any; defaultUsefulLife: any; defaultMethod: any; }' but required in type 'AssetCategoryCreateInput'.
+88.73 src/modules/asset/asset.service.ts(152,15): error TS2741: Property 'tenantId' is missing in type '{ accountId: any; debit: number; kredit: number; deskripsi: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.73 src/modules/asset/asset.service.ts(153,15): error TS2741: Property 'tenantId' is missing in type '{ accountId: string; debit: number; kredit: number; deskripsi: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.73 src/modules/asset/asset.service.ts(227,9): error TS2322: Type '{ assetId: string; bulan: number; tahun: number; bebanDepresiasi: number; akumDepresiasi: number; nilaiBuku: number; }' is not assignable to type '(Without<AssetDepreciationCreateInput, AssetDepreciationUncheckedCreateInput> & AssetDepreciationUncheckedCreateInput) | (Without<...> & AssetDepreciationCreateInput)'.
+88.73   Type '{ assetId: string; bulan: number; tahun: number; bebanDepresiasi: number; akumDepresiasi: number; nilaiBuku: number; }' is not assignable to type 'Without<AssetDepreciationUncheckedCreateInput, AssetDepreciationCreateInput> & AssetDepreciationCreateInput'.
+88.73     Type '{ assetId: string; bulan: number; tahun: number; bebanDepresiasi: number; akumDepresiasi: number; nilaiBuku: number; }' is not assignable to type 'Without<AssetDepreciationUncheckedCreateInput, AssetDepreciationCreateInput>'.
+88.73       Types of property 'assetId' are incompatible.
+88.73         Type 'string' is not assignable to type 'never'.
+88.73 src/modules/asset/asset.service.ts(251,19): error TS2741: Property 'tenantId' is missing in type '{ accountId: string; debit: number; kredit: number; deskripsi: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.73 src/modules/asset/asset.service.ts(252,19): error TS2741: Property 'tenantId' is missing in type '{ accountId: string; debit: number; kredit: number; deskripsi: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.73 src/modules/asset/asset.service.ts(272,35): error TS2339: Property 'akumDepresiasi' does not exist on type '{ currentBookValue: number; accumulatedDep: number; category: { name: string; id: string; createdAt: Date; updatedAt: Date; tenantId: string; depreciationAccountId: string; accDepAccountId: string; defaultUsefulLife: number; defaultMethod: string; }; ... 32 more ...; metodeDepresiasi: DepreciasiMethod; }'.
+88.73 src/modules/asset/asset.service.ts(273,36): error TS2339: Property 'nilaiBuku' does not exist on type '{ currentBookValue: number; accumulatedDep: number; category: { name: string; id: string; createdAt: Date; updatedAt: Date; tenantId: string; depreciationAccountId: string; accDepAccountId: string; defaultUsefulLife: number; defaultMethod: string; }; ... 32 more ...; metodeDepresiasi: DepreciasiMethod; }'.
+88.73 src/modules/asset/asset.service.ts(288,9): error TS2322: Type '{ nomor: string; tanggal: Date; deskripsi: string; status: "POSTED"; lines: { create: any[]; }; }' is not assignable to type '(Without<JournalCreateInput, JournalUncheckedCreateInput> & JournalUncheckedCreateInput) | (Without<...> & JournalCreateInput)'.
+88.73   Type '{ nomor: string; tanggal: Date; deskripsi: string; status: "POSTED"; lines: { create: any[]; }; }' is not assignable to type 'Without<JournalUncheckedCreateInput, JournalCreateInput> & JournalCreateInput'.
+88.73     Property 'tenant' is missing in type '{ nomor: string; tanggal: Date; deskripsi: string; status: "POSTED"; lines: { create: any[]; }; }' but required in type 'JournalCreateInput'.
+88.73 src/modules/asset/asset.service.ts(390,56): error TS2322: Type '{ code: string; name: string; type: any; }' is not assignable to type '(Without<AccountCreateInput, AccountUncheckedCreateInput> & AccountUncheckedCreateInput) | (Without<...> & AccountCreateInput)'.
+88.73   Type '{ code: string; name: string; type: any; }' is not assignable to type 'Without<AccountUncheckedCreateInput, AccountCreateInput> & AccountCreateInput'.
+88.73     Property 'tenant' is missing in type '{ code: string; name: string; type: any; }' but required in type 'AccountCreateInput'.
+88.73 src/modules/audit/audit.service.ts(59,42): error TS2322: Type '{ actorId?: string; action: string; resource: string; tableName?: string; recordId?: string; oldData?: any; newData?: any; ipAddress?: string; userAgent?: string; branchId?: string; metadata?: any; }' is not assignable to type '(Without<AuditLogCreateInput, AuditLogUncheckedCreateInput> & AuditLogUncheckedCreateInput) | (Without<...> & AuditLogCreateInput)'.
+88.73   Type '{ actorId?: string; action: string; resource: string; tableName?: string; recordId?: string; oldData?: any; newData?: any; ipAddress?: string; userAgent?: string; branchId?: string; metadata?: any; }' is not assignable to type 'Without<AuditLogUncheckedCreateInput, AuditLogCreateInput> & AuditLogCreateInput'.
+88.73     Type '{ actorId?: string; action: string; resource: string; tableName?: string; recordId?: string; oldData?: any; newData?: any; ipAddress?: string; userAgent?: string; branchId?: string; metadata?: any; }' is not assignable to type 'Without<AuditLogUncheckedCreateInput, AuditLogCreateInput>'.
+88.73       Types of property 'actorId' are incompatible.
+88.73         Type 'string' is not assignable to type 'never'.
+88.73 src/modules/auth/auth.service.ts(202,7): error TS2322: Type '{ userId: string; token: string; expiresAt: Date; }' is not assignable to type '(Without<PasswordResetTokenCreateInput, PasswordResetTokenUncheckedCreateInput> & PasswordResetTokenUncheckedCreateInput) | (Without<...> & PasswordResetTokenCreateInput)'.
+88.73   Type '{ userId: string; token: string; expiresAt: Date; }' is not assignable to type 'Without<PasswordResetTokenUncheckedCreateInput, PasswordResetTokenCreateInput> & PasswordResetTokenCreateInput'.
+88.73     Type '{ userId: string; token: string; expiresAt: Date; }' is not assignable to type 'Without<PasswordResetTokenUncheckedCreateInput, PasswordResetTokenCreateInput>'.
+88.73       Types of property 'userId' are incompatible.
+88.73         Type 'string' is not assignable to type 'never'.
+88.73 src/modules/contact/contact.service.ts(53,41): error TS2322: Type '{ code: string; name: string; type: string[]; email?: string; phone?: string; mobile?: string; address?: string; city?: string; province?: string; postalCode?: string; country?: string; npwp?: string; ... 11 more ...; branchId?: string; }' is not assignable to type '(Without<ContactCreateInput, ContactUncheckedCreateInput> & ContactUncheckedCreateInput) | (Without<...> & ContactCreateInput)'.
+88.73   Type '{ code: string; name: string; type: string[]; email?: string; phone?: string; mobile?: string; address?: string; city?: string; province?: string; postalCode?: string; country?: string; npwp?: string; ... 11 more ...; branchId?: string; }' is not assignable to type 'Without<ContactUncheckedCreateInput, ContactCreateInput> & ContactCreateInput'.
+88.73     Property 'tenant' is missing in type '{ code: string; name: string; type: string[]; email?: string; phone?: string; mobile?: string; address?: string; city?: string; province?: string; postalCode?: string; country?: string; npwp?: string; ... 11 more ...; branchId?: string; }' but required in type 'ContactCreateInput'.
+88.73 src/modules/customers/customers.service.ts(86,7): error TS2322: Type '{ name: string; phone: string; email: string; kledoId: string; }' is not assignable to type '(Without<CustomerCreateInput, CustomerUncheckedCreateInput> & CustomerUncheckedCreateInput) | (Without<...> & CustomerCreateInput)'.
+88.73   Type '{ name: string; phone: string; email: string; kledoId: string; }' is not assignable to type 'Without<CustomerUncheckedCreateInput, CustomerCreateInput> & CustomerCreateInput'.
+88.73     Property 'tenant' is missing in type '{ name: string; phone: string; email: string; kledoId: string; }' but required in type 'CustomerCreateInput'.
+88.73 src/modules/dashboard/dashboard.service.ts(55,29): error TS2322: Type '{ branchId: string; } | {}' is not assignable to type 'BankAccountWhereInput'.
+88.73   Object literal may only specify known properties, and 'branchId' does not exist in type 'BankAccountWhereInput'.
+88.73 src/modules/expense/expense.service.ts(64,7): error TS2322: Type '{ date: Date; number: string; status: string; taxAmount: number; totalAmount: number; tags: string[]; id?: string; contactId?: string; accountId: string; paymentAccountId?: string; amount: number; ... 4 more ...; createdBy: string; }' is not assignable to type '(Without<ExpenseCreateInput, ExpenseUncheckedCreateInput> & ExpenseUncheckedCreateInput) | (Without<...> & ExpenseCreateInput)'.
+88.73   Type '{ date: Date; number: string; status: string; taxAmount: number; totalAmount: number; tags: string[]; id?: string; contactId?: string; accountId: string; paymentAccountId?: string; amount: number; ... 4 more ...; createdBy: string; }' is not assignable to type 'Without<ExpenseUncheckedCreateInput, ExpenseCreateInput> & ExpenseCreateInput'.
+88.73     Type '{ date: Date; number: string; status: string; taxAmount: number; totalAmount: number; tags: string[]; id?: string; contactId?: string; accountId: string; paymentAccountId?: string; amount: number; ... 4 more ...; createdBy: string; }' is not assignable to type 'Without<ExpenseUncheckedCreateInput, ExpenseCreateInput>'.
+88.73       Types of property 'branchId' are incompatible.
+88.73         Type 'string' is not assignable to type 'never'.
+88.73 src/modules/expense/expense.service.ts(150,9): error TS2322: Type '{ nomor: string; tanggal: Date; deskripsi: string; referensi: string; status: "POSTED"; lines: { create: any[]; }; }' is not assignable to type '(Without<JournalCreateInput, JournalUncheckedCreateInput> & JournalUncheckedCreateInput) | (Without<...> & JournalCreateInput)'.
+88.73   Type '{ nomor: string; tanggal: Date; deskripsi: string; referensi: string; status: "POSTED"; lines: { create: any[]; }; }' is not assignable to type 'Without<JournalUncheckedCreateInput, JournalCreateInput> & JournalCreateInput'.
+88.73     Property 'tenant' is missing in type '{ nomor: string; tanggal: Date; deskripsi: string; referensi: string; status: "POSTED"; lines: { create: any[]; }; }' but required in type 'JournalCreateInput'.
+88.73 src/modules/expense/expense.service.ts(216,9): error TS2322: Type '{ number: any; date: Date; contactId: string; accountId: string; paymentAccountId: string; amount: number; taxId: string; taxAmount: number; totalAmount: number; description: any; attachment: null; status: string; tags: string[]; branchId: string; createdBy: string; }' is not assignable to type '(Without<ExpenseCreateInput, ExpenseUncheckedCreateInput> & ExpenseUncheckedCreateInput) | (Without<...> & ExpenseCreateInput)'.
+88.73   Type '{ number: any; date: Date; contactId: string; accountId: string; paymentAccountId: string; amount: number; taxId: string; taxAmount: number; totalAmount: number; description: any; attachment: null; status: string; tags: string[]; branchId: string; createdBy: string; }' is not assignable to type 'Without<ExpenseUncheckedCreateInput, ExpenseCreateInput> & ExpenseCreateInput'.
+88.73     Type '{ number: any; date: Date; contactId: string; accountId: string; paymentAccountId: string; amount: number; taxId: string; taxAmount: number; totalAmount: number; description: any; attachment: null; status: string; tags: string[]; branchId: string; createdBy: string; }' is not assignable to type 'Without<ExpenseUncheckedCreateInput, ExpenseCreateInput>'.
+88.73       Types of property 'branchId' are incompatible.
+88.73         Type 'string' is not assignable to type 'never'.
+88.73 src/modules/finance/auto-journal.service.ts(35,20): error TS2322: Type '{ accountId: string; debit: number; kredit: number; deskripsi?: string; }[]' is not assignable to type '(Without<JournalLineCreateWithoutJournalInput, JournalLineUncheckedCreateWithoutJournalInput> & JournalLineUncheckedCreateWithoutJournalInput) | (Without<...> & JournalLineCreateWithoutJournalInput) | JournalLineCreateWithoutJournalInput[] | JournalLineUncheckedCreateWithoutJournalInput[]'.
+88.73   Type '{ accountId: string; debit: number; kredit: number; deskripsi?: string; }[]' is not assignable to type 'JournalLineCreateWithoutJournalInput[]'.
+88.73     Type '{ accountId: string; debit: number; kredit: number; deskripsi?: string; }' is missing the following properties from type 'JournalLineCreateWithoutJournalInput': tenant, account
+88.73 src/modules/finance/bank-recon.service.ts(79,9): error TS2322: Type '{ bankAccountId: string; tanggal: Date; type: string; amount: number; keterangan: string; referenceId: string; }' is not assignable to type '(Without<BankTransactionCreateInput, BankTransactionUncheckedCreateInput> & BankTransactionUncheckedCreateInput) | (Without<...> & BankTransactionCreateInput)'.
+88.73   Type '{ bankAccountId: string; tanggal: Date; type: string; amount: number; keterangan: string; referenceId: string; }' is not assignable to type 'Without<BankTransactionUncheckedCreateInput, BankTransactionCreateInput> & BankTransactionCreateInput'.
+88.73     Type '{ bankAccountId: string; tanggal: Date; type: string; amount: number; keterangan: string; referenceId: string; }' is not assignable to type 'Without<BankTransactionUncheckedCreateInput, BankTransactionCreateInput>'.
+88.73       Types of property 'bankAccountId' are incompatible.
+88.73         Type 'string' is not assignable to type 'never'.
+88.73 src/modules/finance/bank-recon.service.ts(202,60): error TS2339: Property 'name' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; tenantId: string; active: boolean; balance: Decimal; bankName: string; accountNo: string; accountName: string; }'.
+88.73 src/modules/finance/finance.service.ts(117,9): error TS2322: Type '{ bankAccountId: any; tanggal: Date; type: string; amount: number; keterangan: any; referenceId: any; }' is not assignable to type '(Without<BankTransactionCreateInput, BankTransactionUncheckedCreateInput> & BankTransactionUncheckedCreateInput) | (Without<...> & BankTransactionCreateInput)'.
+88.73   Type '{ bankAccountId: any; tanggal: Date; type: string; amount: number; keterangan: any; referenceId: any; }' is not assignable to type 'Without<BankTransactionUncheckedCreateInput, BankTransactionCreateInput> & BankTransactionCreateInput'.
+88.73     Type '{ bankAccountId: any; tanggal: Date; type: string; amount: number; keterangan: any; referenceId: any; }' is not assignable to type 'Without<BankTransactionUncheckedCreateInput, BankTransactionCreateInput>'.
+88.73       Types of property 'bankAccountId' are incompatible.
+88.73         Type 'any' is not assignable to type 'never'.
+88.73 src/modules/finance/finance.service.ts(127,9): error TS2322: Type '{ bankAccountId: any; tanggal: Date; type: string; amount: number; keterangan: any; referenceId: any; }' is not assignable to type '(Without<BankTransactionCreateInput, BankTransactionUncheckedCreateInput> & BankTransactionUncheckedCreateInput) | (Without<...> & BankTransactionCreateInput)'.
+88.73   Type '{ bankAccountId: any; tanggal: Date; type: string; amount: number; keterangan: any; referenceId: any; }' is not assignable to type 'Without<BankTransactionUncheckedCreateInput, BankTransactionCreateInput> & BankTransactionCreateInput'.
+88.73     Type '{ bankAccountId: any; tanggal: Date; type: string; amount: number; keterangan: any; referenceId: any; }' is not assignable to type 'Without<BankTransactionUncheckedCreateInput, BankTransactionCreateInput>'.
+88.73       Types of property 'bankAccountId' are incompatible.
+88.73         Type 'any' is not assignable to type 'never'.
+88.73 src/modules/finance/finance.service.ts(399,7): error TS2322: Type '{ bankAccountId: string; periodeAwal: Date; periodeAkhir: Date; saldoBuku: any; saldoBank: any; selisih: number; status: string; notes: string; }' is not assignable to type '(Without<BankReconciliationCreateInput, BankReconciliationUncheckedCreateInput> & BankReconciliationUncheckedCreateInput) | (Without<...> & BankReconciliationCreateInput)'.
+88.73   Type '{ bankAccountId: string; periodeAwal: Date; periodeAkhir: Date; saldoBuku: any; saldoBank: any; selisih: number; status: string; notes: string; }' is not assignable to type 'Without<BankReconciliationUncheckedCreateInput, BankReconciliationCreateInput> & BankReconciliationCreateInput'.
+88.73     Type '{ bankAccountId: string; periodeAwal: Date; periodeAkhir: Date; saldoBuku: any; saldoBank: any; selisih: number; status: string; notes: string; }' is not assignable to type 'Without<BankReconciliationUncheckedCreateInput, BankReconciliationCreateInput>'.
+88.73       Types of property 'bankAccountId' are incompatible.
+88.73         Type 'string' is not assignable to type 'never'.
+88.73 src/modules/finance/finance.service.ts(413,61): error TS2322: Type '{ bankAccountId: any; tanggal: any; type: string; amount: any; keterangan: any; referenceId: string; }' is not assignable to type '(Without<BankTransactionCreateInput, BankTransactionUncheckedCreateInput> & BankTransactionUncheckedCreateInput) | (Without<...> & BankTransactionCreateInput)'.
+88.73   Type '{ bankAccountId: any; tanggal: any; type: string; amount: any; keterangan: any; referenceId: string; }' is not assignable to type 'Without<BankTransactionUncheckedCreateInput, BankTransactionCreateInput> & BankTransactionCreateInput'.
+88.73     Type '{ bankAccountId: any; tanggal: any; type: string; amount: any; keterangan: any; referenceId: string; }' is not assignable to type 'Without<BankTransactionUncheckedCreateInput, BankTransactionCreateInput>'.
+88.73       Types of property 'bankAccountId' are incompatible.
+88.73         Type 'any' is not assignable to type 'never'.
+88.73 src/modules/finance/journal-recurring.service.ts(83,7): error TS2322: Type '{ name: any; description: any; frequency: string; interval: number; startDate: Date; nextRunAt: Date; endDate: Date; status: any; createdById: any; lines: { create: any; }; }' is not assignable to type '(Without<JournalRecurringCreateInput, JournalRecurringUncheckedCreateInput> & JournalRecurringUncheckedCreateInput) | (Without<...> & JournalRecurringCreateInput)'.
+88.73   Type '{ name: any; description: any; frequency: string; interval: number; startDate: Date; nextRunAt: Date; endDate: Date; status: any; createdById: any; lines: { create: any; }; }' is not assignable to type 'Without<JournalRecurringUncheckedCreateInput, JournalRecurringCreateInput> & JournalRecurringCreateInput'.
+88.73     Property 'tenant' is missing in type '{ name: any; description: any; frequency: string; interval: number; startDate: Date; nextRunAt: Date; endDate: Date; status: any; createdById: any; lines: { create: any; }; }' but required in type 'JournalRecurringCreateInput'.
+88.73 src/modules/finance/journal-recurring.service.ts(155,15): error TS2322: Type '{ accountId: string; debit: Decimal; kredit: Decimal; deskripsi: string; }[]' is not assignable to type '(Without<JournalLineCreateWithoutJournalInput, JournalLineUncheckedCreateWithoutJournalInput> & JournalLineUncheckedCreateWithoutJournalInput) | (Without<...> & JournalLineCreateWithoutJournalInput) | JournalLineCreateWithoutJournalInput[] | JournalLineUncheckedCreateWithoutJournalInput[]'.
+88.73   Type '{ accountId: string; debit: Decimal; kredit: Decimal; deskripsi: string; }[]' is not assignable to type 'JournalLineCreateWithoutJournalInput[]'.
+88.73     Type '{ accountId: string; debit: Decimal; kredit: Decimal; deskripsi: string; }' is missing the following properties from type 'JournalLineCreateWithoutJournalInput': tenant, account
+88.74 src/modules/finance/journal.service.ts(70,7): error TS2322: Type '{ nomor: string; tanggal: Date; deskripsi: any; referensi: any; createdById: any; status: "DRAFT"; lines: { create: any; }; }' is not assignable to type '(Without<JournalCreateInput, JournalUncheckedCreateInput> & JournalUncheckedCreateInput) | (Without<...> & JournalCreateInput)'.
+88.74   Type '{ nomor: string; tanggal: Date; deskripsi: any; referensi: any; createdById: any; status: "DRAFT"; lines: { create: any; }; }' is not assignable to type 'Without<JournalUncheckedCreateInput, JournalCreateInput> & JournalCreateInput'.
+88.74     Property 'tenant' is missing in type '{ nomor: string; tanggal: Date; deskripsi: any; referensi: any; createdById: any; status: "DRAFT"; lines: { create: any; }; }' but required in type 'JournalCreateInput'.
+88.74 src/modules/finance/journal.service.ts(122,11): error TS2322: Type '{ accountId: any; debit: any; kredit: any; deskripsi: string; }[]' is not assignable to type '(Without<JournalLineCreateWithoutJournalInput, JournalLineUncheckedCreateWithoutJournalInput> & JournalLineUncheckedCreateWithoutJournalInput) | (Without<...> & JournalLineCreateWithoutJournalInput) | JournalLineCreateWithoutJournalInput[] | JournalLineUncheckedCreateWithoutJournalInput[]'.
+88.74   Type '{ accountId: any; debit: any; kredit: any; deskripsi: string; }[]' is not assignable to type 'JournalLineCreateWithoutJournalInput[]'.
+88.74     Type '{ accountId: any; debit: any; kredit: any; deskripsi: string; }' is missing the following properties from type 'JournalLineCreateWithoutJournalInput': tenant, account
+88.74 src/modules/hr/hr.service.ts(183,11): error TS2322: Type '{ nik: any; name: any; jabatan: any; departemen: any; status: any; }' is not assignable to type '(Without<EmployeeCreateInput, EmployeeUncheckedCreateInput> & EmployeeUncheckedCreateInput) | (Without<...> & EmployeeCreateInput)'.
+88.74   Type '{ nik: any; name: any; jabatan: any; departemen: any; status: any; }' is not assignable to type 'Without<EmployeeUncheckedCreateInput, EmployeeCreateInput> & EmployeeCreateInput'.
+88.74     Property 'tenant' is missing in type '{ nik: any; name: any; jabatan: any; departemen: any; status: any; }' but required in type 'EmployeeCreateInput'.
+88.74 src/modules/hr/hr.service.ts(226,11): error TS2322: Type '{ employeeId: string; tanggal: Date; checkIn: Date; checkOut: Date; status: any; }' is not assignable to type '(Without<AttendanceCreateInput, AttendanceUncheckedCreateInput> & AttendanceUncheckedCreateInput) | (Without<...> & AttendanceCreateInput)'.
+88.74   Type '{ employeeId: string; tanggal: Date; checkIn: Date; checkOut: Date; status: any; }' is not assignable to type 'Without<AttendanceUncheckedCreateInput, AttendanceCreateInput> & AttendanceCreateInput'.
+88.74     Type '{ employeeId: string; tanggal: Date; checkIn: Date; checkOut: Date; status: any; }' is not assignable to type 'Without<AttendanceUncheckedCreateInput, AttendanceCreateInput>'.
+88.74       Types of property 'employeeId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/hr/hr.service.ts(319,7): error TS2322: Type '{ key: string; value: string; }' is not assignable to type '(Without<AppSettingCreateInput, AppSettingUncheckedCreateInput> & AppSettingUncheckedCreateInput) | (Without<...> & AppSettingCreateInput)'.
+88.74   Type '{ key: string; value: string; }' is not assignable to type 'Without<AppSettingUncheckedCreateInput, AppSettingCreateInput> & AppSettingCreateInput'.
+88.74     Property 'tenant' is missing in type '{ key: string; value: string; }' but required in type 'AppSettingCreateInput'.
+88.74 src/modules/hr/hr.service.ts(542,7): error TS2322: Type '{ employeeId: string; fromDepartemen: string; fromJabatan: string; toDepartemen: any; toJabatan: any; effectiveDate: any; reason: any; approvedBy: any; }' is not assignable to type '(Without<EmployeeMutasiCreateInput, EmployeeMutasiUncheckedCreateInput> & EmployeeMutasiUncheckedCreateInput) | (Without<...> & EmployeeMutasiCreateInput)'.
+88.74   Type '{ employeeId: string; fromDepartemen: string; fromJabatan: string; toDepartemen: any; toJabatan: any; effectiveDate: any; reason: any; approvedBy: any; }' is not assignable to type 'Without<EmployeeMutasiUncheckedCreateInput, EmployeeMutasiCreateInput> & EmployeeMutasiCreateInput'.
+88.74     Type '{ employeeId: string; fromDepartemen: string; fromJabatan: string; toDepartemen: any; toJabatan: any; effectiveDate: any; reason: any; approvedBy: any; }' is not assignable to type 'Without<EmployeeMutasiUncheckedCreateInput, EmployeeMutasiCreateInput>'.
+88.74       Types of property 'employeeId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/costing.service.ts(128,7): error TS2322: Type '{ productId: string; nomorLot: string; qtyAwal: number; qtySisa: number; unitCost: number; expiryDate: Date; referenceId: string; }' is not assignable to type '(Without<StockLotCreateInput, StockLotUncheckedCreateInput> & StockLotUncheckedCreateInput) | (Without<...> & StockLotCreateInput)'.
+88.74   Type '{ productId: string; nomorLot: string; qtyAwal: number; qtySisa: number; unitCost: number; expiryDate: Date; referenceId: string; }' is not assignable to type 'Without<StockLotUncheckedCreateInput, StockLotCreateInput> & StockLotCreateInput'.
+88.74     Type '{ productId: string; nomorLot: string; qtyAwal: number; qtySisa: number; unitCost: number; expiryDate: Date; referenceId: string; }' is not assignable to type 'Without<StockLotUncheckedCreateInput, StockLotCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/costing.service.ts(149,7): error TS2322: Type '{ productId: string; date: Date; qty: number; unitCost: number; totalValue: number; movementType: string; referenceId: string; }' is not assignable to type '(Without<StockValuationCreateInput, StockValuationUncheckedCreateInput> & StockValuationUncheckedCreateInput) | (Without<...> & StockValuationCreateInput)'.
+88.74   Type '{ productId: string; date: Date; qty: number; unitCost: number; totalValue: number; movementType: string; referenceId: string; }' is not assignable to type 'Without<StockValuationUncheckedCreateInput, StockValuationCreateInput> & StockValuationCreateInput'.
+88.74     Type '{ productId: string; date: Date; qty: number; unitCost: number; totalValue: number; movementType: string; referenceId: string; }' is not assignable to type 'Without<StockValuationUncheckedCreateInput, StockValuationCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/costing.service.ts(236,13): error TS2322: Type '{ accountId: string; debit: number; kredit: number; deskripsi: string; }[]' is not assignable to type '(Without<JournalLineCreateWithoutJournalInput, JournalLineUncheckedCreateWithoutJournalInput> & JournalLineUncheckedCreateWithoutJournalInput) | (Without<...> & JournalLineCreateWithoutJournalInput) | JournalLineCreateWithoutJournalInput[] | JournalLineUncheckedCreateWithoutJournalInput[]'.
+88.74   Type '{ accountId: string; debit: number; kredit: number; deskripsi: string; }[]' is not assignable to type 'JournalLineCreateWithoutJournalInput[]'.
+88.74     Type '{ accountId: string; debit: number; kredit: number; deskripsi: string; }' is missing the following properties from type 'JournalLineCreateWithoutJournalInput': tenant, account
+88.74 src/modules/inventory/inventory.service.ts(69,47): error TS2322: Type '{ productId: string; componentId: any; qty: any; }' is not assignable to type '(Without<ProductBundleCreateInput, ProductBundleUncheckedCreateInput> & ProductBundleUncheckedCreateInput) | (Without<...> & ProductBundleCreateInput)'.
+88.74   Type '{ productId: string; componentId: any; qty: any; }' is not assignable to type 'Without<ProductBundleUncheckedCreateInput, ProductBundleCreateInput> & ProductBundleCreateInput'.
+88.74     Type '{ productId: string; componentId: any; qty: any; }' is not assignable to type 'Without<ProductBundleUncheckedCreateInput, ProductBundleCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(78,50): error TS2322: Type '{ productId: string; minQty: any; maxQty: any; price: any; currency: any; }' is not assignable to type '(Without<ProductTierPriceCreateInput, ProductTierPriceUncheckedCreateInput> & ProductTierPriceUncheckedCreateInput) | (Without<...> & ProductTierPriceCreateInput)'.
+88.74   Type '{ productId: string; minQty: any; maxQty: any; price: any; currency: any; }' is not assignable to type 'Without<ProductTierPriceUncheckedCreateInput, ProductTierPriceCreateInput> & ProductTierPriceCreateInput'.
+88.74     Type '{ productId: string; minQty: any; maxQty: any; price: any; currency: any; }' is not assignable to type 'Without<ProductTierPriceUncheckedCreateInput, ProductTierPriceCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(184,42): error TS2322: Type '{ productId: string; type: "in" | "out"; qty: number; note: string; }' is not assignable to type '(Without<StockMovementCreateInput, StockMovementUncheckedCreateInput> & StockMovementUncheckedCreateInput) | (Without<...> & StockMovementCreateInput)'.
+88.74   Type '{ productId: string; type: "in" | "out"; qty: number; note: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput> & StockMovementCreateInput'.
+88.74     Type '{ productId: string; type: "in" | "out"; qty: number; note: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(206,56): error TS2322: Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type '(Without<ProductWarehouseStockCreateInput, ProductWarehouseStockUncheckedCreateInput> & ProductWarehouseStockUncheckedCreateInput) | (Without<...> & ProductWarehouseStockCreateInput)'.
+88.74   Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type 'Without<ProductWarehouseStockUncheckedCreateInput, ProductWarehouseStockCreateInput> & ProductWarehouseStockCreateInput'.
+88.74     Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type 'Without<ProductWarehouseStockUncheckedCreateInput, ProductWarehouseStockCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(259,7): error TS2322: Type '{ date: any; warehouseId: any; note: any; items: { create: any; }; }' is not assignable to type '(Without<StockOpnameCreateInput, StockOpnameUncheckedCreateInput> & StockOpnameUncheckedCreateInput) | (Without<...> & StockOpnameCreateInput)'.
+88.74   Type '{ date: any; warehouseId: any; note: any; items: { create: any; }; }' is not assignable to type 'Without<StockOpnameUncheckedCreateInput, StockOpnameCreateInput> & StockOpnameCreateInput'.
+88.74     Property 'tenant' is missing in type '{ date: any; warehouseId: any; note: any; items: { create: any; }; }' but required in type 'StockOpnameCreateInput'.
+88.74 src/modules/inventory/inventory.service.ts(283,15): error TS2322: Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type '(Without<ProductWarehouseStockCreateInput, ProductWarehouseStockUncheckedCreateInput> & ProductWarehouseStockUncheckedCreateInput) | (Without<...> & ProductWarehouseStockCreateInput)'.
+88.74   Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type 'Without<ProductWarehouseStockUncheckedCreateInput, ProductWarehouseStockCreateInput> & ProductWarehouseStockCreateInput'.
+88.74     Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type 'Without<ProductWarehouseStockUncheckedCreateInput, ProductWarehouseStockCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(291,47): error TS2322: Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type '(Without<StockMovementCreateInput, StockMovementUncheckedCreateInput> & StockMovementUncheckedCreateInput) | (Without<...> & StockMovementCreateInput)'.
+88.74   Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput> & StockMovementCreateInput'.
+88.74     Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(440,45): error TS2322: Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type '(Without<StockMovementCreateInput, StockMovementUncheckedCreateInput> & StockMovementUncheckedCreateInput) | (Without<...> & StockMovementCreateInput)'.
+88.74   Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput> & StockMovementCreateInput'.
+88.74     Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(446,55): error TS2322: Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type '(Without<ProductWarehouseStockCreateInput, ProductWarehouseStockUncheckedCreateInput> & ProductWarehouseStockUncheckedCreateInput) | (Without<...> & ProductWarehouseStockCreateInput)'.
+88.74   Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type 'Without<ProductWarehouseStockUncheckedCreateInput, ProductWarehouseStockCreateInput> & ProductWarehouseStockCreateInput'.
+88.74     Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type 'Without<ProductWarehouseStockUncheckedCreateInput, ProductWarehouseStockCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(448,45): error TS2322: Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type '(Without<StockMovementCreateInput, StockMovementUncheckedCreateInput> & StockMovementUncheckedCreateInput) | (Without<...> & StockMovementCreateInput)'.
+88.74   Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput> & StockMovementCreateInput'.
+88.74     Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(513,15): error TS2322: Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type '(Without<ProductWarehouseStockCreateInput, ProductWarehouseStockUncheckedCreateInput> & ProductWarehouseStockUncheckedCreateInput) | (Without<...> & ProductWarehouseStockCreateInput)'.
+88.74   Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type 'Without<ProductWarehouseStockUncheckedCreateInput, ProductWarehouseStockCreateInput> & ProductWarehouseStockCreateInput'.
+88.74     Type '{ productId: string; warehouseId: string; qty: number; }' is not assignable to type 'Without<ProductWarehouseStockUncheckedCreateInput, ProductWarehouseStockCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/inventory.service.ts(521,47): error TS2322: Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type '(Without<StockMovementCreateInput, StockMovementUncheckedCreateInput> & StockMovementUncheckedCreateInput) | (Without<...> & StockMovementCreateInput)'.
+88.74   Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput> & StockMovementCreateInput'.
+88.74     Type '{ productId: string; warehouseId: string; type: string; qty: number; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/landed-cost.service.ts(57,9): error TS2322: Type '{ purchaseId: string; deskripsi: string; amount: number; splitMethod: $Enums.LandedCostSplitMethod; status: string; }' is not assignable to type '(Without<LandedCostCreateInput, LandedCostUncheckedCreateInput> & LandedCostUncheckedCreateInput) | (Without<...> & LandedCostCreateInput)'.
+88.74   Type '{ purchaseId: string; deskripsi: string; amount: number; splitMethod: $Enums.LandedCostSplitMethod; status: string; }' is not assignable to type 'Without<LandedCostUncheckedCreateInput, LandedCostCreateInput> & LandedCostCreateInput'.
+88.74     Property 'tenant' is missing in type '{ purchaseId: string; deskripsi: string; amount: number; splitMethod: $Enums.LandedCostSplitMethod; status: string; }' but required in type 'LandedCostCreateInput'.
+88.74 src/modules/inventory/landed-cost.service.ts(109,11): error TS2322: Type '{ landedCostId: string; productId: string; qty: number; alokasiBiaya: number; }' is not assignable to type '(Without<LandedCostItemCreateInput, LandedCostItemUncheckedCreateInput> & LandedCostItemUncheckedCreateInput) | (Without<...> & LandedCostItemCreateInput)'.
+88.74   Type '{ landedCostId: string; productId: string; qty: number; alokasiBiaya: number; }' is not assignable to type 'Without<LandedCostItemUncheckedCreateInput, LandedCostItemCreateInput> & LandedCostItemCreateInput'.
+88.74     Type '{ landedCostId: string; productId: string; qty: number; alokasiBiaya: number; }' is not assignable to type 'Without<LandedCostItemUncheckedCreateInput, LandedCostItemCreateInput>'.
+88.74       Types of property 'productId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/inventory/landed-cost.service.ts(139,7): error TS2322: Type '{ status: string; purchaseId: string; deskripsi: string; amount: number; splitMethod: LandedCostSplitMethod; }' is not assignable to type '(Without<LandedCostCreateInput, LandedCostUncheckedCreateInput> & LandedCostUncheckedCreateInput) | (Without<...> & LandedCostCreateInput)'.
+88.74   Type '{ status: string; purchaseId: string; deskripsi: string; amount: number; splitMethod: LandedCostSplitMethod; }' is not assignable to type 'Without<LandedCostUncheckedCreateInput, LandedCostCreateInput> & LandedCostCreateInput'.
+88.74     Property 'tenant' is missing in type '{ status: string; purchaseId: string; deskripsi: string; amount: number; splitMethod: LandedCostSplitMethod; }' but required in type 'LandedCostCreateInput'.
+88.74 src/modules/inventory/reorder-cron.service.ts(27,51): error TS2322: Type '{ recipient: string; title: string; message: string; }' is not assignable to type '(Without<NotificationCreateInput, NotificationUncheckedCreateInput> & NotificationUncheckedCreateInput) | (Without<...> & NotificationCreateInput)'.
+88.74   Type '{ recipient: string; title: string; message: string; }' is not assignable to type 'Without<NotificationUncheckedCreateInput, NotificationCreateInput> & NotificationCreateInput'.
+88.74     Property 'tenant' is missing in type '{ recipient: string; title: string; message: string; }' but required in type 'NotificationCreateInput'.
+88.74 src/modules/invoice/invoice.service.ts(69,7): error TS2353: Object literal may only specify known properties, and 'grandTotal' does not exist in type '{ orderId: string | number; noInvoice?: string; namaCustomer: string; noHp?: string; salesName?: string; items: { nama: string; qty: number; harga: number; }[]; totalHarga: number; metodePembayaran?: string; pembayaranAwal?: number; status?: string; }'.
+88.74 src/modules/invoice/invoice.service.ts(105,7): error TS2322: Type '{ invoiceId: string; amount: any; method: any; referensi: any; notes: any; }' is not assignable to type '(Without<InvoicePaymentCreateInput, InvoicePaymentUncheckedCreateInput> & InvoicePaymentUncheckedCreateInput) | (Without<...> & InvoicePaymentCreateInput)'.
+88.74   Type '{ invoiceId: string; amount: any; method: any; referensi: any; notes: any; }' is not assignable to type 'Without<InvoicePaymentUncheckedCreateInput, InvoicePaymentCreateInput> & InvoicePaymentCreateInput'.
+88.74     Type '{ invoiceId: string; amount: any; method: any; referensi: any; notes: any; }' is not assignable to type 'Without<InvoicePaymentUncheckedCreateInput, InvoicePaymentCreateInput>'.
+88.74       Types of property 'invoiceId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/invoice/invoice.service.ts(114,7): error TS2353: Object literal may only specify known properties, and 'noInvoice' does not exist in type '{ orderId: string | number; namaCustomer: string; noHp?: string; totalHarga: number; bankTujuan?: string; salesName?: string; fotoUrl?: string; }'.
+88.74 src/modules/invoice/invoice.service.ts(134,56): error TS2322: Type '{ invoiceId: string; noCreditNote: any; amount: any; reason: any; status: string; }' is not assignable to type '(Without<CreditNoteCreateInput, CreditNoteUncheckedCreateInput> & CreditNoteUncheckedCreateInput) | (Without<...> & CreditNoteCreateInput)'.
+88.74   Type '{ invoiceId: string; noCreditNote: any; amount: any; reason: any; status: string; }' is not assignable to type 'Without<CreditNoteUncheckedCreateInput, CreditNoteCreateInput> & CreditNoteCreateInput'.
+88.74     Type '{ invoiceId: string; noCreditNote: any; amount: any; reason: any; status: string; }' is not assignable to type 'Without<CreditNoteUncheckedCreateInput, CreditNoteCreateInput>'.
+88.74       Types of property 'invoiceId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/invoice/invoice.service.ts(217,53): error TS2322: Type '{ frequency: string; startDate: Date; endDate: Date; nextRunDate: Date; isActive: boolean; invoiceId: string; }' is not assignable to type '(Without<InvoiceRecurringCreateInput, InvoiceRecurringUncheckedCreateInput> & InvoiceRecurringUncheckedCreateInput) | (Without<...> & InvoiceRecurringCreateInput)'.
+88.74   Type '{ frequency: string; startDate: Date; endDate: Date; nextRunDate: Date; isActive: boolean; invoiceId: string; }' is not assignable to type 'Without<InvoiceRecurringUncheckedCreateInput, InvoiceRecurringCreateInput> & InvoiceRecurringCreateInput'.
+88.74     Property 'tenant' is missing in type '{ frequency: string; startDate: Date; endDate: Date; nextRunDate: Date; isActive: boolean; invoiceId: string; }' but required in type 'InvoiceRecurringCreateInput'.
+88.74 src/modules/invoice/invoice.service.ts(234,57): error TS2322: Type '{ invoiceId: string; token: string; provider: string; paymentUrl: string; expiredAt: Date; status: string; }' is not assignable to type '(Without<PaymentLinkCreateInput, PaymentLinkUncheckedCreateInput> & PaymentLinkUncheckedCreateInput) | (Without<...> & PaymentLinkCreateInput)'.
+88.74   Type '{ invoiceId: string; token: string; provider: string; paymentUrl: string; expiredAt: Date; status: string; }' is not assignable to type 'Without<PaymentLinkUncheckedCreateInput, PaymentLinkCreateInput> & PaymentLinkCreateInput'.
+88.74     Property 'tenant' is missing in type '{ invoiceId: string; token: string; provider: string; paymentUrl: string; expiredAt: Date; status: string; }' but required in type 'PaymentLinkCreateInput'.
+88.74 src/modules/kledo/kledo.service.ts(321,13): error TS2322: Type '{ namaCustomer: any; totalHarga: any; kledoInvoiceId: any; kledoSynced: true; status: string; }' is not assignable to type '(Without<OrderCreateInput, OrderUncheckedCreateInput> & OrderUncheckedCreateInput) | (Without<...> & OrderCreateInput)'.
+88.74   Type '{ namaCustomer: any; totalHarga: any; kledoInvoiceId: any; kledoSynced: true; status: string; }' is not assignable to type 'Without<OrderUncheckedCreateInput, OrderCreateInput> & OrderCreateInput'.
+88.74     Property 'tenant' is missing in type '{ namaCustomer: any; totalHarga: any; kledoInvoiceId: any; kledoSynced: true; status: string; }' but required in type 'OrderCreateInput'.
+88.74 src/modules/notification/notification.service.ts(29,7): error TS2322: Type '{ recipient: string; title: string; message: string; status: string; }' is not assignable to type '(Without<NotificationCreateInput, NotificationUncheckedCreateInput> & NotificationUncheckedCreateInput) | (Without<...> & NotificationCreateInput)'.
+88.74   Type '{ recipient: string; title: string; message: string; status: string; }' is not assignable to type 'Without<NotificationUncheckedCreateInput, NotificationCreateInput> & NotificationCreateInput'.
+88.74     Property 'tenant' is missing in type '{ recipient: string; title: string; message: string; status: string; }' but required in type 'NotificationCreateInput'.
+88.74 src/modules/notification/notification.service.ts(58,9): error TS2322: Type '{ recipient: string; title: string; message: string; status: string; }' is not assignable to type '(Without<NotificationCreateInput, NotificationUncheckedCreateInput> & NotificationUncheckedCreateInput) | (Without<...> & NotificationCreateInput)'.
+88.74   Type '{ recipient: string; title: string; message: string; status: string; }' is not assignable to type 'Without<NotificationUncheckedCreateInput, NotificationCreateInput> & NotificationCreateInput'.
+88.74     Property 'tenant' is missing in type '{ recipient: string; title: string; message: string; status: string; }' but required in type 'NotificationCreateInput'.
+88.74 src/modules/payroll/payroll.service.ts(48,47): error TS2322: Type '{ bulan: number; tahun: number; note?: string; }' is not assignable to type '(Without<PayrollPeriodCreateInput, PayrollPeriodUncheckedCreateInput> & PayrollPeriodUncheckedCreateInput) | (Without<...> & PayrollPeriodCreateInput)'.
+88.74   Type '{ bulan: number; tahun: number; note?: string; }' is not assignable to type 'Without<PayrollPeriodUncheckedCreateInput, PayrollPeriodCreateInput> & PayrollPeriodCreateInput'.
+88.74     Property 'tenant' is missing in type '{ bulan: number; tahun: number; note?: string; }' but required in type 'PayrollPeriodCreateInput'.
+88.74 src/modules/payroll/payroll.service.ts(144,20): error TS2322: Type '{ componentId: string; amount: number; deskripsi: string; }[]' is not assignable to type '(Without<PayrollSlipLineCreateWithoutSlipInput, PayrollSlipLineUncheckedCreateWithoutSlipInput> & PayrollSlipLineUncheckedCreateWithoutSlipInput) | (Without<...> & PayrollSlipLineCreateWithoutSlipInput) | PayrollSlipLineCreateWithoutSlipInput[] | PayrollSlipLineUncheckedCreateWithoutSlipInput[]'.
+88.74   Type '{ componentId: string; amount: number; deskripsi: string; }[]' is not assignable to type 'PayrollSlipLineCreateWithoutSlipInput[]'.
+88.74     Property 'tenant' is missing in type '{ componentId: string; amount: number; deskripsi: string; }' but required in type 'PayrollSlipLineCreateWithoutSlipInput'.
+88.74 src/modules/payroll/payroll.service.ts(151,36): error TS2322: Type '{ componentId: string; amount: number; deskripsi: string; }[]' is not assignable to type '(Without<PayrollSlipLineCreateWithoutSlipInput, PayrollSlipLineUncheckedCreateWithoutSlipInput> & PayrollSlipLineUncheckedCreateWithoutSlipInput) | (Without<...> & PayrollSlipLineCreateWithoutSlipInput) | PayrollSlipLineCreateWithoutSlipInput[] | PayrollSlipLineUncheckedCreateWithoutSlipInput[]'.
+88.74   Type '{ componentId: string; amount: number; deskripsi: string; }[]' is not assignable to type 'PayrollSlipLineCreateWithoutSlipInput[]'.
+88.74     Property 'tenant' is missing in type '{ componentId: string; amount: number; deskripsi: string; }' but required in type 'PayrollSlipLineCreateWithoutSlipInput'.
+88.74 src/modules/payroll/payroll.service.ts(196,15): error TS2741: Property 'tenantId' is missing in type '{ deskripsi: string; debit: number; kredit: number; accountId: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.74 src/modules/payroll/payroll.service.ts(197,15): error TS2741: Property 'tenantId' is missing in type '{ deskripsi: string; debit: number; kredit: number; accountId: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.74 src/modules/payroll/payroll.service.ts(198,15): error TS2741: Property 'tenantId' is missing in type '{ deskripsi: string; debit: number; kredit: number; accountId: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.74 src/modules/payroll/payroll.service.ts(199,15): error TS2741: Property 'tenantId' is missing in type '{ deskripsi: string; debit: number; kredit: number; accountId: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.74 src/modules/payroll/payroll.service.ts(200,15): error TS2741: Property 'tenantId' is missing in type '{ deskripsi: string; debit: number; kredit: number; accountId: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.74 src/modules/payroll/payroll.service.ts(201,15): error TS2741: Property 'tenantId' is missing in type '{ deskripsi: string; debit: number; kredit: number; accountId: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.74 src/modules/payroll/payroll.service.ts(351,56): error TS2322: Type '{ code: string; name: string; type: any; }' is not assignable to type '(Without<AccountCreateInput, AccountUncheckedCreateInput> & AccountUncheckedCreateInput) | (Without<...> & AccountCreateInput)'.
+88.74   Type '{ code: string; name: string; type: any; }' is not assignable to type 'Without<AccountUncheckedCreateInput, AccountCreateInput> & AccountCreateInput'.
+88.74     Property 'tenant' is missing in type '{ code: string; name: string; type: any; }' but required in type 'AccountCreateInput'.
+88.74 src/modules/pos/pos.service.ts(12,66): error TS2322: Type '{ posUserId: string; modalAwal: number; status: string; }' is not assignable to type '(Without<PosCashierSessionCreateInput, PosCashierSessionUncheckedCreateInput> & PosCashierSessionUncheckedCreateInput) | (Without<...> & PosCashierSessionCreateInput)'.
+88.74   Type '{ posUserId: string; modalAwal: number; status: string; }' is not assignable to type 'Without<PosCashierSessionUncheckedCreateInput, PosCashierSessionCreateInput> & PosCashierSessionCreateInput'.
+88.74     Type '{ posUserId: string; modalAwal: number; status: string; }' is not assignable to type 'Without<PosCashierSessionUncheckedCreateInput, PosCashierSessionCreateInput>'.
+88.74       Types of property 'posUserId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/pos/pos.service.ts(211,7): error TS2322: Type '{ posUserId: string; modalAwal: any; status: string; }' is not assignable to type '(Without<PosCashierSessionCreateInput, PosCashierSessionUncheckedCreateInput> & PosCashierSessionUncheckedCreateInput) | (Without<...> & PosCashierSessionCreateInput)'.
+88.74   Type '{ posUserId: string; modalAwal: any; status: string; }' is not assignable to type 'Without<PosCashierSessionUncheckedCreateInput, PosCashierSessionCreateInput> & PosCashierSessionCreateInput'.
+88.74     Type '{ posUserId: string; modalAwal: any; status: string; }' is not assignable to type 'Without<PosCashierSessionUncheckedCreateInput, PosCashierSessionCreateInput>'.
+88.74       Types of property 'posUserId' are incompatible.
+88.74         Type 'string' is not assignable to type 'never'.
+88.74 src/modules/pos/pos.service.ts(293,47): error TS2322: Type '{}' is not assignable to type '(Without<LoyaltyConfigCreateInput, LoyaltyConfigUncheckedCreateInput> & LoyaltyConfigUncheckedCreateInput) | (Without<...> & LoyaltyConfigCreateInput)'.
+88.74 src/modules/pos/pos.service.ts(307,59): error TS2322: Type '{ customerId: string; }' is not assignable to type '(Without<CustomerLoyaltyCreateInput, CustomerLoyaltyUncheckedCreateInput> & CustomerLoyaltyUncheckedCreateInput) | (Without<...> & CustomerLoyaltyCreateInput)'.
+88.74   Type '{ customerId: string; }' is not assignable to type 'Without<CustomerLoyaltyUncheckedCreateInput, CustomerLoyaltyCreateInput> & CustomerLoyaltyCreateInput'.
+88.74     Property 'tenant' is missing in type '{ customerId: string; }' but required in type 'CustomerLoyaltyCreateInput'.
+88.74 src/modules/pos/pos.service.ts(487,7): error TS2322: Type '{ customerId: string; points: number; totalEarned: number; totalRedeemed: number; }' is not assignable to type '(Without<CustomerLoyaltyCreateInput, CustomerLoyaltyUncheckedCreateInput> & CustomerLoyaltyUncheckedCreateInput) | (Without<...> & CustomerLoyaltyCreateInput)'.
+88.74   Type '{ customerId: string; points: number; totalEarned: number; totalRedeemed: number; }' is not assignable to type 'Without<CustomerLoyaltyUncheckedCreateInput, CustomerLoyaltyCreateInput> & CustomerLoyaltyCreateInput'.
+88.74     Property 'tenant' is missing in type '{ customerId: string; points: number; totalEarned: number; totalRedeemed: number; }' but required in type 'CustomerLoyaltyCreateInput'.
+88.75 src/modules/pos/pos.service.ts(497,74): error TS2561: Object literal may only specify known properties, but 'isActive' does not exist in type 'PosProductWhereInput'. Did you mean to write 'active'?
+88.75 src/modules/pos/pos.service.ts(505,17): error TS2561: Object literal may only specify known properties, but 'stock' does not exist in type '(Without<PosProductUpdateInput, PosProductUncheckedUpdateInput> & PosProductUncheckedUpdateInput) | (Without<...> & PosProductUpdateInput)'. Did you mean to write 'stok'?
+88.75 src/modules/pos/pos.service.ts(529,39): error TS2345: Argument of type '(s: number, sale: any) => number' is not assignable to parameter of type '(previousValue: { items: ({ posProduct: { name: string; id: string; createdAt: Date; updatedAt: Date; tenantId: string; active: boolean; productId: string; categoryId: string; hargaJual: Decimal; stok: number; barcode: string; }; } & { ...; })[]; } & { ...; }, currentValue: { ...; } & { ...; }, currentIndex: number,...'.
+88.75   Types of parameters 's' and 'previousValue' are incompatible.
+88.75     Type '{ items: ({ posProduct: { name: string; id: string; createdAt: Date; updatedAt: Date; tenantId: string; active: boolean; productId: string; categoryId: string; hargaJual: Decimal; stok: number; barcode: string; }; } & { ...; })[]; } & { ...; }' is not assignable to type 'number'.
+88.75 src/modules/pos/pos.service.ts(531,46): error TS2339: Property 'posSession' does not exist on type 'PrismaService'.
+88.75 src/modules/pos/pos.service.ts(583,13): error TS2741: Property 'tenantId' is missing in type '{ accountId: string; debit: number; kredit: number; deskripsi: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.75 src/modules/pos/pos.service.ts(584,13): error TS2741: Property 'tenantId' is missing in type '{ accountId: string; debit: number; kredit: number; deskripsi: string; }' but required in type 'JournalLineUncheckedCreateWithoutJournalInput'.
+88.75 src/modules/purchasing/purchasing.service.ts(216,47): error TS2322: Type '{ productId: string; type: string; qty: number; note: string; referenceId: string; }' is not assignable to type '(Without<StockMovementCreateInput, StockMovementUncheckedCreateInput> & StockMovementUncheckedCreateInput) | (Without<...> & StockMovementCreateInput)'.
+88.75   Type '{ productId: string; type: string; qty: number; note: string; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput> & StockMovementCreateInput'.
+88.75     Type '{ productId: string; type: string; qty: number; note: string; referenceId: string; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput>'.
+88.75       Types of property 'productId' are incompatible.
+88.75         Type 'string' is not assignable to type 'never'.
+88.75 src/modules/purchasing/purchasing.service.ts(218,257): error TS2322: Type '{ productId: string; nomorLot: any; expiryDate: Date; qtyAwal: number; qtySisa: number; unitCost: number | Decimal; referenceId: string; }' is not assignable to type '(Without<StockLotCreateInput, StockLotUncheckedCreateInput> & StockLotUncheckedCreateInput) | (Without<...> & StockLotCreateInput)'.
+88.75   Type '{ productId: string; nomorLot: any; expiryDate: Date; qtyAwal: number; qtySisa: number; unitCost: number | Decimal; referenceId: string; }' is not assignable to type 'Without<StockLotUncheckedCreateInput, StockLotCreateInput> & StockLotCreateInput'.
+88.75     Type '{ productId: string; nomorLot: any; expiryDate: Date; qtyAwal: number; qtySisa: number; unitCost: number | Decimal; referenceId: string; }' is not assignable to type 'Without<StockLotUncheckedCreateInput, StockLotCreateInput>'.
+88.75       Types of property 'productId' are incompatible.
+88.75         Type 'string' is not assignable to type 'never'.
+88.75 src/modules/purchasing/purchasing.service.ts(312,7): error TS2322: Type '{ vendorBillId: string; amount: number; method: any; referensi: any; notes: any; tanggal: Date; }' is not assignable to type '(Without<VendorBillPaymentCreateInput, VendorBillPaymentUncheckedCreateInput> & VendorBillPaymentUncheckedCreateInput) | (Without<...> & VendorBillPaymentCreateInput)'.
+88.75   Type '{ vendorBillId: string; amount: number; method: any; referensi: any; notes: any; tanggal: Date; }' is not assignable to type 'Without<VendorBillPaymentUncheckedCreateInput, VendorBillPaymentCreateInput> & VendorBillPaymentCreateInput'.
+88.75     Type '{ vendorBillId: string; amount: number; method: any; referensi: any; notes: any; tanggal: Date; }' is not assignable to type 'Without<VendorBillPaymentUncheckedCreateInput, VendorBillPaymentCreateInput>'.
+88.75       Types of property 'vendorBillId' are incompatible.
+88.75         Type 'string' is not assignable to type 'never'.
+88.75 src/modules/purchasing/purchasing.service.ts(482,50): error TS2322: Type '{ productId: any; type: string; qty: any; note: string; referenceId: any; }' is not assignable to type '(Without<StockMovementCreateInput, StockMovementUncheckedCreateInput> & StockMovementUncheckedCreateInput) | (Without<...> & StockMovementCreateInput)'.
+88.75   Type '{ productId: any; type: string; qty: any; note: string; referenceId: any; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput> & StockMovementCreateInput'.
+88.75     Type '{ productId: any; type: string; qty: any; note: string; referenceId: any; }' is not assignable to type 'Without<StockMovementUncheckedCreateInput, StockMovementCreateInput>'.
+88.75       Types of property 'productId' are incompatible.
+88.75         Type 'any' is not assignable to type 'never'.
+88.75 src/modules/sales/sales.service.ts(247,9): error TS2322: Type '{ create: { productId: any; nama: any; qty: number; harga: number; subtotal: number; }[]; }' is not assignable to type 'InvoiceItemUncheckedCreateNestedManyWithoutInvoiceInput | InvoiceItemCreateNestedManyWithoutInvoiceInput'.
+88.75   Types of property 'create' are incompatible.
+88.75     Type '{ productId: any; nama: any; qty: number; harga: number; subtotal: number; }[]' is not assignable to type '(Without<InvoiceItemCreateWithoutInvoiceInput, InvoiceItemUncheckedCreateWithoutInvoiceInput> & InvoiceItemUncheckedCreateWithoutInvoiceInput) | (Without<...> & InvoiceItemCreateWithoutInvoiceInput) | InvoiceItemCreateWithoutInvoiceInput[] | InvoiceItemUncheckedCreateWithoutInvoiceInput[]'.
+88.75       Type '{ productId: any; nama: any; qty: number; harga: number; subtotal: number; }[]' is not assignable to type 'InvoiceItemCreateWithoutInvoiceInput[]'.
+88.75         Property 'tenant' is missing in type '{ productId: any; nama: any; qty: number; harga: number; subtotal: number; }' but required in type 'InvoiceItemCreateWithoutInvoiceInput'.
+88.75 src/modules/settings/settings.service.ts(15,74): error TS2322: Type '{ key: string; value: string; }' is not assignable to type '(Without<AppSettingCreateInput, AppSettingUncheckedCreateInput> & AppSettingUncheckedCreateInput) | (Without<...> & AppSettingCreateInput)'.
+88.75   Type '{ key: string; value: string; }' is not assignable to type 'Without<AppSettingUncheckedCreateInput, AppSettingCreateInput> & AppSettingCreateInput'.
+88.75     Property 'tenant' is missing in type '{ key: string; value: string; }' but required in type 'AppSettingCreateInput'.
+88.75 src/modules/settings/settings.service.ts(36,7): error TS2322: Type '{ docType: string; prefix: string; separator: string; useYear: boolean; useMonth: boolean; padLength: number; lastSeq: number; }' is not assignable to type '(Without<DocumentNumberConfigCreateInput, DocumentNumberConfigUncheckedCreateInput> & DocumentNumberConfigUncheckedCreateInput) | (Without<...> & DocumentNumberConfigCreateInput)'.
+88.75   Type '{ docType: string; prefix: string; separator: string; useYear: boolean; useMonth: boolean; padLength: number; lastSeq: number; }' is not assignable to type 'Without<DocumentNumberConfigUncheckedCreateInput, DocumentNumberConfigCreateInput> & DocumentNumberConfigCreateInput'.
+88.75     Property 'tenant' is missing in type '{ docType: string; prefix: string; separator: string; useYear: boolean; useMonth: boolean; padLength: number; lastSeq: number; }' but required in type 'DocumentNumberConfigCreateInput'.
+88.75 src/modules/settings/settings.service.ts(88,9): error TS2322: Type '{ name: string; }' is not assignable to type '(Without<CompanyProfileCreateInput, CompanyProfileUncheckedCreateInput> & CompanyProfileUncheckedCreateInput) | (Without<...> & CompanyProfileCreateInput)'.
+88.75   Type '{ name: string; }' is not assignable to type 'Without<CompanyProfileUncheckedCreateInput, CompanyProfileCreateInput> & CompanyProfileCreateInput'.
+88.75     Property 'tenant' is missing in type '{ name: string; }' but required in type 'CompanyProfileCreateInput'.
+88.75 src/modules/settings/settings.service.ts(98,51): error TS2322: Type '{ name: string; logo?: string; address?: string; phone?: string; email?: string; website?: string; npwp?: string; currency?: string; timezone?: string; }' is not assignable to type '(Without<CompanyProfileCreateInput, CompanyProfileUncheckedCreateInput> & CompanyProfileUncheckedCreateInput) | (Without<...> & CompanyProfileCreateInput)'.
+88.75   Type '{ name: string; logo?: string; address?: string; phone?: string; email?: string; website?: string; npwp?: string; currency?: string; timezone?: string; }' is not assignable to type 'Without<CompanyProfileUncheckedCreateInput, CompanyProfileCreateInput> & CompanyProfileCreateInput'.
+88.75     Property 'tenant' is missing in type '{ name: string; logo?: string; address?: string; phone?: string; email?: string; website?: string; npwp?: string; currency?: string; timezone?: string; }' but required in type 'CompanyProfileCreateInput'.
+88.75 src/modules/settings/settings.service.ts(112,9): error TS2322: Type '{ templateType: string; }' is not assignable to type '(Without<InvoiceTemplateCreateInput, InvoiceTemplateUncheckedCreateInput> & InvoiceTemplateUncheckedCreateInput) | (Without<...> & InvoiceTemplateCreateInput)'.
+88.75   Type '{ templateType: string; }' is not assignable to type 'Without<InvoiceTemplateUncheckedCreateInput, InvoiceTemplateCreateInput> & InvoiceTemplateCreateInput'.
+88.75     Property 'tenant' is missing in type '{ templateType: string; }' but required in type 'InvoiceTemplateCreateInput'.
+88.75 src/modules/settings/settings.service.ts(131,58): error TS2322: Type '{}' is not assignable to type '(Without<WorkflowConfigCreateInput, WorkflowConfigUncheckedCreateInput> & WorkflowConfigUncheckedCreateInput) | (Without<...> & WorkflowConfigCreateInput)'.
+88.75 src/modules/settings/settings.service.ts(148,61): error TS2322: Type '{}' is not assignable to type '(Without<DefaultAccountsCreateInput, DefaultAccountsUncheckedCreateInput> & DefaultAccountsUncheckedCreateInput) | (Without<...> & DefaultAccountsCreateInput)'.
+88.75 src/modules/settings/settings.service.ts(169,7): error TS2322: Type '{ kode: string; nama: string; tipe: any; rate: number; accountId: string; }' is not assignable to type '(Without<TaxCreateInput, TaxUncheckedCreateInput> & TaxUncheckedCreateInput) | (Without<TaxUncheckedCreateInput, TaxCreateInput> & TaxCreateInput)'.
+88.75   Type '{ kode: string; nama: string; tipe: any; rate: number; accountId: string; }' is not assignable to type 'Without<TaxUncheckedCreateInput, TaxCreateInput> & TaxCreateInput'.
+88.75     Property 'tenant' is missing in type '{ kode: string; nama: string; tipe: any; rate: number; accountId: string; }' but required in type 'TaxCreateInput'.
+88.75 src/modules/settings/settings.service.ts(192,7): error TS2322: Type '{ code: string; name: string; symbol: string; rate: number; isDefault: boolean; }' is not assignable to type '(Without<CurrencyCreateInput, CurrencyUncheckedCreateInput> & CurrencyUncheckedCreateInput) | (Without<...> & CurrencyCreateInput)'.
+88.75   Type '{ code: string; name: string; symbol: string; rate: number; isDefault: boolean; }' is not assignable to type 'Without<CurrencyUncheckedCreateInput, CurrencyCreateInput> & CurrencyCreateInput'.
+88.75     Property 'tenant' is missing in type '{ code: string; name: string; symbol: string; rate: number; isDefault: boolean; }' but required in type 'CurrencyCreateInput'.
+88.75 src/modules/settings/settings.service.ts(216,62): error TS2322: Type '{}' is not assignable to type '(Without<NotificationConfigCreateInput, NotificationConfigUncheckedCreateInput> & NotificationConfigUncheckedCreateInput) | (Without<...> & NotificationConfigCreateInput)'.
+88.75 src/modules/tax/efaktur.service.ts(77,7): error TS2322: Type '{ nomorFaktur: string; tanggal: Date; referenceId: string; npwpPembeli: string; namaPembeli: string; nilaiDPP: number; nilaiPPN: number; taxId: string; status: "DRAFT"; }' is not assignable to type '(Without<EFakturCreateInput, EFakturUncheckedCreateInput> & EFakturUncheckedCreateInput) | (Without<...> & EFakturCreateInput)'.
+88.75   Type '{ nomorFaktur: string; tanggal: Date; referenceId: string; npwpPembeli: string; namaPembeli: string; nilaiDPP: number; nilaiPPN: number; taxId: string; status: "DRAFT"; }' is not assignable to type 'Without<EFakturUncheckedCreateInput, EFakturCreateInput> & EFakturCreateInput'.
+88.75     Type '{ nomorFaktur: string; tanggal: Date; referenceId: string; npwpPembeli: string; namaPembeli: string; nilaiDPP: number; nilaiPPN: number; taxId: string; status: "DRAFT"; }' is not assignable to type 'Without<EFakturUncheckedCreateInput, EFakturCreateInput>'.
+88.75       Types of property 'taxId' are incompatible.
+88.75         Type 'string' is not assignable to type 'never'.
+88.75 src/modules/tax/efaktur.service.ts(251,9): error TS2353: Object literal may only specify known properties, and 'tanggal' does not exist in type 'VendorBillWhereInput'.
+88.75 src/modules/tax/efaktur.service.ts(255,18): error TS2353: Object literal may only specify known properties, and 'tanggal' does not exist in type 'VendorBillOrderByWithRelationInput | VendorBillOrderByWithRelationInput[]'.
+88.75 src/modules/tax/tax.service.ts(96,37): error TS2322: Type '{ rate: number; kode: string; nama: string; tipe: TaxType; isActive?: boolean; accountId?: string; }' is not assignable to type '(Without<TaxCreateInput, TaxUncheckedCreateInput> & TaxUncheckedCreateInput) | (Without<TaxUncheckedCreateInput, TaxCreateInput> & TaxCreateInput)'.
+88.75   Type '{ rate: number; kode: string; nama: string; tipe: TaxType; isActive?: boolean; accountId?: string; }' is not assignable to type 'Without<TaxUncheckedCreateInput, TaxCreateInput> & TaxCreateInput'.
+88.75     Property 'tenant' is missing in type '{ rate: number; kode: string; nama: string; tipe: TaxType; isActive?: boolean; accountId?: string; }' but required in type 'TaxCreateInput'.
+88.75 src/modules/tax/tax.service.ts(191,7): error TS2322: Type '{ referenceId: string; referenceType: string; taxId: string; baseAmount: number; taxAmount: number; tipe: $Enums.TaxLineType; }' is not assignable to type '(Without<TaxLineCreateInput, TaxLineUncheckedCreateInput> & TaxLineUncheckedCreateInput) | (Without<...> & TaxLineCreateInput)'.
+88.75   Type '{ referenceId: string; referenceType: string; taxId: string; baseAmount: number; taxAmount: number; tipe: $Enums.TaxLineType; }' is not assignable to type 'Without<TaxLineUncheckedCreateInput, TaxLineCreateInput> & TaxLineCreateInput'.
+88.75     Type '{ referenceId: string; referenceType: string; taxId: string; baseAmount: number; taxAmount: number; tipe: $Enums.TaxLineType; }' is not assignable to type 'Without<TaxLineUncheckedCreateInput, TaxLineCreateInput>'.
+88.75       Types of property 'taxId' are incompatible.
+88.75         Type 'string' is not assignable to type 'never'.
+88.75 src/modules/user/user.service.ts(28,69): error TS2339: Property 'name' does not exist on type '{ id: string; module: string; action: string; label: string; description: string; }'.
+88.75 src/modules/workflow/workflow.service.ts(11,55): error TS2322: Type '{}' is not assignable to type '(Without<WorkflowConfigCreateInput, WorkflowConfigUncheckedCreateInput> & WorkflowConfigUncheckedCreateInput) | (Without<...> & WorkflowConfigCreateInput)'.
+88.75 src/modules/workflow/workflow.service.ts(82,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '(Without<NotificationCreateInput, NotificationUncheckedCreateInput> & NotificationUncheckedCreateInput) | (Without<...> & NotificationCreateInput)'.
+88.75 src/modules/workflow/workflow.service.ts(106,7): error TS2322: Type '{ actorId: string; action: string; resource: string; recordId: string; metadata: { notes: string; }; }' is not assignable to type '(Without<AuditLogCreateInput, AuditLogUncheckedCreateInput> & AuditLogUncheckedCreateInput) | (Without<...> & AuditLogCreateInput)'.
+88.75   Type '{ actorId: string; action: string; resource: string; recordId: string; metadata: { notes: string; }; }' is not assignable to type 'Without<AuditLogUncheckedCreateInput, AuditLogCreateInput> & AuditLogCreateInput'.
+88.75     Type '{ actorId: string; action: string; resource: string; recordId: string; metadata: { notes: string; }; }' is not assignable to type 'Without<AuditLogUncheckedCreateInput, AuditLogCreateInput>'.
+88.75       Types of property 'actorId' are incompatible.
+88.75         Type 'string' is not assignable to type 'never'.
+88.75 src/modules/workflow/workflow.service.ts(119,9): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '(Without<NotificationCreateInput, NotificationUncheckedCreateInput> & NotificationUncheckedCreateInput) | (Without<...> & NotificationCreateInput)'.
+88.75 src/modules/workflow/workflow.service.ts(142,7): error TS2322: Type '{ actorId: string; action: string; resource: string; recordId: string; metadata: { notes: string; }; }' is not assignable to type '(Without<AuditLogCreateInput, AuditLogUncheckedCreateInput> & AuditLogUncheckedCreateInput) | (Without<...> & AuditLogCreateInput)'.
+88.75   Type '{ actorId: string; action: string; resource: string; recordId: string; metadata: { notes: string; }; }' is not assignable to type 'Without<AuditLogUncheckedCreateInput, AuditLogCreateInput> & AuditLogCreateInput'.
+88.75     Type '{ actorId: string; action: string; resource: string; recordId: string; metadata: { notes: string; }; }' is not assignable to type 'Without<AuditLogUncheckedCreateInput, AuditLogCreateInput>'.
+88.75       Types of property 'actorId' are incompatible.
+88.75         Type 'string' is not assignable to type 'never'.
+89.05  ELIFECYCLE  Command failed with exit code 2.
+------
+[+] up 0/2
+ ⠙ Image gentong-mas-erp-frontend Building                                                                                      95.7s
+ ⠙ Image gentong-mas-erp-backend  Building                                                                                      95.7s
+Dockerfile:13
+
+--------------------
+
+  11 |     COPY apps/backend/ ./apps/backend/
+
+  12 |     
+
+  13 | >>> RUN cd apps/backend && pnpm prisma generate && pnpm build
+
+  14 |     
+
+  15 |     FROM node:20-alpine AS runner
+
+--------------------
+
+target backend: failed to solve: process "/bin/sh -c cd apps/backend && pnpm prisma generate && pnpm build" did not complete successfully: exit code: 2

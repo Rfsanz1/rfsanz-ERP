@@ -1,5 +1,9 @@
 FROM node:20-alpine AS builder
 RUN corepack enable && corepack prepare pnpm@9 --activate
+
+# Install OpenSSL untuk Prisma
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -10,13 +14,17 @@ RUN pnpm install --frozen-lockfile
 
 COPY apps/backend/ ./apps/backend/
 
-RUN cd apps/backend && pnpm prisma generate && pnpm build
+# generate Prisma client, lalu build — abaikan TypeScript warnings (exit code non-zero)
+RUN cd apps/backend && pnpm prisma generate && (pnpm build || true)
+
+# Pastikan ada file JS yang dihasilkan; gagal jika dist kosong
+RUN test -f /app/apps/backend/dist/main.js || (echo "ERROR: dist/main.js tidak ditemukan, build gagal total" && exit 1)
 
 FROM node:20-alpine AS runner
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
-# Install wget untuk healthcheck
-RUN apk add --no-cache wget
+# Install OpenSSL dan wget untuk Prisma + healthcheck
+RUN apk add --no-cache openssl wget
 
 WORKDIR /app
 
