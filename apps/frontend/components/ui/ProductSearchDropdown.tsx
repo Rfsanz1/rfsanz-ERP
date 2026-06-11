@@ -76,7 +76,7 @@ export default function ProductSearchDropdown({
       <div className="relative">
         <input
           className="w-full rounded-lg px-3 py-2 text-sm pr-8"
-          style={{ border: `1px solid ${open ? accentColor : '#EDE8F5'}`, color: '#1E1B4B', outline: 'none' }}
+          style={{ border: `1px solid ${open ? accentColor : '#EDE8F5'}`, color: '#1E1B4B', outline: 'none', background: '#fff' }}
           placeholder={placeholder}
           value={value}
           disabled={disabled}

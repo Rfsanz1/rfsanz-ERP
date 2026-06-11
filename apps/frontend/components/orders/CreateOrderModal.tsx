@@ -125,13 +125,13 @@ export default function CreateOrderModal({ onClose, onSuccess }: { onClose: () =
               {/* Customer Search Dropdown */}
               <div className="col-span-2">
                 <label className="block text-xs font-medium mb-1" style={{ color: '#1E1B4B' }}>
-                  Nama Customer <span style={{ color: '#EA5455' }}>*</span>
+                  Nama Konsumen <span style={{ color: '#EA5455' }}>*</span>
                 </label>
                 <CustomerSearchDropdown
                   value={namaCustomer}
                   onChange={setNamaCustomer}
                   onSelect={handleCustomerSelect}
-                  placeholder="Ketik nama atau nomor HP pelanggan..."
+                  placeholder="Ketik nama atau nomor HP konsumen..."
                   accentColor={COLOR}
                   required
                 />

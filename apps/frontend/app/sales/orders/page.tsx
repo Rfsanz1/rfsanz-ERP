@@ -56,7 +56,7 @@ export default function SalesOrdersPage() {
 
   const filtered = rows.filter(r =>
     (!statusFilter || r.status === statusFilter) &&
-    (!search || (r.soNumber + (r.customerName ?? '')).toLowerCase().includes(search.toLowerCase()))
+    (!search || ((r.soNumber ?? '') + (r.namaCustomer ?? r.customerName ?? '')).toLowerCase().includes(search.toLowerCase()))
   );
 
   const fmtRp   = (v: number) => `Rp ${Number(v).toLocaleString('id-ID')}`;
@@ -118,7 +118,7 @@ export default function SalesOrdersPage() {
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-hover)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   <td style={{ padding: '13px 16px', fontWeight: 700, color: '#6366F1', fontSize: 12 }}>{r.soNumber ?? r.orderNumber}</td>
-                  <td style={{ padding: '13px 16px', color: 'var(--text-primary)', fontWeight: 500 }}>{r.customerName ?? r.customer?.name ?? '–'}</td>
+                  <td style={{ padding: '13px 16px', color: 'var(--text-primary)', fontWeight: 500 }}>{r.namaCustomer ?? r.customerName ?? r.customer?.name ?? '–'}</td>
                   <td style={{ padding: '13px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{fmtDate(r.createdAt)}</td>
                   <td style={{ padding: '13px 16px', color: 'var(--text-muted)' }}>{r.items ?? r.itemCount ?? '–'} item</td>
                   <td style={{ padding: '13px 16px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmtRp(r.totalAmount ?? r.total ?? 0)}</td>

@@ -129,7 +129,7 @@ export default function SmartOrderPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
-                Nama / No. HP Pelanggan <span style={{ color: '#EF4444' }}>*</span>
+                Nama Konsumen <span style={{ color: '#EF4444' }}>*</span>
               </label>
               <CustomerSearchDropdown
                 value={customerName}
