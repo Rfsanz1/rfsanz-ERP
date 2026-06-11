@@ -30,26 +30,26 @@ export class DashboardService {
     ] = await Promise.all([
       this.prisma.order.aggregate({
         where: { ...whereOrder, createdAt: { gte: today } },
-        _sum: { totalAmount: true },
+        _sum: { totalHarga: true },
       }),
       this.prisma.order.aggregate({
         where: { ...whereOrder, createdAt: { gte: monthStart } },
-        _sum: { totalAmount: true },
+        _sum: { totalHarga: true },
       }),
       this.prisma.order.aggregate({
         where: { ...whereOrder, createdAt: { gte: yearStart } },
-        _sum: { totalAmount: true },
+        _sum: { totalHarga: true },
       }),
       this.prisma.invoice.aggregate({
-        where: { ...whereInvoice, status: 'DRAFT' },
-        _sum: { totalAmount: true },
+        where: { ...whereInvoice, status: 'draft' },
+        _sum: { grandTotal: true },
         _count: true,
       }),
       this.prisma.invoice.count({
-        where: { ...whereInvoice, dueDate: { lt: today }, status: { in: ['SENT', 'PARTIAL'] } },
+        where: { ...whereInvoice, dueDate: { lt: today }, status: { in: ['sent', 'partial'] } },
       }),
       this.prisma.productWarehouseStock.count({
-        where: { quantity: { lte: this.prisma.product.fields.minimumStock } },
+        where: { qty: { lte: 0 } },
       }),
       this.prisma.bankAccount.aggregate({
         where: branchId ? { branchId } : {},
@@ -63,10 +63,10 @@ export class DashboardService {
     ]);
 
     const summary = {
-      todayRevenue: Number(todayOrders._sum?.totalAmount || 0),
-      monthRevenue: Number(monthOrders._sum?.totalAmount || 0),
-      yearRevenue: Number(yearOrders._sum?.totalAmount || 0),
-      totalAR: Number(invoices._sum?.totalAmount || 0),
+      todayRevenue: Number(todayOrders._sum?.totalHarga || 0),
+      monthRevenue: Number(monthOrders._sum?.totalHarga || 0),
+      yearRevenue: Number(yearOrders._sum?.totalHarga || 0),
+      totalAR: Number(invoices._sum?.grandTotal || 0),
       totalAP: 0, // Calculate from Bills/PurchaseOrders
       cashBalance: Number(cashBalance._sum?.balance || 0),
       lowStockCount,
@@ -120,7 +120,7 @@ export class DashboardService {
             ...(branchId ? { branchId } : {}),
             createdAt: { gte: monthStart, lte: monthEnd },
           },
-          _sum: { totalAmount: true },
+          _sum: { totalHarga: true },
         }),
         this.prisma.expense.aggregate({
           where: {
@@ -133,7 +133,7 @@ export class DashboardService {
 
       months.push({
         month: date.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }),
-        revenue: Number(revenue._sum?.totalAmount || 0),
+        revenue: Number(revenue._sum?.totalHarga || 0),
         expense: Number(expense._sum?.amount || 0),
       });
     }
@@ -163,7 +163,7 @@ export class DashboardService {
   private async getTopProducts(branchId?: string, limit = 5) {
     const products = await this.prisma.orderItem.groupBy({
       by: ['productId'],
-      _sum: { quantity: true, subtotal: true },
+      _sum: { qty: true, subtotal: true },
       orderBy: { _sum: { subtotal: 'desc' } },
       take: limit,
     });
@@ -176,7 +176,7 @@ export class DashboardService {
       });
       result.push({
         name: product?.name || 'Unknown',
-        qty: item._sum?.quantity || 0,
+        qty: item._sum?.qty || 0,
         revenue: Number(item._sum?.subtotal || 0),
       });
     }
@@ -187,9 +187,9 @@ export class DashboardService {
   private async getTopCustomers(branchId?: string, limit = 5) {
     const customers = await this.prisma.order.groupBy({
       by: ['customerId'],
-      _sum: { totalAmount: true },
+      _sum: { totalHarga: true },
       _count: true,
-      orderBy: { _sum: { totalAmount: 'desc' } },
+      orderBy: { _sum: { totalHarga: 'desc' } },
       take: limit,
     });
 
@@ -201,7 +201,7 @@ export class DashboardService {
       });
       result.push({
         name: customer?.name || 'Unknown',
-        revenue: Number(item._sum?.totalAmount || 0),
+        revenue: Number(item._sum?.totalHarga || 0),
       });
     }
 
@@ -209,32 +209,36 @@ export class DashboardService {
   }
 
   private async getExpenseByCategory(branchId?: string) {
-    const expenses = await this.prisma.expense.groupBy({
-      by: ['category'],
-      _sum: { amount: true },
-      orderBy: { _sum: { amount: 'desc' } },
+    const expenses = await this.prisma.expense.findMany({
+      where: branchId ? { branchId } : {},
+      include: { account: { select: { name: true } } },
     });
 
-    return expenses.map((e) => ({
-      category: e.category || 'Uncategorized',
-      amount: Number(e._sum?.amount || 0),
-    }));
+    const grouped: Record<string, number> = {};
+    for (const e of expenses) {
+      const key = e.account?.name || 'Uncategorized';
+      grouped[key] = (grouped[key] || 0) + Number(e.amount || 0);
+    }
+
+    return Object.entries(grouped)
+      .map(([category, amount]) => ({ category, amount }))
+      .sort((a, b) => b.amount - a.amount);
   }
 
   private async getLowStockAlerts(branchId?: string, limit = 10) {
     const stocks = await this.prisma.productWarehouseStock.findMany({
       where: {
         ...(branchId ? { warehouseId: branchId } : {}),
-        quantity: { lte: this.prisma.product.fields.minimumStock as any },
+        qty: { lte: 5 },
       },
-      include: { product: { select: { name: true, minimumStock: true } } },
+      include: { product: { select: { name: true, stokMinimum: true } } },
       take: limit,
     });
 
     return stocks.map((s) => ({
       productName: s.product?.name || 'Unknown',
-      currentStock: s.quantity,
-      minStock: s.product?.minimumStock || 0,
+      currentStock: s.qty,
+      minStock: s.product?.stokMinimum || 0,
     }));
   }
 
@@ -245,18 +249,18 @@ export class DashboardService {
     const invoices = await this.prisma.invoice.findMany({
       where: {
         dueDate: { lt: today },
-        status: { in: ['SENT', 'PARTIAL'] },
+        status: { in: ['sent', 'partial'] },
       },
-      include: { order: { select: { customer: { select: { name: true } } } } },
+      include: { customer: { select: { name: true } } },
       take: limit,
       orderBy: { dueDate: 'asc' },
     });
 
     return invoices.map((inv) => ({
-      invoiceNumber: inv.invoiceNumber || inv.id,
-      customerName: inv.order?.customer?.name || 'Unknown',
+      invoiceNumber: inv.noInvoice || inv.id,
+      customerName: inv.customer?.name || 'Unknown',
       dueDate: inv.dueDate,
-      amount: Number(inv.totalAmount || 0),
+      amount: Number(inv.grandTotal || 0),
     }));
   }
 
@@ -276,10 +280,10 @@ export class DashboardService {
     });
 
     return payables.map((p) => ({
-      billNumber: p.invoiceNumber || p.id,
+      billNumber: p.noInvoice || p.id,
       supplierName: 'N/A', // Add supplier info if available
       dueDate: p.dueDate,
-      amount: Number(p.totalAmount || 0),
+      amount: Number(p.grandTotal || 0),
     }));
   }
 
