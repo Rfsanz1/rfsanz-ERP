@@ -10,6 +10,7 @@ export interface CustomerOption {
   phone?: string | null;
   email?: string | null;
   address?: string | null;
+  source?: 'local' | 'kledo';
 }
 
 interface Props {
@@ -41,10 +42,38 @@ export default function CustomerSearchDropdown({
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await api.get('/customers', { params: { search: q, limit: 8, active: 'true' } });
-        const list: CustomerOption[] = res.data?.data ?? [];
-        setSuggestions(list);
-        setOpen(list.length > 0);
+        const [localRes, kledoRes] = await Promise.allSettled([
+          api.get('/customers', { params: { search: q, limit: 8, active: 'true' } }),
+          api.get('/kledo/contacts', { params: { search: q, per_page: 8 } }),
+        ]);
+
+        const localList: CustomerOption[] =
+          localRes.status === 'fulfilled'
+            ? (localRes.value.data?.data ?? []).map((c: any) => ({ ...c, source: 'local' as const }))
+            : [];
+
+        const kledoRaw: any[] =
+          kledoRes.status === 'fulfilled'
+            ? (kledoRes.value.data?.data ?? [])
+            : [];
+
+        const kledoList: CustomerOption[] = kledoRaw.map((c: any) => ({
+          id: `kledo-${c.id}`,
+          name: c.name,
+          phone: c.phone ?? null,
+          email: c.email ?? null,
+          address: null,
+          source: 'kledo' as const,
+        }));
+
+        const localNames = new Set(localList.map((c) => c.name.toLowerCase().trim()));
+        const dedupedKledo = kledoList.filter(
+          (c) => !localNames.has(c.name.toLowerCase().trim()),
+        );
+
+        const merged = [...localList, ...dedupedKledo].slice(0, 10);
+        setSuggestions(merged);
+        setOpen(merged.length > 0);
       } catch { setSuggestions([]); }
       finally { setLoading(false); }
     }, 300);
@@ -114,13 +143,26 @@ export default function CustomerSearchDropdown({
             >
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 text-white text-xs font-bold"
-                style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}99)` }}
+                style={{ background: c.source === 'kledo'
+                  ? 'linear-gradient(135deg, #10B981, #059669)'
+                  : `linear-gradient(135deg, ${accentColor}, ${accentColor}99)` }}
               >
                 {c.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold truncate" style={{ color: '#1E1B4B' }}>{c.name}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-semibold truncate" style={{ color: '#1E1B4B' }}>{c.name}</p>
+                  {c.source === 'kledo' && (
+                    <span
+                      className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'rgba(16,185,129,.12)', color: '#059669' }}
+                    >
+                      Kledo
+                    </span>
+                  )}
+                </div>
                 {c.phone && <p className="text-[11px] truncate" style={{ color: '#9CA3AF' }}>📞 {c.phone}</p>}
+                {!c.phone && c.email && <p className="text-[11px] truncate" style={{ color: '#9CA3AF' }}>✉ {c.email}</p>}
               </div>
               {c.address && (
                 <p className="text-[10px] text-right flex-shrink-0 max-w-[100px] truncate" style={{ color: '#C4B5FD' }}>
@@ -132,7 +174,7 @@ export default function CustomerSearchDropdown({
           <div className="px-3 py-2 border-t" style={{ borderColor: '#F5F3FF' }}>
             <p className="text-[10px]" style={{ color: '#C4B5FD' }}>
               <User className="h-3 w-3 inline mr-1" />
-              Tidak ada? Ketik nama baru untuk membuat pelanggan baru.
+              Menampilkan kontak lokal &amp; Kledo · Tidak ada? Ketik nama baru untuk membuat pelanggan baru.
             </p>
           </div>
         </div>
@@ -140,6 +182,12 @@ export default function CustomerSearchDropdown({
 
       {selected && (
         <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+          {selected.source === 'kledo' && (
+            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
+              style={{ backgroundColor: 'rgba(16,185,129,.12)', color: '#059669' }}>
+              ✓ Dari Kledo
+            </span>
+          )}
           {selected.phone && (
             <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accentColor}15`, color: accentColor }}>
               📞 {selected.phone}
