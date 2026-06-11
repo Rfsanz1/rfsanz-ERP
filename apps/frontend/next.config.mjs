@@ -4,7 +4,7 @@ const BACKEND = 'http://127.0.0.1:6000';
 const config = {
   transpilePackages: ['@gm/ui', '@gm/utils', '@gm/types'],
   reactStrictMode: true,
-  allowedDevOrigins: ['*.replit.dev', '*.repl.co', '*.replit.app', '*.replit.com'],
+  allowedDevOrigins: ['*.replit.dev', '*.repl.co', '*.replit.app', '*.replit.com', '*.pike.replit.dev', '*.kirk.replit.dev'],
   typescript: {
     ignoreBuildErrors: true,
   },
