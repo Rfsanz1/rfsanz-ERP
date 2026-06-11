@@ -62,8 +62,25 @@ export const kledoService = {
   getSpmBrands: () =>
     api.get<SpmBrand[]>('/kledo/spm-brands').then((r) => r.data),
 
+  /** Sync produk saja */
+  syncProducts: () =>
+    api.post<{ jobId: string; message: string; total?: number }>('/kledo/sync').then((r) => r.data),
+
+  /** Sync kontak saja */
+  syncContacts: () =>
+    api.post<{ jobId: string; message: string; total?: number }>('/kledo/sync-contacts').then((r) => r.data),
+
+  /** Sync invoice saja */
+  syncInvoices: (limit = 500) =>
+    api.post<{ jobId: string; message: string }>('/kledo/sync-invoices', null, { params: { limit } }).then((r) => r.data),
+
+  /** Sync semua sekaligus (produk + kontak + invoice) */
+  syncAll: () =>
+    api.post<{ jobs: Record<string, string>; message: string }>('/kledo/sync-all').then((r) => r.data),
+
+  /** Legacy — hanya sync produk */
   syncNow: () =>
-    api.post<{ success: boolean; synced: number }>('/kledo/sync').then((r) => r.data),
+    api.post<{ jobId: string; message: string }>('/kledo/sync').then((r) => r.data),
 
   autoSync: () =>
     api.post('/kledo/auto-sync').then((r) => r.data),

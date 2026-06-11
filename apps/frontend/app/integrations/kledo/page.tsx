@@ -68,13 +68,33 @@ export default function KledoPage() {
     load();
   }, [token]);
 
+  const [syncMode, setSyncMode] = useState<'all' | 'products' | 'contacts' | 'invoices'>('all');
+  const [syncMessage, setSyncMessage] = useState('');
+
   const handleSync = async () => {
     setSyncing(true);
     setSyncResult(null);
+    setSyncMessage('');
     try {
-      const res = await kledoService.syncNow();
-      setSyncResult(res);
-      await load();
+      let res: any;
+      if (syncMode === 'all') {
+        res = await kledoService.syncAll();
+        setSyncMessage(res.message ?? 'Sync semua dimulai di background');
+        setSyncResult({ success: true, synced: 0 });
+      } else if (syncMode === 'products') {
+        res = await kledoService.syncProducts();
+        setSyncMessage(res.message ?? 'Sync produk dimulai');
+        setSyncResult({ success: true, synced: res.total ?? 0 });
+      } else if (syncMode === 'contacts') {
+        res = await kledoService.syncContacts();
+        setSyncMessage(res.message ?? 'Sync kontak dimulai');
+        setSyncResult({ success: true, synced: res.total ?? 0 });
+      } else {
+        res = await kledoService.syncInvoices(500);
+        setSyncMessage(res.message ?? 'Sync invoice dimulai');
+        setSyncResult({ success: true, synced: 0 });
+      }
+      setTimeout(() => load(), 3000);
     } catch { setSyncResult({ success: false, synced: 0 }); }
     finally { setSyncing(false); }
   };
@@ -132,7 +152,7 @@ export default function KledoPage() {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
             <button
               onClick={load}
               disabled={loading}
@@ -140,13 +160,27 @@ export default function KledoPage() {
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Cek Status
             </button>
+
+            {/* Sync mode selector */}
+            <select
+              value={syncMode}
+              onChange={e => setSyncMode(e.target.value as any)}
+              className="rounded-xl text-sm font-semibold px-3 py-2 border-none outline-none"
+              style={{ background: 'rgba(255,255,255,.2)', color: '#fff' }}
+            >
+              <option value="all" style={{ color: '#1E1B4B' }}>Sync Semua</option>
+              <option value="products" style={{ color: '#1E1B4B' }}>Produk</option>
+              <option value="contacts" style={{ color: '#1E1B4B' }}>Kontak</option>
+              <option value="invoices" style={{ color: '#1E1B4B' }}>Invoice</option>
+            </select>
+
             <button
               onClick={handleSync}
               disabled={syncing || loading}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-white/20 hover:bg-white/30 transition disabled:opacity-50"
             >
               <Zap className={`h-4 w-4 ${syncing ? 'animate-pulse' : ''}`} />
-              {syncing ? 'Sync...' : 'Sync Sekarang'}
+              {syncing ? 'Menyinkronkan...' : 'Sync Sekarang'}
             </button>
           </div>
         </div>
@@ -161,7 +195,7 @@ export default function KledoPage() {
             }}
           >
             {syncResult.success
-              ? <><CheckCircle className="h-4 w-4" /> Sync berhasil! {syncResult.synced} produk disinkronisasi ke database lokal.</>
+              ? <><CheckCircle className="h-4 w-4" /> {syncMessage || 'Sync berhasil dimulai di background.'}</>
               : <><AlertCircle className="h-4 w-4" /> Sync gagal. Periksa koneksi dan KLEDO_TOKEN.</>}
           </div>
         )}
