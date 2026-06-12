@@ -53,8 +53,8 @@ export const kledoService = {
   getProducts: (params?: { page?: number; per_page?: number; search?: string }) =>
     api.get<{ data: KledoProduct[]; total?: number }>('/kledo/products', { params }).then((r) => r.data),
 
-  getContacts: (params?: { page?: number; per_page?: number; search?: string }) =>
-    api.get<{ data: KledoContact[] }>('/kledo/contacts', { params }).then((r) => r.data),
+  getContacts: (params?: { page?: number; per_page?: number; search?: string; type?: string }) =>
+    api.get<{ data: KledoContact[] }>('/kledo/contacts', { params: { type: 'customer', ...params } }).then((r) => r.data),
 
   getInvoices: (params?: { page?: number; per_page?: number }) =>
     api.get<{ data: KledoInvoice[] }>('/kledo/invoices', { params }).then((r) => r.data),

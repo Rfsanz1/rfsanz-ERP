@@ -46,7 +46,7 @@ export default function KledoPage() {
       if (st.connected) {
         const [prods, conts, invs, logs] = await Promise.allSettled([
           kledoService.getProducts({ per_page: 50 }),
-          kledoService.getContacts({ per_page: 30 }),
+          kledoService.getContacts({ per_page: 30, type: 'customer' }),
           kledoService.getInvoices({ per_page: 20 }),
           kledoService.getSyncLogs({ limit: 20 }),
         ]);
