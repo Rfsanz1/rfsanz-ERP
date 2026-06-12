@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
-// Dalam Docker: BACKEND_URL=http://backend:6000
-// Dalam dev Replit: BACKEND_URL=http://127.0.0.1:6000
+// Dalam Docker (CasaOS): BACKEND_URL=http://backend:8000  (via docker-compose env)
+// Dalam dev Replit:      BACKEND_URL tidak diset → fallback ke 127.0.0.1:6000
 const BACKEND = process.env.BACKEND_URL || 'http://127.0.0.1:6000';
 
 const config = {
