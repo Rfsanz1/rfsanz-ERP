@@ -1,12 +1,25 @@
 /** @type {import('next').NextConfig} */
-// Dalam Docker (CasaOS): BACKEND_URL=http://backend:8000  (via docker-compose env)
-// Dalam dev Replit:      BACKEND_URL tidak diset → fallback ke 127.0.0.1:6000
 const BACKEND = process.env.BACKEND_URL || 'http://127.0.0.1:6000';
+
+const replitDevDomain = process.env.REPLIT_DEV_DOMAIN;
+const allowedDevOrigins = [
+  '*.replit.dev',
+  '*.repl.co',
+  '*.replit.app',
+  '*.replit.com',
+  '*.pike.replit.dev',
+  '*.kirk.replit.dev',
+  '*.sisko.replit.dev',
+  '*.janeway.replit.dev',
+];
+if (replitDevDomain) {
+  allowedDevOrigins.push(replitDevDomain);
+}
 
 const config = {
   transpilePackages: ['@gm/ui', '@gm/utils', '@gm/types'],
   reactStrictMode: true,
-  allowedDevOrigins: ['*.replit.dev', '*.repl.co', '*.replit.app', '*.replit.com', '*.pike.replit.dev', '*.kirk.replit.dev'],
+  allowedDevOrigins,
   typescript: {
     ignoreBuildErrors: true,
   },
