@@ -11,7 +11,7 @@ interface MaterioLayoutProps {
 }
 
 export function MaterioLayout({ children }: MaterioLayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
