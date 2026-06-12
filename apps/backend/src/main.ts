@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -69,68 +70,33 @@ async function bootstrap() {
     next();
   });
 
-  // ── Halaman dokumentasi API bergaya Bagisto di /docs ──
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.get('/docs', (_req: any, res: any) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(DOCS_HTML);
   });
 
-  // ── Swagger: JSON spec di /docs-json, UI di /docs-swagger ──
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Gentong Mas ERP — API')
-    .setDescription(
-      'REST API untuk sistem ERP Gentong Mas. Mencakup modul: Auth, Sales, Inventory, Finance, HR, CRM, Fleet, Payroll, Tax, dan lainnya.',
-    )
-    .setVersion('1.0')
+    .setDescription('REST API untuk sistem ERP Gentong Mas. Integrasi langsung dengan Kledo.')
+    .setVersion('2.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')
-    .addTag('auth',          'Autentikasi & otorisasi')
-    .addTag('dashboard',     'KPI & statistik dashboard')
-    .addTag('sales',         'Manajemen penjualan & order')
-    .addTag('inventory',     'Stok & gudang')
-    .addTag('finance',       'Keuangan & akuntansi')
-    .addTag('hr',            'Sumber daya manusia')
-    .addTag('crm',           'CRM & relasi pelanggan')
-    .addTag('purchasing',    'Pembelian & vendor')
-    .addTag('fleet',         'Armada & pengiriman')
-    .addTag('payroll',       'Penggajian karyawan')
-    .addTag('tax',           'Perpajakan & e-Faktur')
-    .addTag('assets',        'Aset tetap & penyusutan')
-    .addTag('maintenance',   'Pemeliharaan peralatan')
-    .addTag('manufacturing', 'Produksi & BOM')
-    .addTag('project',       'Manajemen proyek')
-    .addTag('pos',           'Point of Sale')
-    .addTag('branch',        'Cabang & perusahaan')
-    .addTag('users',         'Manajemen pengguna')
-    .addTag('settings',      'Pengaturan sistem')
+    .addTag('auth',    'Autentikasi & otorisasi')
+    .addTag('kledo',   'Integrasi Kledo — kontak, produk, invoice')
+    .addTag('health',  'Health check')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs-swagger', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-      docExpansion: 'none',
-      filter: true,
-      showRequestDuration: true,
-    },
+    swaggerOptions: { persistAuthorization: true, docExpansion: 'none', filter: true },
     customSiteTitle: 'Gentong Mas ERP — Swagger UI',
-    customCss: `
-      .swagger-ui .topbar { background: linear-gradient(135deg, #0041ff, #41d1ff); }
-      .swagger-ui .topbar-wrapper img { display: none; }
-      .swagger-ui .topbar-wrapper::before {
-        content: '🏭 Gentong Mas ERP — API';
-        color: white; font-size: 1.25rem; font-weight: 700; font-family: Inter, sans-serif;
-      }
-      .swagger-ui .info .title { color: #0041ff; }
-    `,
   });
 
   const port = process.env.PORT ? Number(process.env.PORT) : 6000;
-  await app.listen(port);
-  console.log(`Modern backend running on http://localhost:${port}`);
-  console.log(`API Docs (Bagisto style): http://localhost:${port}/docs`);
-  console.log(`Swagger UI:               http://localhost:${port}/docs-swagger`);
-  console.log(`OpenAPI JSON:             http://localhost:${port}/docs-json`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`\n🚀  Backend running  →  http://0.0.0.0:${port}`);
+  console.log(`🔑  Kledo token      →  ${process.env.KLEDO_TOKEN ? '✅ terbaca' : '❌ TIDAK TERBACA — set KLEDO_TOKEN di .env'}`);
+  console.log(`📄  Swagger UI       →  http://0.0.0.0:${port}/docs-swagger\n`);
 }
 
 bootstrap();
