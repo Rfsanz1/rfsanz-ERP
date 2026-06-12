@@ -181,29 +181,39 @@ function ConfigModal({
     [authToken],
   );
 
+  const safeJson = async (res: globalThis.Response) => {
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { return { message: text || 'Respons tidak valid dari server' }; }
+  };
+
   const handleSave = async () => {
     setSaving(true); setSaveMsg(null);
     try {
       if (intg.id === 'kledo') {
+        const token = (values['token'] ?? '').trim();
+        if (!token) {
+          setSaveMsg({ ok: false, text: 'Token tidak boleh kosong' });
+          return;
+        }
         const res = await apiFetch('/api/kledo/config', {
           method: 'PUT',
-          body: JSON.stringify({ token: values['token'] ?? '', baseUrl: values['baseUrl'] || undefined }),
+          body: JSON.stringify({ token, baseUrl: values['baseUrl']?.trim() || undefined }),
         });
-        const data = await res.json();
+        const data = await safeJson(res);
         if (res.ok) {
           setSaveMsg({ ok: true, text: 'Token Kledo berhasil disimpan!' });
           setValues({});
           onKledoSaved();
           handleTest();
         } else {
-          setSaveMsg({ ok: false, text: data?.message ?? 'Gagal menyimpan' });
+          setSaveMsg({ ok: false, text: data?.message ?? 'Gagal menyimpan token' });
         }
       } else {
         await new Promise(r => setTimeout(r, 600));
         setSaveMsg({ ok: false, text: 'Integrasi ini belum tersedia — segera hadir!' });
       }
     } catch (e: any) {
-      setSaveMsg({ ok: false, text: e.message ?? 'Terjadi kesalahan' });
+      setSaveMsg({ ok: false, text: 'Tidak dapat terhubung ke server. Pastikan backend berjalan.' });
     } finally { setSaving(false); }
   };
 

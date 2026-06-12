@@ -1,85 +1,124 @@
-import { Controller, Get, Post, Put, Delete, Body, Query, Param, Inject, UseGuards, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller, Get, Post, Put, Delete,
+  Body, Query, Param, Inject, HttpStatus, Res,
+} from '@nestjs/common';
+import { Response } from 'express';
 import { KledoService } from './kledo.service.js';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+
+function ok(res: Response, data: unknown, status = HttpStatus.OK) {
+  return res.status(status).json(data);
+}
+function fail(res: Response, message: string, status = HttpStatus.INTERNAL_SERVER_ERROR) {
+  return res.status(status).json({ success: false, message });
+}
 
 @Controller('kledo')
 export class KledoController {
   constructor(@Inject(KledoService) private readonly svc: KledoService) {}
 
   @Get('status')
-  async getStatus() {
-    try { return await this.svc.getStatus(); }
-    catch (e: any) { return { connected: false, message: e?.message ?? 'Gagal cek status' }; }
+  async getStatus(@Res() res: Response) {
+    try { return ok(res, await this.svc.getStatus()); }
+    catch (e: any) { return ok(res, { connected: false, message: e?.message ?? 'Gagal cek status' }); }
   }
 
   @Get('config')
-  @UseGuards(JwtAuthGuard)
-  async getConfig() {
-    try { return await this.svc.getConfig(); }
-    catch (e: any) { throw new HttpException({ message: e?.message ?? 'Gagal ambil konfigurasi' }, HttpStatus.INTERNAL_SERVER_ERROR); }
+  async getConfig(@Res() res: Response) {
+    try { return ok(res, await this.svc.getConfig()); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil konfigurasi'); }
   }
 
   @Put('config')
-  @UseGuards(JwtAuthGuard)
-  async saveConfig(@Body() dto: { token: string; baseUrl?: string }) {
-    try { return await this.svc.saveConfig(dto.token, dto.baseUrl); }
-    catch (e: any) { throw new HttpException({ message: e?.message ?? 'Gagal menyimpan konfigurasi' }, HttpStatus.INTERNAL_SERVER_ERROR); }
+  async saveConfig(@Body() dto: { token?: string; baseUrl?: string }, @Res() res: Response) {
+    try {
+      const token = (dto?.token ?? '').trim();
+      if (!token) return fail(res, 'Token tidak boleh kosong', HttpStatus.BAD_REQUEST);
+      const result = await this.svc.saveConfig(token, dto?.baseUrl?.trim() || undefined);
+      return ok(res, { success: true, ...result });
+    } catch (e: any) { return fail(res, e?.message ?? 'Gagal menyimpan konfigurasi'); }
   }
 
   @Get('spm-brands')
-  getSpmBrands() { return this.svc.getSpmBrands(); }
+  async getSpmBrands(@Res() res: Response) {
+    try { return ok(res, this.svc.getSpmBrands()); }
+    catch (e: any) { return fail(res, e?.message ?? 'Error'); }
+  }
 
   @Get('products')
-  @UseGuards(JwtAuthGuard)
-  getProducts(@Query() q: any) { return this.svc.getProducts(q); }
+  async getProducts(@Query() q: any, @Res() res: Response) {
+    try { return ok(res, await this.svc.getProducts(q)); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil produk Kledo'); }
+  }
 
   @Get('contacts')
-  @UseGuards(JwtAuthGuard)
-  getContacts(@Query() q: any) { return this.svc.getContacts(q); }
+  async getContacts(@Query() q: any, @Res() res: Response) {
+    try { return ok(res, await this.svc.getContacts(q)); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil kontak Kledo'); }
+  }
 
   @Post('contacts')
-  @UseGuards(JwtAuthGuard)
-  createContact(@Body() dto: any) { return this.svc.createContact(dto); }
+  async createContact(@Body() dto: any, @Res() res: Response) {
+    try { return ok(res, await this.svc.createContact(dto), HttpStatus.CREATED); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal membuat kontak Kledo'); }
+  }
 
   @Put('contacts/:id')
-  @UseGuards(JwtAuthGuard)
-  updateContact(@Param('id') id: string, @Body() dto: any) { return this.svc.updateContact(Number(id), dto); }
+  async updateContact(@Param('id') id: string, @Body() dto: any, @Res() res: Response) {
+    try { return ok(res, await this.svc.updateContact(Number(id), dto)); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengupdate kontak'); }
+  }
 
   @Delete('contacts/:id')
-  @UseGuards(JwtAuthGuard)
-  deleteContact(@Param('id') id: string) { return this.svc.deleteContact(Number(id)); }
+  async deleteContact(@Param('id') id: string, @Res() res: Response) {
+    try { return ok(res, await this.svc.deleteContact(Number(id))); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal menghapus kontak'); }
+  }
 
   @Get('invoices')
-  @UseGuards(JwtAuthGuard)
-  getInvoices(@Query() q: any) { return this.svc.getInvoices(q); }
+  async getInvoices(@Query() q: any, @Res() res: Response) {
+    try { return ok(res, await this.svc.getInvoices(q)); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil invoice Kledo'); }
+  }
 
   @Post('invoices')
-  @UseGuards(JwtAuthGuard)
-  createInvoice(@Body() dto: any) { return this.svc.createInvoice(dto); }
+  async createInvoice(@Body() dto: any, @Res() res: Response) {
+    try { return ok(res, await this.svc.createInvoice(dto), HttpStatus.CREATED); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal membuat invoice'); }
+  }
 
   @Post('sync')
-  @UseGuards(JwtAuthGuard)
-  syncProducts() { return this.svc.syncProducts(); }
+  async syncProducts(@Res() res: Response) {
+    try { return ok(res, await this.svc.syncProducts()); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal sync produk'); }
+  }
 
   @Post('sync-contacts')
-  @UseGuards(JwtAuthGuard)
-  syncContacts() { return this.svc.syncContacts(); }
+  async syncContacts(@Res() res: Response) {
+    try { return ok(res, await this.svc.syncContacts()); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal sync kontak'); }
+  }
 
   @Post('sync-invoices')
-  @UseGuards(JwtAuthGuard)
-  syncInvoices(@Query('limit') limit?: string) {
-    return this.svc.syncInvoices(limit ? Number(limit) : 500);
+  async syncInvoices(@Query('limit') limit: string | undefined, @Res() res: Response) {
+    try { return ok(res, await this.svc.syncInvoices(limit ? Number(limit) : 500)); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal sync invoice'); }
   }
 
   @Post('sync-all')
-  @UseGuards(JwtAuthGuard)
-  syncAll() { return this.svc.syncAll(); }
+  async syncAll(@Res() res: Response) {
+    try { return ok(res, await this.svc.syncAll()); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal sync semua'); }
+  }
 
   @Post('auto-sync')
-  @UseGuards(JwtAuthGuard)
-  autoSync() { return this.svc.autoSync(); }
+  async autoSync(@Res() res: Response) {
+    try { return ok(res, await this.svc.autoSync()); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal auto sync'); }
+  }
 
   @Get('sync-logs')
-  @UseGuards(JwtAuthGuard)
-  getSyncLogs(@Query() q: any) { return this.svc.getSyncLogs(q); }
+  async getSyncLogs(@Query() q: any, @Res() res: Response) {
+    try { return ok(res, await this.svc.getSyncLogs(q)); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil log sync'); }
+  }
 }
