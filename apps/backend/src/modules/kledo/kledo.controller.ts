@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Query, Param, Inject, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Query, Param, Inject, UseGuards, HttpException, HttpStatus } from '@nestjs/common';
 import { KledoService } from './kledo.service.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 
@@ -7,16 +7,23 @@ export class KledoController {
   constructor(@Inject(KledoService) private readonly svc: KledoService) {}
 
   @Get('status')
-  getStatus() { return this.svc.getStatus(); }
+  async getStatus() {
+    try { return await this.svc.getStatus(); }
+    catch (e: any) { return { connected: false, message: e?.message ?? 'Gagal cek status' }; }
+  }
 
   @Get('config')
   @UseGuards(JwtAuthGuard)
-  getConfig() { return this.svc.getConfig(); }
+  async getConfig() {
+    try { return await this.svc.getConfig(); }
+    catch (e: any) { throw new HttpException({ message: e?.message ?? 'Gagal ambil konfigurasi' }, HttpStatus.INTERNAL_SERVER_ERROR); }
+  }
 
   @Put('config')
   @UseGuards(JwtAuthGuard)
-  saveConfig(@Body() dto: { token: string; baseUrl?: string }) {
-    return this.svc.saveConfig(dto.token, dto.baseUrl);
+  async saveConfig(@Body() dto: { token: string; baseUrl?: string }) {
+    try { return await this.svc.saveConfig(dto.token, dto.baseUrl); }
+    catch (e: any) { throw new HttpException({ message: e?.message ?? 'Gagal menyimpan konfigurasi' }, HttpStatus.INTERNAL_SERVER_ERROR); }
   }
 
   @Get('spm-brands')

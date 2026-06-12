@@ -42,10 +42,26 @@ export class KledoService {
     return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   }
 
+  /* ── Cari atau buat default tenant ────────────────────────────────── */
+  private async getOrCreateTenant() {
+    let tenant = await this.prisma.tenant.findFirst();
+    if (!tenant) {
+      tenant = await this.prisma.tenant.create({
+        data: {
+          name: 'Gentong Mas',
+          slug: 'gentong-mas',
+          plan: 'trial',
+          isActive: true,
+        },
+      });
+      this.logger.log('Default tenant dibuat otomatis untuk menyimpan konfigurasi.');
+    }
+    return tenant;
+  }
+
   /* ── Simpan config ke DB ───────────────────────────────────────────── */
   async saveConfig(token: string, baseUrl?: string) {
-    const tenant = await this.prisma.tenant.findFirst();
-    if (!tenant) throw new Error('Tenant belum ada di database. Jalankan seed terlebih dahulu.');
+    const tenant = await this.getOrCreateTenant();
 
     await this.prisma.appSetting.upsert({
       where: { key: DB_KEY_TOKEN },
