@@ -9,6 +9,16 @@ export class KledoController {
   @Get('status')
   getStatus() { return this.svc.getStatus(); }
 
+  @Get('config')
+  @UseGuards(JwtAuthGuard)
+  getConfig() { return this.svc.getConfig(); }
+
+  @Put('config')
+  @UseGuards(JwtAuthGuard)
+  saveConfig(@Body() dto: { token: string; baseUrl?: string }) {
+    return this.svc.saveConfig(dto.token, dto.baseUrl);
+  }
+
   @Get('spm-brands')
   getSpmBrands() { return this.svc.getSpmBrands(); }
 
