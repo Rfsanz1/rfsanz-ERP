@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { MaterioLayout } from './MaterioLayout';
+import { OfflineBanner } from '../ui/OfflineBanner';
 
 const STANDALONE_PREFIXES = ['/gudang', '/driver'];
 
@@ -12,7 +13,19 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
     (p) => pathname === p || pathname.startsWith(p + '/'),
   );
 
-  if (isStandalone) return <>{children}</>;
+  if (isStandalone) {
+    return (
+      <>
+        <OfflineBanner />
+        {children}
+      </>
+    );
+  }
 
-  return <MaterioLayout>{children}</MaterioLayout>;
+  return (
+    <>
+      <OfflineBanner />
+      <MaterioLayout>{children}</MaterioLayout>
+    </>
+  );
 }

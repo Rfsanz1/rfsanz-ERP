@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Building2, Users, Globe2, Hash, Mail, Smartphone,
-  HardDrive, Link2, FileSearch, ChevronRight,
+  HardDrive, Link2, FileSearch, ChevronRight, Wifi,
 } from 'lucide-react';
 
 const MENU = [
@@ -15,6 +15,7 @@ const MENU = [
   { href: '/settings/email-gateway',    label: 'Email Gateway',    icon: Mail,        desc: 'Konfigurasi SMTP untuk email' },
   { href: '/settings/wa-gateway',       label: 'WA Gateway',       icon: Smartphone,  desc: 'Fonnte WhatsApp notifikasi' },
   { href: '/settings/api-integration',  label: 'API & Integrasi',  icon: Link2,       desc: 'Kledo, Fonnte, marketplace' },
+  { href: '/settings/connection',       label: 'Koneksi Server',   icon: Wifi,        desc: 'URL server untuk app mobile' },
   { href: '/settings/backup',           label: 'Backup & Restore', icon: HardDrive,   desc: 'Backup dan pemulihan data' },
   { href: '/settings/audit-log',        label: 'Audit Log',        icon: FileSearch,  desc: 'Riwayat aktivitas pengguna' },
 ];
