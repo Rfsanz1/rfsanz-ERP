@@ -10,7 +10,12 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
-const DOCS_HTML = fs.readFileSync(path.join(__dirname, 'docs', 'index.html'), 'utf-8');
+let DOCS_HTML: string;
+try {
+  DOCS_HTML = fs.readFileSync(path.join(__dirname, 'docs', 'index.html'), 'utf-8');
+} catch {
+  DOCS_HTML = '<html><body><h1>API Docs</h1><p>Dokumentasi tidak tersedia.</p></body></html>';
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
