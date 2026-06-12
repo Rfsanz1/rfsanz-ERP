@@ -1,10 +1,10 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import AppShell from '../../components/layout/AppShell';
 import { CRM_CONFIG, CRM_NAV } from '../../lib/nav-configs';
 import { api } from '../../lib/api';
-import { Users, Plus, Search, RefreshCw } from 'lucide-react';
+import { Users, Plus, Search, RefreshCw, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 const SUB_NAV = [
@@ -23,6 +23,25 @@ const thStyle: React.CSSProperties = {
   color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em',
 };
 
+interface KledoContact {
+  id: number;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+}
+
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  kledoId: string;
+}
+
+const EMPTY_FORM: FormData = { name: '', email: '', phone: '', address: '', city: '', kledoId: '' };
+
 export default function CustomersPage() {
   const { token } = useAuthStore();
   const [data, setData]       = useState<any[]>([]);
@@ -31,6 +50,21 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal]     = useState(0);
   const [page, setPage]       = useState(1);
+
+  // Modal state
+  const [showModal, setShowModal]   = useState(false);
+  const [form, setForm]             = useState<FormData>(EMPTY_FORM);
+  const [saving, setSaving]         = useState(false);
+  const [saveResult, setSaveResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  // Kledo autocomplete state
+  const [klSearch, setKlSearch]         = useState('');
+  const [klSuggestions, setKlSuggestions] = useState<KledoContact[]>([]);
+  const [klLoading, setKlLoading]       = useState(false);
+  const [klOpen, setKlOpen]             = useState(false);
+  const [klError, setKlError]           = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
     setLoading(true);
@@ -47,6 +81,96 @@ export default function CustomersPage() {
   useEffect(() => { if (token) load(); }, [search, page, token]);
   if (!token) return null;
 
+  // Debounced Kledo contact search
+  const searchKledo = useCallback((q: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!q.trim()) { setKlSuggestions([]); setKlOpen(false); return; }
+    debounceRef.current = setTimeout(async () => {
+      setKlLoading(true);
+      setKlError(false);
+      try {
+        const res = await api.get('/kledo/contacts', { params: { search: q, type: 'customer', per_page: 8 } });
+        const contacts: KledoContact[] = res.data?.data?.data ?? res.data?.data ?? [];
+        setKlSuggestions(contacts);
+        setKlOpen(true);
+      } catch {
+        setKlError(true);
+        setKlSuggestions([]);
+        setKlOpen(false);
+      } finally {
+        setKlLoading(false);
+      }
+    }, 350);
+  }, []);
+
+  const handleNameInput = (val: string) => {
+    setKlSearch(val);
+    setForm(f => ({ ...f, name: val, kledoId: '' }));
+    searchKledo(val);
+  };
+
+  const selectKledoContact = (c: KledoContact) => {
+    setForm(f => ({
+      ...f,
+      name: c.name,
+      email: c.email || f.email,
+      phone: c.phone || f.phone,
+      address: c.address || f.address,
+      kledoId: String(c.id),
+    }));
+    setKlSearch(c.name);
+    setKlSuggestions([]);
+    setKlOpen(false);
+  };
+
+  const openModal = () => {
+    setForm(EMPTY_FORM);
+    setKlSearch('');
+    setKlSuggestions([]);
+    setKlOpen(false);
+    setSaveResult(null);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    if (saving) return;
+    setShowModal(false);
+    setKlSuggestions([]);
+    setKlOpen(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setSaving(true);
+    setSaveResult(null);
+    try {
+      await api.post('/customers', {
+        name:    form.name.trim(),
+        email:   form.email.trim() || null,
+        phone:   form.phone.trim() || null,
+        address: form.address.trim() || null,
+        city:    form.city.trim() || null,
+        kledoId: form.kledoId || null,
+        active:  true,
+      });
+      setSaveResult({ ok: true, msg: 'Pelanggan berhasil ditambahkan!' });
+      load();
+      setTimeout(() => { setShowModal(false); setSaveResult(null); }, 1200);
+    } catch (err: any) {
+      setSaveResult({ ok: false, msg: err?.response?.data?.message ?? 'Gagal menyimpan pelanggan.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '9px 13px', borderRadius: 10,
+    border: '1px solid var(--border)', outline: 'none', fontSize: 13,
+    background: 'var(--surface-sunken)', color: 'var(--text-primary)',
+    boxSizing: 'border-box',
+  };
+
   return (
     <AppShell {...CRM_CONFIG} navItems={CRM_NAV} activeHref="/customers">
       <div style={{ maxWidth: 1200 }} className="space-y-5">
@@ -57,7 +181,10 @@ export default function CustomersPage() {
             <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Data Pelanggan</h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Manajemen data pelanggan &amp; riwayat transaksi</p>
           </div>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button
+            onClick={openModal}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          >
             <Plus size={14} /> Tambah Pelanggan
           </button>
         </div>
@@ -135,7 +262,12 @@ export default function CustomersPage() {
                         <div style={{ width: 32, height: 32, borderRadius: 10, background: '#6366F11A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#6366F1', flexShrink: 0 }}>
                           {c.name?.charAt(0) ?? '?'}
                         </div>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</span>
+                        <div>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</span>
+                          {c.kledoId && (
+                            <span style={{ display: 'block', fontSize: 10, color: '#6366F1', fontWeight: 600 }}>Kledo #{c.kledoId}</span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td style={{ padding: '13px 16px', fontSize: 13, color: 'var(--text-muted)' }}>{c.email || '–'}</td>
@@ -164,6 +296,199 @@ export default function CustomersPage() {
           </div>
         </div>
       </div>
+
+      {/* ─── MODAL TAMBAH PELANGGAN ─── */}
+      {showModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={e => { if (e.target === e.currentTarget) closeModal(); }}
+        >
+          <div style={{ background: 'var(--surface)', borderRadius: 20, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+
+            {/* Modal header */}
+            <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>Tambah Pelanggan</h2>
+                <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                  Ketik nama untuk mengambil kontak dari Kledo
+                </p>
+              </div>
+              <button onClick={closeModal} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, borderRadius: 8, display: 'flex' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <form onSubmit={handleSubmit} style={{ padding: '20px 24px 24px' }}>
+              <div className="space-y-4">
+
+                {/* Nama — dengan Kledo autocomplete */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                    Nama Pelanggan <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <div style={{ position: 'relative' }} ref={dropdownRef}>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        autoFocus
+                        value={klSearch}
+                        onChange={e => handleNameInput(e.target.value)}
+                        onFocus={() => { if (klSuggestions.length > 0) setKlOpen(true); }}
+                        onBlur={() => setTimeout(() => setKlOpen(false), 200)}
+                        style={{ ...inputStyle, paddingRight: 36 }}
+                        placeholder="Ketik nama untuk cari di Kledo…"
+                        required
+                      />
+                      {klLoading && (
+                        <Loader2 size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#6366F1', animation: 'spin .7s linear infinite' }} />
+                      )}
+                      {form.kledoId && !klLoading && (
+                        <CheckCircle2 size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#10B981' }} />
+                      )}
+                    </div>
+
+                    {/* Dropdown suggestions */}
+                    {klOpen && klSuggestions.length > 0 && (
+                      <div style={{
+                        position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                        background: 'var(--surface)', border: '1px solid var(--border)',
+                        borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                        marginTop: 4, maxHeight: 240, overflowY: 'auto',
+                      }}>
+                        <div style={{ padding: '6px 12px 4px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', borderBottom: '1px solid var(--border)' }}>
+                          Kontak Kledo
+                        </div>
+                        {klSuggestions.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onMouseDown={() => selectKledoContact(c)}
+                            style={{
+                              display: 'block', width: '100%', textAlign: 'left',
+                              padding: '10px 14px', border: 'none', background: 'none',
+                              cursor: 'pointer', transition: 'background .1s',
+                            }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--brand-hover)'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+                          >
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>
+                              {[c.phone, c.email].filter(Boolean).join(' · ') || 'Tidak ada detail'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* No results */}
+                    {klOpen && !klLoading && klSuggestions.length === 0 && klSearch.trim().length >= 2 && (
+                      <div style={{
+                        position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                        background: 'var(--surface)', border: '1px solid var(--border)',
+                        borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        marginTop: 4, padding: '12px 14px',
+                        fontSize: 12, color: 'var(--text-muted)',
+                      }}>
+                        {klError
+                          ? 'Kledo tidak terhubung — nama akan disimpan manual.'
+                          : `Tidak ditemukan di Kledo. Nama "${klSearch}" akan disimpan baru.`}
+                      </div>
+                    )}
+
+                    {form.kledoId && (
+                      <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#10B981', fontWeight: 600 }}>
+                        <CheckCircle2 size={12} /> Kontak Kledo #{form.kledoId} terhubung
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Telepon */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Telepon</label>
+                  <input
+                    value={form.phone}
+                    onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                    style={inputStyle}
+                    placeholder="08xxxxxxxxxx"
+                    type="tel"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Email</label>
+                  <input
+                    value={form.email}
+                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                    style={inputStyle}
+                    placeholder="email@contoh.com"
+                    type="email"
+                  />
+                </div>
+
+                {/* Kota + Alamat side by side */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Kota</label>
+                    <input
+                      value={form.city}
+                      onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
+                      style={inputStyle}
+                      placeholder="Surabaya"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Alamat</label>
+                    <input
+                      value={form.address}
+                      onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                      style={inputStyle}
+                      placeholder="Jl. Contoh No. 1"
+                    />
+                  </div>
+                </div>
+
+                {/* Save result */}
+                {saveResult && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+                    borderRadius: 10, fontSize: 13, fontWeight: 500,
+                    background: saveResult.ok ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.10)',
+                    color: saveResult.ok ? '#10B981' : '#EF4444',
+                  }}>
+                    {saveResult.ok
+                      ? <CheckCircle2 size={15} />
+                      : <AlertCircle size={15} />}
+                    {saveResult.msg}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 justify-end" style={{ paddingTop: 4 }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    disabled={saving}
+                    style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.5 : 1 }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || !form.name.trim()}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving || !form.name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.name.trim() ? 0.6 : 1 }}
+                  >
+                    {saving ? <><Loader2 size={13} style={{ animation: 'spin .7s linear infinite' }} /> Menyimpan…</> : 'Simpan Pelanggan'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </AppShell>
   );
 }

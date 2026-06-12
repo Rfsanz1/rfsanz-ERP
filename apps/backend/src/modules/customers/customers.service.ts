@@ -43,7 +43,16 @@ export class CustomersService {
     return c;
   }
 
+  private async getDefaultTenantId(): Promise<string> {
+    const tenant = await this.prisma.tenant.findFirst({ select: { id: true } });
+    if (!tenant) throw new Error('Tidak ada tenant di database');
+    return tenant.id;
+  }
+
   async create(dto: any) {
+    if (!dto.tenantId) {
+      dto.tenantId = await this.getDefaultTenantId();
+    }
     const customer = await this.prisma.customer.create({ data: dto });
     this.kledo.findOrCreateContact(customer.name, customer.phone ?? undefined)
       .then((kledoId) => {
