@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Inject, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Query, Param, Inject, UseGuards } from '@nestjs/common';
 import { KledoService } from './kledo.service.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 
@@ -19,6 +19,18 @@ export class KledoController {
   @Get('contacts')
   @UseGuards(JwtAuthGuard)
   getContacts(@Query() q: any) { return this.svc.getContacts(q); }
+
+  @Post('contacts')
+  @UseGuards(JwtAuthGuard)
+  createContact(@Body() dto: any) { return this.svc.createContact(dto); }
+
+  @Put('contacts/:id')
+  @UseGuards(JwtAuthGuard)
+  updateContact(@Param('id') id: string, @Body() dto: any) { return this.svc.updateContact(Number(id), dto); }
+
+  @Delete('contacts/:id')
+  @UseGuards(JwtAuthGuard)
+  deleteContact(@Param('id') id: string) { return this.svc.deleteContact(Number(id)); }
 
   @Get('invoices')
   @UseGuards(JwtAuthGuard)

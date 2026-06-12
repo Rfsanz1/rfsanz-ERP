@@ -52,13 +52,41 @@ export class KledoService {
   }
 
   async getContacts(query: any = {}) {
+    if (!this.token) return { data: { data: [], total: 0, last_page: 1 } };
     const { page = 1, per_page = 50, search, type } = query;
     const params: any = { page, per_page };
     if (search) params.name = search;
-    // type=customer → hanya kontak penjualan; type=vendor → hanya kontak pembelian
     if (type === 'customer') params.is_customer = 1;
     else if (type === 'vendor') params.is_vendor = 1;
     const res = await firstValueFrom(this.http.get(`${this.baseUrl}/finance/contacts`, { headers: this.headers, params }));
+    return res.data;
+  }
+
+  async createContact(dto: { name: string; phone?: string; email?: string; address?: string }) {
+    if (!this.token) throw new Error('KLEDO_TOKEN tidak dikonfigurasi');
+    const res = await firstValueFrom(
+      this.http.post(
+        `${this.baseUrl}/finance/contacts`,
+        { name: dto.name, phone: dto.phone ?? null, email: dto.email ?? null, address: dto.address ?? null, type_id: 4, is_customer: 1 },
+        { headers: this.headers },
+      ),
+    );
+    return res.data;
+  }
+
+  async updateContact(id: number, dto: { name?: string; phone?: string; email?: string; address?: string }) {
+    if (!this.token) throw new Error('KLEDO_TOKEN tidak dikonfigurasi');
+    const res = await firstValueFrom(
+      this.http.put(`${this.baseUrl}/finance/contacts/${id}`, dto, { headers: this.headers }),
+    );
+    return res.data;
+  }
+
+  async deleteContact(id: number) {
+    if (!this.token) throw new Error('KLEDO_TOKEN tidak dikonfigurasi');
+    const res = await firstValueFrom(
+      this.http.delete(`${this.baseUrl}/finance/contacts/${id}`, { headers: this.headers }),
+    );
     return res.data;
   }
 
