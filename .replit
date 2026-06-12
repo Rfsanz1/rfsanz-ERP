@@ -65,3 +65,8 @@ RATE_LIMIT_MAX = "1000"
 RATE_LIMIT_WINDOW_MS = "60000"
 JWT_SECRET = "m1x3auwWcvhssNDknT39Uoc1ra1GiufRsP8fB16fHvhx/MWqS0691TmimVFSmKL1gIyEjPqttP7p30SLJKNTbg=="
 JWT_REFRESH_SECRET = "5m3LQtbwxUZjP4w5bP94UG3razCxclyr8mHcYjBdpynEDiFgF0rzDxcc3VgFOMbAjZviYR/5tM7FwDmqsTcOtQ=="
+
+[deployment]
+deploymentTarget = "vm"
+run = ["pnpm", "run", "start"]
+build = ["pnpm", "run", "build"]
