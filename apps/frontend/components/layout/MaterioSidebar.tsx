@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export const SIDEBAR_WIDTH          = 256;
-export const SIDEBAR_COLLAPSED_WIDTH = 64;
+export const SIDEBAR_COLLAPSED_WIDTH = 0;
 
 interface NavChild { href: string; label: string; }
 interface NavItem  { href?: string; label: string; icon: React.ElementType; children?: NavChild[]; badge?: string; }
@@ -400,9 +400,10 @@ export function MaterioSidebar({ collapsed, mobileOpen, onMobileClose }: Sidebar
             position: 'fixed', top: 0, left: 0, bottom: 0,
             width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
             transition: 'width 0.25s ease', zIndex: 100,
+            overflow: 'hidden',
           }}
         >
-          <SidebarContent collapsed={collapsed} onMobileClose={() => {}} />
+          <SidebarContent collapsed={false} onMobileClose={() => {}} />
         </div>
       </aside>
 
