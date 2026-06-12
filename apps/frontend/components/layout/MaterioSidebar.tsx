@@ -114,20 +114,7 @@ const NAV: NavItem[] = [
   { href: '/marketing', label: 'Marketing',    icon: Megaphone },
   { href: '/website',   label: 'Website',      icon: Globe     },
   { href: '/notifications', label: 'Notifikasi', icon: Bell, badge: '5' },
-  {
-    label: 'Pengaturan', icon: Settings, dividerBefore: true,
-    children: [
-      { href: '/settings',                 label: 'Umum'            },
-      { href: '/settings/users',           label: 'Users & Roles'   },
-      { href: '/settings/companies',       label: 'Multi Perusahaan'},
-      { href: '/settings/document-numbers',label: 'Nomor Dokumen'   },
-      { href: '/settings/email-gateway',   label: 'Email Gateway'   },
-      { href: '/settings/wa-gateway',      label: 'WA Gateway'      },
-      { href: '/settings/api-integration', label: 'API & Integrasi' },
-      { href: '/settings/backup',          label: 'Backup & Restore'},
-      { href: '/settings/audit-log',       label: 'Audit Log'       },
-    ],
-  },
+  { href: '/settings', label: 'Pengaturan', icon: Settings, dividerBefore: true },
   { href: '/help', label: 'FAQ / Bantuan', icon: HelpCircle },
 ];
 
