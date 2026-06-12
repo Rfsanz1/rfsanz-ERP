@@ -68,7 +68,7 @@ export default function CustomersPage() {
     setLoading(true);
     try {
       const res = await api.get('/kledo/contacts', {
-        params: { page: pg, per_page: 20, search: q || undefined },
+        params: { page: pg, per_page: 20, search: q || undefined, type: 'customer' },
       });
       const d = res.data?.data;
       setContacts(d?.data ?? []);
