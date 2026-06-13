@@ -2,30 +2,18 @@
     "private": true,
     "type": "module",
     "workspaces": [
-        "apps/frontend",
-        "apps/backend"
+        "apps/frontend"
     ],
     "scripts": {
-        "dev:backend": "pnpm --filter @erp-modern/backend start:dev",
-        "dev:frontend": "pnpm --filter @erp-modern/frontend dev",
-        "dev": "concurrently \"pnpm dev:backend\" \"pnpm dev:frontend\"",
-        "build:backend": "pnpm --filter @erp-modern/backend build && cp -r apps/backend/src/docs apps/backend/dist/",
-        "build:frontend": "pnpm --filter @erp-modern/frontend build",
-        "build:all": "pnpm build:backend && pnpm build:frontend",
-        "build": "pnpm build:backend && pnpm build:frontend",
-        "start:backend": "PORT=6000 pnpm --filter @erp-modern/backend start",
-        "start:frontend": "PORT=5000 pnpm --filter @erp-modern/frontend start",
-        "start": "concurrently \"pnpm start:backend\" \"pnpm start:frontend\"",
+        "dev": "pnpm --filter @erp-modern/frontend dev",
+        "build": "pnpm --filter @erp-modern/frontend build",
+        "start": "pnpm --filter @erp-modern/frontend start",
         "cap:sync": "pnpm --filter @erp-modern/frontend cap:sync",
-        "build:android": "pnpm build:frontend && pnpm --filter @erp-modern/frontend cap:sync",
-        "build:ios": "pnpm build:frontend && pnpm --filter @erp-modern/frontend build:ios"
+        "build:android": "pnpm build && pnpm --filter @erp-modern/frontend cap:sync",
+        "build:ios": "pnpm build && pnpm --filter @erp-modern/frontend build:ios"
     },
     "dependencies": {
-        "@prisma/client": "^5.22.0",
         "concurrently": "^8.2.2",
-        "eventemitter3": "^5.0.4",
-        "pnpm": "^10.34.1",
-        "prisma": "^5.22.0",
-        "tsx": "^4.22.4"
+        "pnpm": "^10.34.1"
     }
 }

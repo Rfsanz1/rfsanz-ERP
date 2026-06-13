@@ -16,23 +16,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Backend API"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "Start application"
-
-[[workflows.workflow]]
-name = "Backend API"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @erp-modern/backend start:dev"
-waitForPort = 8000
 
 [[workflows.workflow]]
 name = "Start application"
@@ -61,14 +45,8 @@ externalPort = 8000
 [userenv]
 
 [userenv.shared]
-BACKEND_URL = "http://127.0.0.1:8000"
-PORT = "8000"
+BACKEND_URL = "https://ganti-dengan-url-backend-kamu.com"
 NODE_ENV = "development"
-JWT_EXPIRES_IN = "7d"
-RATE_LIMIT_MAX = "1000"
-RATE_LIMIT_WINDOW_MS = "60000"
-JWT_SECRET = "m1x3auwWcvhssNDknT39Uoc1ra1GiufRsP8fB16fHvhx/MWqS0691TmimVFSmKL1gIyEjPqttP7p30SLJKNTbg=="
-JWT_REFRESH_SECRET = "5m3LQtbwxUZjP4w5bP94UG3razCxclyr8mHcYjBdpynEDiFgF0rzDxcc3VgFOMbAjZviYR/5tM7FwDmqsTcOtQ=="
 
 [deployment]
 deploymentTarget = "vm"

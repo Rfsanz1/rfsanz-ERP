@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND = process.env.BACKEND_URL || 'http://127.0.0.1:6000';
+const BACKEND = process.env.BACKEND_URL || '';
 
 async function proxy(req: NextRequest, { params }: { params: { path: string[] } }) {
   const path = (await params).path.join('/');
@@ -34,7 +34,7 @@ async function proxy(req: NextRequest, { params }: { params: { path: string[] } 
   } catch (err) {
     console.error('[proxy] failed to reach backend:', url, err);
     return NextResponse.json(
-      { statusCode: 503, message: 'Backend tidak tersedia. Jalankan NestJS backend terlebih dahulu.' },
+      { statusCode: 503, message: 'Backend tidak tersedia. Set BACKEND_URL ke URL backend yang sudah di-deploy.' },
       { status: 503 },
     );
   }
