@@ -1,0 +1,272 @@
+Kamu adalah senior NestJS developer. Saya punya project ERP dengan 
+stack NestJS + PostgreSQL + Prisma yang sudah berjalan. Tambahkan 
+modul delivery lengkap untuk mendukung aplikasi mobile pengiriman 
+material bangunan.
+
+=== STRUKTUR PROJECT EXISTING ===
+- Framework: NestJS
+- ORM: Prisma + PostgreSQL
+- Auth: JWT (sudah ada, jangan ubah)
+- Storage: MinIO (perlu disetup dari 0)
+- Port: 8000
+
+=== YANG HARUS DIBUAT ===
+
+1. PRISMA SCHEMA — tambah model baru ini:
+
+model DeliveryOrder {
+  id           String              @id @default(cuid())
+  orderNumber  String              @unique
+  date         DateTime
+  driverId     String
+  driver       User                @relation(fields: [driverId], references: [id])
+  status       DeliveryOrderStatus @default(PENDING)
+  recipients   DeliveryRecipient[]
+  fuelReports  FuelReport[]
+  activities   DeliveryActivity[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+}
+
+model DeliveryRecipient {
+  id              String           @id @default(cuid())
+  deliveryOrderId String
+  deliveryOrder   DeliveryOrder    @relation(fields: [deliveryOrderId], references: [id])
+  name            String           // contoh: BU SURYANI - BSPS TLAHAB
+  address         String
+  phone           String?
+  status          RecipientStatus  @default(PENDING)
+  photos          DeliveryPhoto[]
+  issues          DeliveryIssue[]
+  signature       String?          // base64 PNG
+  deliveredAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model DeliveryPhoto {
+  id          String            @id @default(cuid())
+  recipientId String
+  recipient   DeliveryRecipient @relation(fields: [recipientId], references: [id])
+  type        PhotoType         // BARANG, SURAT_JALAN, PENERIMA, ISSUE, BBM
+  url         String            // URL MinIO
+  path        String            // path di MinIO: tanggal/ORDER-ID/NAMA-PENERIMA/barang.jpg
+  uploadedAt  DateTime          @default(now())
+}
+
+model DeliveryIssue {
+  id          String            @id @default(cuid())
+  recipientId String
+  recipient   DeliveryRecipient @relation(fields: [recipientId], references: [id])
+  type        IssueType
+  description String
+  photoUrl    String?
+  createdAt   DateTime          @default(now())
+}
+
+model FuelReport {
+  id              String        @id @default(cuid())
+  deliveryOrderId String?
+  deliveryOrder   DeliveryOrder? @relation(fields: [deliveryOrderId], references: [id])
+  driverId        String
+  driver          User          @relation(fields: [driverId], references: [id])
+  date            DateTime
+  liters          Float
+  pricePerLiter   Float
+  total           Float
+  spbu            String?
+  receiptUrl      String?
+  createdAt       DateTime      @default(now())
+}
+
+model DeliveryActivity {
+  id              String        @id @default(cuid())
+  deliveryOrderId String
+  deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id])
+  driverId        String
+  action          String
+  description     String
+  createdAt       DateTime      @default(now())
+}
+
+enum DeliveryOrderStatus {
+  PENDING
+  IN_PROGRESS
+  PARTIAL
+  COMPLETED
+}
+
+enum RecipientStatus {
+  PENDING
+  ON_THE_WAY
+  DELIVERED
+  ISSUE_REPORTED
+}
+
+enum PhotoType {
+  BARANG
+  SURAT_JALAN
+  PENERIMA
+  ISSUE
+  BBM
+}
+
+enum IssueType {
+  PENERIMA_TIDAK_ADA
+  ALAMAT_TIDAK_DITEMUKAN
+  BARANG_RUSAK
+  AKSES_JALAN_TERTUTUP
+  LAINNYA
+}
+
+2. MINIO SERVICE
+Buat src/modules/storage/minio.service.ts:
+- Koneksi ke MinIO via env: MINIO_ENDPOINT, MINIO_PORT, MINIO_ACCESS_KEY, 
+  MINIO_SECRET_KEY, MINIO_BUCKET
+- Method uploadFile(file: Express.Multer.File, path: string): Promise<string>
+  → Upload file ke path yang ditentukan
+  → Return public URL file
+- Method buildDeliveryPath(date: Date, orderNumber: string, recipientName: string, type: string): string
+  → Return: 2026-06-12/ORDER-001/BU-SURYANI-BSPS-TLAHAB/barang.jpg
+  → Nama penerima: spasi diganti strip, huruf kapital semua
+- Method deleteFile(path: string): Promise<void>
+- Bucket dibuat otomatis jika belum ada saat startup
+
+3. DELIVERY MODULE
+Buat src/modules/delivery/ dengan file:
+
+delivery.module.ts
+delivery.controller.ts  
+delivery.service.ts
+dto/create-delivery-order.dto.ts
+dto/update-recipient-status.dto.ts
+dto/upload-photos.dto.ts
+dto/create-issue.dto.ts
+dto/create-fuel-report.dto.ts
+
+4. ENDPOINTS LENGKAP:
+
+GET /api/delivery/orders
+- Query params: date (YYYY-MM-DD), driverId, status
+- Guard: JWT Auth
+- Return: list DeliveryOrder dengan jumlah recipient per status
+
+GET /api/delivery/orders/:orderId
+- Guard: JWT Auth  
+- Return: DeliveryOrder lengkap dengan semua recipient + status foto per recipient
+
+POST /api/delivery/orders
+- Guard: JWT Auth + Role Admin/Manager
+- Body: CreateDeliveryOrderDto
+- Buat order baru + list recipient
+
+PUT /api/delivery/orders/:orderId/status
+- Guard: JWT Auth
+- Update status order
+
+PUT /api/delivery/orders/:orderId/recipients/:recipientId/status
+- Guard: JWT Auth
+- Body: { status: RecipientStatus }
+- Update status recipient
+- Jika status DELIVERED, set deliveredAt = now()
+- Catat ke DeliveryActivity
+
+POST /api/delivery/orders/:orderId/recipients/:recipientId/photos
+- Guard: JWT Auth
+- Content-Type: multipart/form-data
+- Fields: barang (file), suratJalan (file), penerima (file), 
+  signature (string base64, optional), timestamp (string)
+- Validasi: ketiga foto wajib ada
+- Upload masing-masing ke MinIO dengan path:
+  tanggal/orderNumber/NAMA-PENERIMA/barang.jpg
+  tanggal/orderNumber/NAMA-PENERIMA/surat-jalan.jpg
+  tanggal/orderNumber/NAMA-PENERIMA/penerima.jpg
+- Simpan URL ke DeliveryPhoto
+- Catat ke DeliveryActivity: "Foto diunggah untuk [NAMA]"
+- Return: { success: true, photos: [...urls] }
+
+POST /api/delivery/orders/:orderId/recipients/:recipientId/issues
+- Guard: JWT Auth
+- Content-Type: multipart/form-data
+- Fields: type, description, photo (file, optional)
+- Upload foto ke MinIO jika ada
+- Simpan ke DeliveryIssue
+- Update status recipient jadi ISSUE_REPORTED
+- Catat ke DeliveryActivity
+
+POST /api/delivery/fuel-reports
+- Guard: JWT Auth
+- Content-Type: multipart/form-data
+- Fields: date, liters, pricePerLiter, spbu, receipt (file optional)
+- Upload struk ke MinIO jika ada
+- Simpan ke FuelReport
+
+GET /api/delivery/fuel-reports
+- Guard: JWT Auth
+- Query: month (YYYY-MM), driverId
+- Return: list FuelReport bulan tersebut + total pengeluaran
+
+GET /api/delivery/activity
+- Guard: JWT Auth
+- Query: date (YYYY-MM-DD), driverId
+- Return: list DeliveryActivity urut dari terbaru
+- Format deskripsi: "09:15 - Foto diunggah untuk Bu Suryani"
+
+GET /api/health
+- Public endpoint (no auth)
+- Return: { status: 'ok', timestamp: ISO string, version: '1.0.0' }
+
+5. ENV VARIABLES YANG DITAMBAHKAN
+Tambahkan ke .env:
+MINIO_ENDPOINT=192.168.18.50
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=delivery-photos
+MINIO_USE_SSL=false
+MINIO_PUBLIC_URL=http://192.168.18.50:9000
+
+6. TAMPILAN DI ERP WEB (Next.js)
+Tambahkan halaman apps/frontend/app/delivery/page.tsx:
+- Tabel semua delivery order
+- Filter by tanggal, driver, status
+- Klik order → lihat detail
+
+Tambahkan apps/frontend/app/delivery/[orderId]/page.tsx:
+- List semua recipient dalam order
+- Per recipient: status chip + 3 thumbnail foto
+- Klik foto → buka modal full size
+- Tanda tangan digital tampil di bawah foto
+- Tombol "Download Semua Foto" → download zip semua foto order ini
+
+7. DOCKER COMPOSE
+Tambahkan MinIO service ke docker-compose.yml:
+
+minio:
+  image: minio/minio
+  ports:
+    - "9000:9000"
+    - "9001:9001"
+  volumes:
+    - minio_data:/data
+  environment:
+    MINIO_ROOT_USER: minioadmin
+    MINIO_ROOT_PASSWORD: minioadmin
+  command: server /data --console-address ":9001"
+
+volumes:
+  minio_data:
+
+=== CONSTRAINT ===
+- Jangan ubah modul yang sudah ada
+- Semua endpoint baru prefix /api/delivery
+- Gunakan TypeScript strict
+- Validasi semua input dengan class-validator
+- Error handling proper dengan HttpException
+- Log semua upload activity ke console
+
+=== OUTPUT ===
+1. Semua file lengkap siap pakai
+2. Perintah migrasi Prisma: npx prisma migrate dev --name add-delivery-module
+3. Cara setup MinIO pertama kali
+4. Cara test semua endpoint via curl atau Postman
