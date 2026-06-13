@@ -1,47 +1,32 @@
 FROM node:20-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@latest --activate
 RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY packages/ ./packages/
-COPY apps/backend/package.json ./apps/backend/package.json
+COPY package.json ./
+RUN pnpm install
 
-RUN pnpm install --frozen-lockfile
+COPY . .
 
-COPY apps/backend/ ./apps/backend/
-
-RUN pnpm --filter @erp-modern/backend prisma:generate && \
-    (pnpm --filter @erp-modern/backend build || true)
-
-RUN test -f /app/apps/backend/dist/main.js || \
-    (echo "ERROR: dist/main.js tidak ditemukan" && exit 1)
-
-# pnpm deploy creates a self-contained node_modules with real files (no pnpm symlinks).
-# This is the recommended way to package pnpm workspace apps for Docker.
-RUN pnpm --filter @erp-modern/backend deploy --prod /app/deploy
-
-# Copy prisma schema into deploy dir, then generate the Prisma client there
-# using the builder's prisma CLI. Output goes to /app/deploy/node_modules/@prisma/client
-RUN cp -r /app/apps/backend/prisma /app/deploy/prisma && \
-    /app/node_modules/.bin/prisma generate --schema=/app/deploy/prisma/schema.prisma
+RUN pnpm prisma:generate && pnpm build
 
 FROM node:20-alpine AS runner
 RUN apk add --no-cache openssl wget
 
-WORKDIR /app/apps/backend
+WORKDIR /app
 
-# Self-contained node_modules — real files, no pnpm virtual-store symlinks
-COPY --from=builder /app/deploy/node_modules ./node_modules
-# Compiled NestJS application
-COPY --from=builder /app/apps/backend/dist ./dist
-# Prisma schema (needed for db push at startup) + generated client inside node_modules
-COPY --from=builder /app/deploy/prisma ./prisma
+COPY package.json ./
+RUN corepack enable && corepack prepare pnpm@latest --activate && \
+    pnpm install --prod
 
-COPY apps/backend/entrypoint.sh /entrypoint.sh
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client \
+     ./node_modules/@prisma/client 2>/dev/null || true
+COPY prisma ./prisma
+COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 6000
+EXPOSE 8000
 
 CMD ["/entrypoint.sh"]
