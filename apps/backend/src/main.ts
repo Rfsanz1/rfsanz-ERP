@@ -5,7 +5,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, RequestMethod } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,7 +20,17 @@ try {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'int/v1/auth/login',         method: RequestMethod.POST },
+      { path: 'int/v1/auth/session',        method: RequestMethod.GET },
+      { path: 'int/v1/auth/logout',         method: RequestMethod.POST },
+      { path: 'int/v1/auth/organizations',  method: RequestMethod.GET },
+      { path: 'int/v1/users/me',            method: RequestMethod.GET },
+      { path: 'int/v1/users/locale',        method: RequestMethod.GET },
+      { path: 'int/v1/two-fa/check',        method: RequestMethod.GET },
+    ],
+  });
 
   const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(o => o.trim()) ?? [];
   app.enableCors({

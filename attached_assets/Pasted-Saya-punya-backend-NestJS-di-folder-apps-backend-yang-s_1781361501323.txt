@@ -1,0 +1,66 @@
+Saya punya backend NestJS (di folder `apps/backend`) yang sudah jalan dengan JWT auth, Prisma, dan struktur multi-tenant (Tenant/User/Role). Backend ini sudah punya auth login, JWT session, dan user profile.
+
+Saya ingin menghubungkan frontend Fleetbase (yang ada di project ini) ke backend tersebut. Fleetbase frontend memanggil endpoint dengan prefix `/int/v1/`. Saya butuh kamu membuat **auth adapter module** di backend NestJS yang mengekspos endpoint-endpoint berikut agar cocok dengan format yang diharapkan Fleetbase:
+
+**Endpoint yang harus dibuat:**
+
+1. `POST /int/v1/auth/login`
+   - Request body: `{ identity: string, password: string, remember: boolean }`
+   - Response sukses: `{ token: "bearer-token", user: "uuid-user" }`
+   - Response gagal: `{ errors: ["Invalid credentials"] }`
+
+2. `GET /int/v1/auth/session` (header: `Authorization: Bearer <token>`)
+   - Response sukses: `{ restore: true, token: "bearer-token", user: "uuid-user" }`
+   - Response gagal: `{ restore: false, error: "Session expired" }`
+
+3. `POST /int/v1/auth/logout`
+   - Response: `{ status: "ok" }`
+
+4. `GET /int/v1/users/me` — format JSON:API
+   - Response:
+   ```json
+   {
+     "data": {
+       "id": "<user-uuid>",
+       "type": "user",
+       "attributes": {
+         "name": "...",
+         "email": "...",
+         "avatar_url": null,
+         "is_admin": true,
+         "company_uuid": "<tenant-id>",
+         "company_name": "..."
+       }
+     }
+   }
+   ```
+
+5. `GET /int/v1/two-fa/check?identity=email`
+   - Response: `{ isTwoFaEnabled: false, twoFaSession: null }`
+
+6. `GET /int/v1/users/locale`
+   - Response: `{ locale: "en-us" }`
+
+7. `GET /int/v1/auth/organizations` — format JSON:API
+   - Response:
+   ```json
+   {
+     "data": [
+       { "id": "<tenant-uuid>", "type": "company", "attributes": { "name": "..." } }
+     ]
+   }
+   ```
+
+**Detail teknis:**
+- Backend pakai NestJS v11, Prisma 5, JWT (@nestjs/jwt), bcrypt untuk password
+- Model User punya field: id, tenantId, name, email, password, isOwner, role
+- Model Tenant punya field: id, name, slug
+- JWT secret ada di env `JWT_SECRET`, expires di `JWT_EXPIRES_IN`
+- Login harus cek password dengan bcrypt.compare()
+- Endpoint `/int/v1/users/me` dan `/int/v1/auth/session` harus validasi Bearer token dari header Authorization, lalu lookup user dari database via Prisma
+- Buat file baru di `apps/backend/src/modules/fleetbase-adapter/` — jangan ubah modul lain yang sudah ada
+- Daftarkan FleetbaseAdapterModule di `apps/backend/src/app.module.ts`
+- Semua endpoint `/int/v1/*` harus bebas dari guard yang ada (gunakan decorator `@Public()` atau skip guard untuk route ini)
+
+Setelah selesai, pastikan backend bisa di-restart dan semua endpoint di atas bisa diakses.
+```

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { ScheduleModule } from '@nestjs/schedule';
+import { FleetbaseAdapterModule } from './modules/fleetbase-adapter/fleetbase-adapter.module.js';
 
 import { HealthModule }       from './modules/health/health.module.js';
 import { AuthModule }         from './modules/auth/auth.module.js';
@@ -73,6 +74,9 @@ import { APP_GUARD }          from '@nestjs/core';
     // Reporting & Dashboard
     DashboardModule,
     ReportingModule,
+
+    // Fleetbase Adapter
+    FleetbaseAdapterModule,
   ],
   providers: [
     CanAccessGuard,
