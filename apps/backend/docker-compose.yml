@@ -1,0 +1,84 @@
+version: "3.8"
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: gentong-mas-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-erp_db}
+      POSTGRES_USER: ${POSTGRES_USER:-erp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gantisecret123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-erp_user} -d ${POSTGRES_DB:-erp_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - erp_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gentong-mas-backend:latest
+    container_name: gentong-mas-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      NODE_ENV: production
+      PORT: "8000"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-erp_user}:${POSTGRES_PASSWORD:-gantisecret123}@postgres:5432/${POSTGRES_DB:-erp_db}"
+      JWT_SECRET: ${JWT_SECRET:-ganti-jwt-secret-dengan-string-acak-panjang}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-ganti-refresh-secret-dengan-string-acak-lain}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrator}
+      COMPANY_NAME: ${COMPANY_NAME:-Gentong Mas}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-1000}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      KLEDO_TOKEN: ${KLEDO_TOKEN:-}
+      KLEDO_BASE_URL: ${KLEDO_BASE_URL:-https://api.kledo.com/api/v1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - erp_net
+    labels:
+      casaos.app.name: "Gentong Mas ERP Backend"
+      casaos.app.icon: "https://cdn-icons-png.flaticon.com/512/2232/2232688.png"
+      casaos.app.description: "NestJS REST API — ERP Gentong Mas dengan JWT Auth, Prisma, dan Fleetbase Adapter"
+      casaos.app.port.map: "${PORT:-8000}:8000"
+
+volumes:
+  postgres_data:
+    name: gentong_mas_postgres_data
+
+networks:
+  erp_net:
+    name: gentong_mas_network
+    driver: bridge
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: backend
+  store_app_id: gentong-mas-backend
+  title:
+    en_us: Gentong Mas ERP Backend
+  description:
+    en_us: NestJS REST API untuk sistem ERP Gentong Mas. Lengkap dengan JWT auth, Prisma ORM, PostgreSQL, dan Fleetbase adapter (/int/v1/).
+  author: Gentong Mas
+  developer: Gentong Mas
+  icon: https://cdn-icons-png.flaticon.com/512/2232/2232688.png
+  screenshot_link: []
+  category: Business
+  port_map: "8000"
