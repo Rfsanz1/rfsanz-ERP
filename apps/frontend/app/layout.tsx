@@ -4,6 +4,7 @@ import { ConditionalLayout } from '../components/layout/ConditionalLayout';
 import { ThemeRegistry } from '../lib/theme/ThemeRegistry';
 import { ServiceWorkerRegister } from '../components/pwa/ServiceWorkerRegister';
 import { NativeInitializer } from '../components/layout/NativeInitializer';
+import { AuthInitializer } from '../components/layout/AuthInitializer';
 
 // Semua halaman ERP butuh auth — skip SSG untuk seluruh app
 export const dynamic = 'force-dynamic';
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen antialiased" suppressHydrationWarning>
         <NativeInitializer />
+        <AuthInitializer />
         <ThemeRegistry>
           <ConditionalLayout>{children}</ConditionalLayout>
         </ThemeRegistry>

@@ -26,13 +26,13 @@ args = "Start application"
 name = "Backend API"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "pnpm --filter @erp-modern/backend start:dev"
-waitForPort = 6000
-
-[workflows.workflow.metadata]
-outputType = "console"
+waitForPort = 8000
 
 [[workflows.workflow]]
 name = "Start application"
@@ -54,11 +54,15 @@ externalPort = 80
 localPort = 6000
 externalPort = 6000
 
+[[ports]]
+localPort = 8000
+externalPort = 8000
+
 [userenv]
 
 [userenv.shared]
-BACKEND_URL = "http://localhost:6000"
-PORT = "6000"
+BACKEND_URL = "http://127.0.0.1:8000"
+PORT = "8000"
 NODE_ENV = "development"
 JWT_EXPIRES_IN = "7d"
 RATE_LIMIT_MAX = "1000"

@@ -1,10 +1,12 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const jwt = require('jsonwebtoken') as typeof import('jsonwebtoken');
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
 
   private buildPayload() {
     return {
@@ -19,13 +21,13 @@ export class AuthService {
 
   private signTokens(payload: any) {
     const secret = process.env.JWT_SECRET || 'change-this-secret';
-    const accessToken = this.jwtService.sign(payload, {
-      secret,
-      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+    const accessToken = jwt.sign(payload, secret, {
+      expiresIn: (process.env.JWT_EXPIRES_IN || '24h') as any,
     });
-    const refreshToken = this.jwtService.sign(
+    const refreshToken = jwt.sign(
       { sub: payload.sub, email: payload.email },
-      { secret: process.env.JWT_REFRESH_SECRET || secret, expiresIn: '7d' },
+      process.env.JWT_REFRESH_SECRET || secret,
+      { expiresIn: '7d' },
     );
     return { accessToken, refreshToken };
   }
@@ -113,11 +115,10 @@ export class AuthService {
   async refreshToken(token: string) {
     try {
       const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'change-this-secret';
-      this.jwtService.verify(token, { secret });
+      jwt.verify(token, secret);
       const payload = this.buildPayload();
-      const accessToken = this.jwtService.sign(payload, {
-        secret: process.env.JWT_SECRET || 'change-this-secret',
-        expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+      const accessToken = jwt.sign(payload, process.env.JWT_SECRET || 'change-this-secret', {
+        expiresIn: (process.env.JWT_EXPIRES_IN || '24h') as any,
       });
       return { accessToken, refreshToken: token };
     } catch {

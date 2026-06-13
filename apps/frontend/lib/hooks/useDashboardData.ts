@@ -75,6 +75,7 @@ export function useDashboardData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isDemo = useAuthStore((s) => s.isDemo);
+  const token = useAuthStore((s) => s.token);
 
   const refresh = async () => {
     setLoading(true);
@@ -110,12 +111,14 @@ export function useDashboardData() {
   };
 
   useEffect(() => {
-    if (!isDemo) {
-      refresh();
-    } else {
+    if (isDemo) {
       setLoading(false);
+      return;
     }
-  }, [isDemo]);
+    if (token) {
+      refresh();
+    }
+  }, [isDemo, token]);
 
   return { data, loading, error, refresh };
 }
