@@ -1,6 +1,6 @@
 # Dockerfile untuk Next.js frontend Gentong Mas ERP (monorepo)
 # Build args: APP_DIR (nama folder di apps/), PORT (port yang dipakai)
-# Contoh: docker build --build-arg APP_DIR=frontend --build-arg PORT=5000 -f Dockerfile.frontend .
+# Contoh: docker build --build-arg APP_DIR=frontend --build-arg PORT=3000 -f Dockerfile.frontend .
 
 ARG APP_DIR=frontend
 ARG PORT=3000
@@ -28,11 +28,9 @@ RUN pnpm install --frozen-lockfile
 # Copy source app
 COPY apps/${APP_DIR}/ ./apps/${APP_DIR}/
 
-# Build Next.js (|| true agar tidak batal karena SSG warning)
-RUN cd apps/${APP_DIR} && (pnpm build || true)
-
-# Pastikan .next/BUILD_ID ada — bukti build berhasil
-RUN test -f /app/apps/${APP_DIR}/.next/BUILD_ID || (echo "ERROR: Next.js build gagal total, .next/BUILD_ID tidak ditemukan" && exit 1)
+# Build Next.js — tambah memory limit untuk server dengan RAM terbatas
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+RUN cd apps/${APP_DIR} && pnpm build
 
 # ── Stage 2: Runner ───────────────────────────────────────────────
 FROM node:20-alpine AS runner
@@ -40,6 +38,7 @@ ARG APP_DIR
 ARG PORT
 
 ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=512"
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 WORKDIR /app
@@ -54,12 +53,11 @@ RUN pnpm install --frozen-lockfile --prod
 # Copy hasil build dari stage builder
 COPY --from=builder /app/apps/${APP_DIR}/.next ./apps/${APP_DIR}/.next
 
-# Copy public folder (opsional — tidak gagal jika tidak ada)
+# Copy public folder
 COPY --from=builder /app/apps/${APP_DIR}/public ./apps/${APP_DIR}/public
 
 WORKDIR /app/apps/${APP_DIR}
 
 EXPOSE ${PORT}
 
-# Jalankan dengan script "start" dari package.json
 CMD ["pnpm", "start"]

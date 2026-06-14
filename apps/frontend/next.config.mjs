@@ -20,11 +20,24 @@ const config = {
   transpilePackages: ['@gm/ui', '@gm/utils', '@gm/types'],
   reactStrictMode: true,
   allowedDevOrigins,
+
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@mui/material', '@mui/icons-material'],
+  },
+
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: '**' },
+      { protocol: 'http', hostname: '**' },
+    ],
   },
 
   async rewrites() {
@@ -46,6 +59,13 @@ const config = {
 
   async headers() {
     return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+        ],
+      },
       {
         source: '/sw.js',
         headers: [
