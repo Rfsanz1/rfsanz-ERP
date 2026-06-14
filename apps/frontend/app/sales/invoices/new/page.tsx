@@ -1,142 +1,251 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../../../lib/store/useAuthStore';
 import AppShell from '../../../../components/layout/AppShell';
 import { api } from '@/lib/api';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import CustomerSearchDropdown, { CustomerOption } from '../../../../components/ui/CustomerSearchDropdown';
+import {
+  ArrowLeft, Plus, Trash2, Calendar, Tag, Percent,
+  Link2, CheckCircle2, AlertCircle, Package,
+} from 'lucide-react';
+import CustomerSearchDropdown, { type CustomerOption } from '../../../../components/ui/CustomerSearchDropdown';
+import ProductSearchDropdown, { type ProductOption } from '../../../../components/ui/ProductSearchDropdown';
+import SalesDropdown from '../../../../components/ui/SalesDropdown';
 
 const C = '#00ACC1';
-const inputCls = 'w-full rounded-lg px-3 py-2 text-sm outline-none';
-const inputStyle = { border: '1px solid #EDE8F5', color: '#1E1B4B', backgroundColor: '#FDFCFF' };
-const Field = ({ label, required, children }: any) => (
-  <div className="flex flex-col gap-1">
-    <label className="text-xs font-semibold" style={{ color: '#1E1B4B' }}>{label}{required && <span style={{ color: '#F44336' }}>*</span>}</label>
-    {children}
-  </div>
-);
-const Section = ({ title, children }: any) => (
-  <div className="bg-white rounded-2xl p-6 space-y-4" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)', overflow: 'visible' }}>
-    <h3 className="text-sm font-bold" style={{ color: '#1E1B4B' }}>{title}</h3>
-    {children}
-  </div>
-);
+const today = () => new Date().toISOString().slice(0, 10);
+
+const inputCls = 'w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-colors';
+const inputSt = { border: '1.5px solid #E5E7EB', color: '#1E1B4B', backgroundColor: '#fff' };
+const focusBorder = (e: React.FocusEvent<any>) => (e.target.style.borderColor = C);
+const blurBorder  = (e: React.FocusEvent<any>) => (e.target.style.borderColor = '#E5E7EB');
+
+function Field({ label, optional, children }: { label: string; optional?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold" style={{ color: '#374151' }}>
+        {label}
+        {optional && <span className="ml-1 font-normal text-[11px]" style={{ color: '#9CA3AF' }}>(opsional)</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-2xl p-6 space-y-4"
+      style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)', overflow: 'visible' }}>
+      <h3 className="text-sm font-bold" style={{ color: '#1E1B4B' }}>{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+interface InvoiceItem {
+  id: number;
+  productId?: string;
+  kledoProductId?: string | null;
+  nama: string;
+  qty: number;
+  harga: number;
+  diskonItem: number;
+  subtotal: number;
+  unit?: string;
+}
+
+const emptyItem = (): InvoiceItem => ({ id: Date.now(), nama: '', qty: 1, harga: 0, diskonItem: 0, subtotal: 0 });
+const calcSub = (it: InvoiceItem) => Math.max(0, it.qty * it.harga - it.diskonItem);
 
 export default function NewInvoicePage() {
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
   const router = useRouter();
-  const [customerName, setCustomerName] = useState('');
-  const [customerId, setCustomerId] = useState('');
+
+  const [customerName, setCustomerName]   = useState('');
+  const [customerId, setCustomerId]       = useState('');
+  const [kledoContactId, setKledoContactId] = useState('');
   const [resolvingCustomer, setResolvingCustomer] = useState(false);
-  const [form, setForm] = useState({
-    salesName: '', tanggal: new Date().toISOString().slice(0, 10),
-    dueDate: '', notes: '', subtotal: 0, diskon: 0, pajak: 0, grandTotal: 0,
-  });
-  const [items, setItems] = useState([{ nama: '', qty: 1, harga: 0, subtotal: 0 }]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+  const [salesName, setSalesName] = useState(user?.name ?? '');
+  const [tanggal, setTanggal]     = useState(today());
+  const [dueDate, setDueDate]     = useState('');
+  const [noRef, setNoRef]         = useState('');
+  const [notes, setNotes]         = useState('');
+  const [diskonTotal, setDiskonTotal] = useState(0);
+  const [pajak, setPajak]         = useState(0);
 
-  const handleCustomerSelect = async (customer: CustomerOption) => {
-    if (customer.source === 'local') {
-      setCustomerId(customer.id);
-      setCustomerName(customer.name);
+  const [items, setItems] = useState<InvoiceItem[]>([emptyItem()]);
+  const [loading, setLoading]     = useState(false);
+  const [kledoStatus, setKledoStatus] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle');
+  const [error, setError]         = useState('');
+
+  /* ── Derived ── */
+  const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
+  const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak);
+  const fmtRp = (v: number) => v.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+
+  /* ── Handlers ── */
+  const handleCustomerSelect = async (c: CustomerOption) => {
+    if (c.source === 'local') {
+      setCustomerId(c.id);
+      setCustomerName(c.name);
+      if ((c as any).kledoId) setKledoContactId((c as any).kledoId);
       return;
     }
-    // Kontak Kledo — resolve ke local customer ID via find-or-create
     setResolvingCustomer(true);
     try {
-      const kledoId = customer.id.replace('kledo-', '');
+      const kledoId = c.id.replace('kledo-', '');
       const res = await api.post('/customers/find-or-create', {
-        name: customer.name,
-        phone: customer.phone ?? undefined,
-        email: customer.email ?? undefined,
-        kledoId,
+        name: c.name, phone: c.phone ?? undefined, email: c.email ?? undefined, kledoId,
       });
       setCustomerId(res.data.id);
-      setCustomerName(customer.name);
-    } catch {
-      setError('Gagal menyimpan kontak Kledo. Coba lagi.');
-    } finally {
-      setResolvingCustomer(false);
-    }
+      setKledoContactId(kledoId);
+      setCustomerName(c.name);
+    } catch { setError('Gagal menyimpan kontak Kledo.'); }
+    finally { setResolvingCustomer(false); }
   };
 
-  const handleCustomerNameChange = (name: string) => {
-    setCustomerName(name);
-    // Reset customerId jika nama diedit manual
-    setCustomerId('');
+  const updateItem = (id: number, field: keyof InvoiceItem, value: any) => {
+    setItems(prev => prev.map(it => {
+      if (it.id !== id) return it;
+      const updated = { ...it, [field]: value };
+      if (['qty', 'harga', 'diskonItem'].includes(field as string))
+        updated.subtotal = calcSub(updated);
+      return updated;
+    }));
   };
 
-  const recalc = (newItems: any[]) => {
-    const sub = newItems.reduce((s, it) => s + (Number(it.qty) * Number(it.harga)), 0);
-    setItems(newItems);
-    setForm(f => {
-      const grandTotal = sub - Number(f.diskon) + Number(f.pajak);
-      return { ...f, subtotal: sub, grandTotal };
-    });
+  const handleProductSelect = (itemId: number, p: ProductOption) => {
+    setItems(prev => prev.map(it => {
+      if (it.id !== itemId) return it;
+      const updated = { ...it, nama: p.name, productId: p.id, kledoProductId: p.kledoProductId ?? null, harga: p.hargaJual, unit: p.unit?.name, diskonItem: 0 };
+      updated.subtotal = calcSub(updated);
+      return updated;
+    }));
   };
 
-  const setItem = (i: number, k: string, v: any) => {
-    const next = items.map((it, idx) => idx === i ? { ...it, [k]: v, subtotal: k === 'qty' ? Number(v) * it.harga : k === 'harga' ? it.qty * Number(v) : it.subtotal } : it);
-    recalc(next);
-  };
-
-  const addItem = () => recalc([...items, { nama: '', qty: 1, harga: 0, subtotal: 0 }]);
-  const removeItem = (i: number) => recalc(items.filter((_, idx) => idx !== i));
-
-  const fmt = (v: number) => new Intl.NumberFormat('id-ID').format(v);
+  const addItem    = () => setItems(prev => [...prev, emptyItem()]);
+  const removeItem = (id: number) => setItems(prev => prev.filter(it => it.id !== id));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName.trim()) { setError('Nama pelanggan harus diisi'); return; }
-    if (items.some(it => !it.nama)) { setError('Nama produk harus diisi'); return; }
+    if (!customerName.trim()) { setError('Nama pelanggan harus diisi.'); return; }
+    if (items.some(it => !it.nama)) { setError('Semua produk harus diisi.'); return; }
     setLoading(true); setError('');
+
     try {
-      // Jika belum ada customerId (ketik nama baru), buat customer dulu
       let resolvedId = customerId;
       if (!resolvedId) {
         const res = await api.post('/customers/find-or-create', { name: customerName.trim() });
         resolvedId = res.data.id;
       }
-      const sub = items.reduce((s, it) => s + Number(it.qty) * Number(it.harga), 0);
-      const grand = sub - Number(form.diskon) + Number(form.pajak);
-      const res = await api.post('/invoices', {
-        ...form,
-        customerId: resolvedId,
-        subtotal: sub,
-        grandTotal: grand,
-        items: items.map(it => ({ ...it, subtotal: Number(it.qty) * Number(it.harga) })),
-      });
-      router.push(`/sales/invoices/${res.data.data.id}`);
-    } catch (err: any) { setError(err?.response?.data?.message || 'Terjadi kesalahan'); } finally { setLoading(false); }
-  };
 
-  if (!token) return null;
+      /* 1. Simpan invoice ke backend lokal */
+      const res = await api.post('/invoices', {
+        customerId: resolvedId,
+        salesName: salesName.trim() || undefined,
+        tanggal,
+        dueDate: dueDate || undefined,
+        noReferensi: noRef.trim() || undefined,
+        notes: notes.trim() || undefined,
+        diskon: diskonTotal || undefined,
+        pajak: pajak || undefined,
+        subtotal: subtotalBruto,
+        grandTotal,
+        items: items.map(it => ({
+          nama: it.nama,
+          qty: it.qty,
+          harga: it.harga,
+          diskon: it.diskonItem || undefined,
+          subtotal: it.subtotal,
+          productId: it.productId,
+          kledoProductId: it.kledoProductId ?? undefined,
+        })),
+      });
+
+      /* 2. Push ke Kledo sebagai invoice */
+      setKledoStatus('syncing');
+      try {
+        await api.post('/kledo/invoices', {
+          trans_date: tanggal,
+          due_date: dueDate || undefined,
+          ref_number: noRef.trim() || undefined,
+          memo: notes.trim() || undefined,
+          contact_id: kledoContactId ? Number(kledoContactId) : undefined,
+          contact_name: customerName.trim(),
+          discount: diskonTotal || undefined,
+          include_tax: pajak > 0 ? 1 : 0,
+          items: items.map(it => ({
+            product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
+            name_item: it.nama,
+            qty: it.qty,
+            rate: it.harga,
+            discount: it.diskonItem || undefined,
+            unit: it.unit,
+          })),
+        });
+        setKledoStatus('ok');
+      } catch { setKledoStatus('error'); }
+
+      router.push(`/sales/invoices/${res.data?.data?.id ?? res.data?.id ?? ''}`);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Terjadi kesalahan.');
+      setKledoStatus('idle');
+    } finally { setLoading(false); }
+  };
 
   return (
     <AppShell>
       <div className="p-6 space-y-6 max-w-4xl mx-auto">
+
+        {/* Header */}
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 rounded-lg" style={{ border: '1px solid #EDE8F5', color: C }}><ArrowLeft className="h-4 w-4" /></button>
+          <button onClick={() => router.back()} className="p-2 rounded-xl" style={{ border: '1.5px solid #EDE8F5', color: C }}>
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <div>
             <h1 className="text-xl font-bold" style={{ color: '#1E1B4B' }}>Buat Invoice Baru</h1>
-            <p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Isi data invoice dan item penjualan</p>
+            <p className="text-sm mt-0.5 flex items-center gap-1.5" style={{ color: '#9CA3AF' }}>
+              <Link2 className="h-3.5 w-3.5" /> Tersinkron otomatis ke Kledo
+            </p>
           </div>
         </div>
 
-        {error && <div className="rounded-xl p-3 text-sm" style={{ backgroundColor: 'rgba(244,67,54,.08)', color: '#F44336', border: '1px solid rgba(244,67,54,.2)' }}>{error}</div>}
+        {error && (
+          <div className="rounded-xl p-3 text-sm flex items-center gap-2"
+            style={{ backgroundColor: 'rgba(244,67,54,.08)', color: '#F44336', border: '1.5px solid rgba(244,67,54,.2)' }}>
+            ⚠ {error}
+          </div>
+        )}
+        {kledoStatus !== 'idle' && (
+          <div className="flex items-center gap-2 rounded-xl p-3 text-sm"
+            style={{
+              background: kledoStatus === 'ok' ? 'rgba(34,197,94,.08)' : kledoStatus === 'error' ? 'rgba(234,84,85,.08)' : `${C}0A`,
+              border: `1.5px solid ${kledoStatus === 'ok' ? 'rgba(34,197,94,.25)' : kledoStatus === 'error' ? 'rgba(234,84,85,.25)' : `${C}25`}`,
+              color: kledoStatus === 'ok' ? '#16A34A' : kledoStatus === 'error' ? '#EA5455' : C,
+            }}>
+            {kledoStatus === 'syncing' && <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: `${C}40`, borderTopColor: C }} />}
+            {kledoStatus === 'ok' && <CheckCircle2 className="h-4 w-4" />}
+            {kledoStatus === 'error' && <AlertCircle className="h-4 w-4" />}
+            <span>
+              {kledoStatus === 'syncing' && 'Mengirim invoice ke Kledo…'}
+              {kledoStatus === 'ok' && 'Invoice berhasil dikirim ke Kledo'}
+              {kledoStatus === 'error' && 'Kledo tidak terjangkau — invoice tetap tersimpan di ERP'}
+            </span>
+          </div>
+        )}
 
         <form onSubmit={submit} className="space-y-5">
-          <Section title="Info Invoice">
+
+          {/* ── Info Pelanggan ── */}
+          <Section title="Info Pelanggan">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Pelanggan" required>
-                <div className="relative">
+              <div className="md:col-span-2">
+                <Field label="Pelanggan" >
                   <CustomerSearchDropdown
                     value={customerName}
-                    onChange={handleCustomerNameChange}
+                    onChange={v => { setCustomerName(v); setCustomerId(''); setKledoContactId(''); }}
                     onSelect={handleCustomerSelect}
                     placeholder="Ketik nama pelanggan atau cari dari Kledo..."
                     accentColor={C}
@@ -145,90 +254,181 @@ export default function NewInvoicePage() {
                   {resolvingCustomer && (
                     <div className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: C }}>
                       <div className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: `${C}40`, borderTopColor: C }} />
-                      Menyimpan kontak Kledo...
+                      Menyimpan kontak Kledo…
                     </div>
                   )}
-                  {customerId && !resolvingCustomer && (
-                    <div className="mt-1 flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full w-fit font-semibold" style={{ backgroundColor: 'rgba(0,172,193,.1)', color: C }}>
-                      ✓ Pelanggan dipilih
+                  {(customerId || kledoContactId) && !resolvingCustomer && (
+                    <div className="mt-1 flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full w-fit font-semibold"
+                      style={{ backgroundColor: `${C}12`, color: C }}>
+                      <Link2 className="h-2.5 w-2.5" /> Pelanggan terhubung ke Kledo
                     </div>
                   )}
-                </div>
-              </Field>
-              <Field label="Sales">
-                <input className={inputCls} style={inputStyle} value={form.salesName} onChange={e => set('salesName', e.target.value)} placeholder="Nama sales" />
-              </Field>
-              <Field label="Tanggal Invoice" required>
-                <input type="date" className={inputCls} style={inputStyle} value={form.tanggal} onChange={e => set('tanggal', e.target.value)} />
-              </Field>
-              <Field label="Jatuh Tempo">
-                <input type="date" className={inputCls} style={inputStyle} value={form.dueDate} onChange={e => set('dueDate', e.target.value)} />
-              </Field>
-              <div className="md:col-span-2">
-                <Field label="Catatan">
-                  <textarea className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Catatan tambahan..." />
                 </Field>
               </div>
+              <Field label="Nama Sales" optional>
+                <SalesDropdown value={salesName} onChange={setSalesName} accentColor={C} placeholder="Pilih atau ketik nama sales..." />
+              </Field>
             </div>
           </Section>
 
-          <Section title="Item Invoice">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #EDE8F5' }}>
-                    {['Produk / Nama', 'Qty', 'Harga Satuan', 'Subtotal', ''].map(h => (
-                      <th key={h} className="pb-2 text-left text-xs font-semibold" style={{ color: '#9CA3AF' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((it, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #F5F2FB' }}>
-                      <td className="py-2 pr-2">
-                        <input className={inputCls} style={{ ...inputStyle, minWidth: '160px' }} value={it.nama} onChange={e => setItem(i, 'nama', e.target.value)} placeholder="Nama produk" />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input type="number" className={inputCls} style={{ ...inputStyle, width: '70px' }} value={it.qty} min={1} onChange={e => setItem(i, 'qty', e.target.value)} />
-                      </td>
-                      <td className="py-2 pr-2">
-                        <input type="number" className={inputCls} style={{ ...inputStyle, width: '130px' }} value={it.harga} min={0} onChange={e => setItem(i, 'harga', e.target.value)} />
-                      </td>
-                      <td className="py-2 pr-2 text-sm font-semibold whitespace-nowrap" style={{ color: '#1E1B4B' }}>Rp {fmt(Number(it.qty) * Number(it.harga))}</td>
-                      <td className="py-2">
-                        <button type="button" onClick={() => removeItem(i)} className="p-1.5 rounded hover:bg-red-50" style={{ color: '#F44336' }}><Trash2 className="h-3.5 w-3.5" /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* ── Info Transaksi (sesuai Kledo) ── */}
+          <Section title="Info Transaksi">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Tanggal Transaksi">
+                <input type="date" className={inputCls} style={inputSt} value={tanggal}
+                  onChange={e => setTanggal(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
+              </Field>
+              <Field label="Jatuh Tempo" optional>
+                <input type="date" className={inputCls} style={inputSt} value={dueDate}
+                  onChange={e => setDueDate(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
+              </Field>
+              <Field label="No. Referensi" optional>
+                <input className={inputCls} style={inputSt} placeholder="cth: INV-2024-001"
+                  value={noRef} onChange={e => setNoRef(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
+              </Field>
+              <Field label="Catatan / Memo" optional>
+                <input className={inputCls} style={inputSt} placeholder="Catatan untuk Kledo..."
+                  value={notes} onChange={e => setNotes(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
+              </Field>
             </div>
-            <button type="button" onClick={addItem} className="flex items-center gap-1.5 text-xs font-semibold mt-2" style={{ color: C }}>
-              <Plus className="h-3.5 w-3.5" /> Tambah Baris
+          </Section>
+
+          {/* ── Item Invoice ── */}
+          <Section title="Item Invoice">
+            <div className="space-y-3">
+              {items.map((it, idx) => (
+                <div key={it.id} className="rounded-2xl p-4 space-y-3"
+                  style={{ border: '1.5px solid #F0EDFB', background: '#FDFCFF' }}>
+
+                  {/* Header kartu */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg text-[11px] font-bold text-white" style={{ background: C }}>
+                        {idx + 1}
+                      </div>
+                      <span className="text-xs font-semibold" style={{ color: '#6B7280' }}>Produk #{idx + 1}</span>
+                      {it.unit && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${C}14`, color: C }}>{it.unit}</span>
+                      )}
+                      {it.kledoProductId && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'rgba(99,102,241,.1)', color: '#6366F1' }}>
+                          <Link2 className="h-2.5 w-2.5" /> Kledo
+                        </span>
+                      )}
+                    </div>
+                    {items.length > 1 && (
+                      <button type="button" onClick={() => removeItem(it.id)}
+                        className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                        style={{ color: '#EA5455' }}>
+                        <Trash2 className="h-3.5 w-3.5" /> Hapus
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Nama Produk (dengan dropdown) */}
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>
+                      <Package className="h-3 w-3 inline mr-1" style={{ color: C }} />
+                      Nama Produk / Jasa <span style={{ color: '#EA5455' }}>*</span>
+                    </label>
+                    <ProductSearchDropdown
+                      value={it.nama}
+                      onChange={nama => updateItem(it.id, 'nama', nama)}
+                      onSelect={prod => handleProductSelect(it.id, prod)}
+                      placeholder="Ketik nama produk, jasa, atau SKU..."
+                      accentColor={C}
+                    />
+                  </div>
+
+                  {/* Qty + Harga + Diskon + Subtotal */}
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>Qty</label>
+                      <input type="number" className={`${inputCls} text-center`} style={inputSt} min={1}
+                        value={it.qty} onChange={e => updateItem(it.id, 'qty', Number(e.target.value) || 1)}
+                        onFocus={focusBorder} onBlur={blurBorder} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>Harga Satuan (Rp)</label>
+                      <input type="number" className={`${inputCls} text-right`} style={inputSt} min={0}
+                        value={it.harga} onChange={e => updateItem(it.id, 'harga', Number(e.target.value) || 0)}
+                        onFocus={focusBorder} onBlur={blurBorder} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>
+                        <Tag className="h-3 w-3 inline mr-0.5" style={{ color: '#9CA3AF' }} /> Diskon Item (Rp)
+                      </label>
+                      <input type="number" className={`${inputCls} text-right`} style={inputSt} min={0}
+                        value={it.diskonItem || ''} placeholder="0"
+                        onChange={e => updateItem(it.id, 'diskonItem', Number(e.target.value) || 0)}
+                        onFocus={focusBorder} onBlur={blurBorder} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>Subtotal</label>
+                      <div className="w-full rounded-xl px-3 py-2.5 text-sm text-right font-bold"
+                        style={{ background: `${C}0D`, color: C, border: `1.5px solid ${C}30` }}>
+                        {fmtRp(it.subtotal)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button type="button" onClick={addItem}
+              className="flex items-center gap-1.5 text-xs font-semibold mt-2 px-3 py-2 rounded-xl transition-colors"
+              style={{ color: C, background: `${C}10` }}>
+              <Plus className="h-3.5 w-3.5" /> Tambah Item
             </button>
           </Section>
 
+          {/* ── Ringkasan ── */}
           <Section title="Ringkasan">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Field label="Diskon (Rp)">
-                <input type="number" className={inputCls} style={inputStyle} value={form.diskon} min={0} onChange={e => { set('diskon', Number(e.target.value)); setForm(f => ({ ...f, diskon: Number(e.target.value), grandTotal: f.subtotal - Number(e.target.value) + f.pajak })); }} />
-              </Field>
-              <Field label="Pajak / PPN (Rp)">
-                <input type="number" className={inputCls} style={inputStyle} value={form.pajak} min={0} onChange={e => { setForm(f => ({ ...f, pajak: Number(e.target.value), grandTotal: f.subtotal - f.diskon + Number(e.target.value) })); }} />
-              </Field>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold" style={{ color: '#9CA3AF' }}>Grand Total</label>
-                <div className="rounded-lg px-3 py-2 text-lg font-bold" style={{ backgroundColor: 'rgba(0,172,193,.08)', color: C }}>
-                  Rp {fmt(Math.max(0, form.subtotal - Number(form.diskon) + Number(form.pajak)))}
-                </div>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span style={{ color: '#6B7280' }}>Subtotal ({items.length} item)</span>
+                <span className="font-semibold" style={{ color: '#1E1B4B' }}>{fmtRp(subtotalBruto)}</span>
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm flex items-center gap-1.5" style={{ color: '#6B7280' }}>
+                  <Tag className="h-3.5 w-3.5" /> Diskon Total (Rp)
+                </span>
+                <input type="number" min={0} className="w-36 rounded-xl px-3 py-2 text-sm text-right outline-none"
+                  style={{ border: '1.5px solid #E5E7EB', color: '#1E1B4B' }}
+                  value={diskonTotal || ''} placeholder="0"
+                  onChange={e => setDiskonTotal(Number(e.target.value) || 0)}
+                  onFocus={focusBorder} onBlur={blurBorder} />
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm flex items-center gap-1.5" style={{ color: '#6B7280' }}>
+                  <Percent className="h-3.5 w-3.5" /> Pajak / PPN (Rp)
+                </span>
+                <input type="number" min={0} className="w-36 rounded-xl px-3 py-2 text-sm text-right outline-none"
+                  style={{ border: '1.5px solid #E5E7EB', color: '#1E1B4B' }}
+                  value={pajak || ''} placeholder="0"
+                  onChange={e => setPajak(Number(e.target.value) || 0)}
+                  onFocus={focusBorder} onBlur={blurBorder} />
+              </div>
+
+              <div className="flex justify-between items-center pt-3" style={{ borderTop: '1.5px solid #E5E7EB' }}>
+                <span className="text-sm font-bold" style={{ color: '#1E1B4B' }}>Grand Total</span>
+                <span className="text-2xl font-bold" style={{ color: C }}>{fmtRp(grandTotal)}</span>
               </div>
             </div>
           </Section>
 
           <div className="flex gap-3 justify-end">
-            <button type="button" onClick={() => router.back()} className="px-5 py-2.5 rounded-xl text-sm font-semibold" style={{ border: '1.5px solid #EDE8F5', color: '#9CA3AF' }}>Batal</button>
-            <button type="submit" disabled={loading || resolvingCustomer} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ backgroundColor: C }}>
-              {loading ? 'Menyimpan...' : 'Simpan Invoice'}
+            <button type="button" onClick={() => router.back()}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+              style={{ border: '1.5px solid #E5E7EB', color: '#9CA3AF' }}>
+              Batal
+            </button>
+            <button type="submit" disabled={loading || resolvingCustomer}
+              className="px-7 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: C, boxShadow: `0 4px 16px ${C}50` }}>
+              {loading ? 'Menyimpan…' : '💾 Simpan & Kirim ke Kledo'}
             </button>
           </div>
         </form>
