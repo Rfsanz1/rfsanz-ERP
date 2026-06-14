@@ -46,47 +46,72 @@ export default function ProductSearchDropdown({
       setLoading(true);
       try {
         const [localRes, kledoRes] = await Promise.allSettled([
-          api.get('/inventory/products', { params: { search: q, limit: 20, active: 'true' } }),
-          api.get('/kledo/products', { params: { search: q, per_page: 20 } }),
+          // Local inventory: param search, response { data: [...] } atau langsung array
+          api.get('/inventory/products', { params: { search: q, limit: 30 } }),
+          // Kledo: param name (bukan search), response { success, data: { data: [...] } }
+          api.get('/kledo/products', { params: { name: q, per_page: 30 } }),
         ]);
 
-        const localList: ProductOption[] =
+        // Parse local — bisa array langsung atau { data: [...] }
+        const localRaw: any[] =
           localRes.status === 'fulfilled'
-            ? (localRes.value.data?.data ?? localRes.value.data ?? []).map((p: any) => ({
-                ...p,
-                source: 'local' as const,
-              }))
+            ? (() => {
+                const d = localRes.value.data;
+                return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
+              })()
             : [];
 
+        const localList: ProductOption[] = localRaw.map((p: any) => ({
+          id: String(p.id),
+          name: p.name ?? '',
+          sku: p.sku ?? p.code ?? '',
+          hargaJual: Number(p.hargaJual ?? p.price ?? 0),
+          stok: Number(p.stok ?? p.stock ?? p.qty ?? 0),
+          kledoProductId: p.kledoProductId ?? null,
+          unit: p.unit ?? null,
+          source: 'local' as const,
+        }));
+
+        // Parse Kledo — response: { success, data: { data: [...], total, ... } }
         const kledoRaw: any[] =
           kledoRes.status === 'fulfilled'
-            ? (kledoRes.value.data?.data?.data ?? kledoRes.value.data?.data ?? [])
+            ? (() => {
+                const d = kledoRes.value.data;
+                const inner = d?.data ?? d;
+                return Array.isArray(inner?.data) ? inner.data : Array.isArray(inner) ? inner : [];
+              })()
             : [];
 
         const kledoList: ProductOption[] = kledoRaw.map((p: any) => ({
           id: `kledo-${p.id}`,
-          name: p.name,
+          name: p.name ?? '',
           sku: p.code ?? '',
-          hargaJual: p.price ?? 0,
+          hargaJual: Number(p.price ?? 0),
           stok: 0,
           kledoProductId: String(p.id),
-          unit: p.unit ? { name: p.unit } : null,
+          unit: p.unit ? { name: String(p.unit) } : null,
           source: 'kledo' as const,
         }));
 
+        // Dedup: hilangkan dari Kledo kalau sudah ada di lokal
         const localNames = new Set(localList.map((p) => p.name.toLowerCase().trim()));
         const dedupedKledo = kledoList.filter((p) => !localNames.has(p.name.toLowerCase().trim()));
 
         let merged = [...localList, ...dedupedKledo];
 
-        // Filter client-side — setiap kata harus ada di nama/SKU produk
-        const terms = q.toLowerCase().trim().split(/\s+/);
-        merged = merged.filter((p) =>
-          terms.every(
-            (t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t),
-          ),
-        ).slice(0, 10);
+        // Filter client-side — setiap kata harus ada di nama/SKU
+        if (q.trim()) {
+          const terms = q.toLowerCase().trim().split(/\s+/);
+          const filtered = merged.filter((p) =>
+            terms.every(
+              (t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t),
+            ),
+          );
+          // Kalau filter terlalu ketat dan hasilnya kosong, tampilkan semua hasil API
+          merged = filtered.length > 0 ? filtered : merged;
+        }
 
+        merged = merged.slice(0, 10);
         setSuggestions(merged);
         setOpen(merged.length > 0);
       } catch { setSuggestions([]); }
