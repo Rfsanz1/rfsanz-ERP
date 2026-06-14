@@ -108,11 +108,12 @@ type KledoStatus = { connected: boolean; message: string } | null;
    KARTU INTEGRASI — kompak
 ══════════════════════════════════════════════════════════════════════════ */
 function IntCard({
-  intg, onClick, connected,
+  intg, onClick, connected, tokenSaved,
 }: {
   intg: Integration;
   onClick: () => void;
   connected?: boolean | null;
+  tokenSaved?: boolean;
 }) {
   return (
     <button
@@ -131,13 +132,19 @@ function IntCard({
             <CheckCircle className="h-2 w-2" /> Aktif
           </span>
         )}
-        {connected === false && (
+        {connected === false && tokenSaved && (
           <span className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
             style={{ background: 'rgba(239,68,68,.1)', color: '#DC2626' }}>
             <AlertCircle className="h-2 w-2" /> Error
           </span>
         )}
-        {connected === undefined && (
+        {connected !== true && tokenSaved && connected !== false && (
+          <span className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+            style={{ background: 'rgba(37,99,235,.1)', color: '#2563EB' }}>
+            <CheckCircle className="h-2 w-2" /> Tersimpan
+          </span>
+        )}
+        {!tokenSaved && connected !== true && (
           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
             style={{ background: '#F3F4F6', color: '#D1D5DB' }}>
             Belum diatur
@@ -415,7 +422,8 @@ export default function ApiIntegrationPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {bySection('akuntansi').map(intg => (
               <IntCard key={intg.id} intg={intg} onClick={() => setSelected(intg)}
-                connected={intg.id === 'kledo' ? kledoStatus?.connected : undefined} />
+                connected={intg.id === 'kledo' ? kledoStatus?.connected : undefined}
+                tokenSaved={intg.id === 'kledo' ? (kledoConfig?.tokenSet ?? false) : undefined} />
             ))}
           </div>
         </section>
