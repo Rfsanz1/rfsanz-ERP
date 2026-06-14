@@ -12,6 +12,7 @@ export interface ProductOption {
   stok: number;
   kledoProductId?: string | null;
   unit?: { name: string } | null;
+  source?: 'local' | 'kledo';
 }
 
 interface Props {
@@ -44,17 +45,50 @@ export default function ProductSearchDropdown({
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await api.get('/inventory/products', { params: { search: q, limit: 20, active: 'true' } });
-        let list: ProductOption[] = res.data?.data ?? res.data ?? [];
+        const [localRes, kledoRes] = await Promise.allSettled([
+          api.get('/inventory/products', { params: { search: q, limit: 20, active: 'true' } }),
+          api.get('/kledo/products', { params: { search: q, per_page: 20 } }),
+        ]);
 
-        // Filter client-side agar hasil selalu sesuai dengan yang diketik
+        const localList: ProductOption[] =
+          localRes.status === 'fulfilled'
+            ? (localRes.value.data?.data ?? localRes.value.data ?? []).map((p: any) => ({
+                ...p,
+                source: 'local' as const,
+              }))
+            : [];
+
+        const kledoRaw: any[] =
+          kledoRes.status === 'fulfilled'
+            ? (kledoRes.value.data?.data?.data ?? kledoRes.value.data?.data ?? [])
+            : [];
+
+        const kledoList: ProductOption[] = kledoRaw.map((p: any) => ({
+          id: `kledo-${p.id}`,
+          name: p.name,
+          sku: p.code ?? '',
+          hargaJual: p.price ?? 0,
+          stok: 0,
+          kledoProductId: String(p.id),
+          unit: p.unit ? { name: p.unit } : null,
+          source: 'kledo' as const,
+        }));
+
+        const localNames = new Set(localList.map((p) => p.name.toLowerCase().trim()));
+        const dedupedKledo = kledoList.filter((p) => !localNames.has(p.name.toLowerCase().trim()));
+
+        let merged = [...localList, ...dedupedKledo];
+
+        // Filter client-side — setiap kata harus ada di nama/SKU produk
         const terms = q.toLowerCase().trim().split(/\s+/);
-        list = list.filter((p) =>
-          terms.every((t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t)),
-        ).slice(0, 8);
+        merged = merged.filter((p) =>
+          terms.every(
+            (t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t),
+          ),
+        ).slice(0, 10);
 
-        setSuggestions(list);
-        setOpen(list.length > 0);
+        setSuggestions(merged);
+        setOpen(merged.length > 0);
       } catch { setSuggestions([]); }
       finally { setLoading(false); }
     }, 300);
@@ -72,7 +106,8 @@ export default function ProductSearchDropdown({
     onSelect(p);
   };
 
-  const stockColor = (stok: number) => {
+  const stockColor = (stok: number, source?: string) => {
+    if (source === 'kledo') return '#6366F1';
     if (stok > 20) return '#22C55E';
     if (stok > 5) return '#F59E0B';
     return '#EF4444';
@@ -117,12 +152,26 @@ export default function ProductSearchDropdown({
             >
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
-                style={{ background: `${accentColor}18` }}
+                style={{
+                  background: p.source === 'kledo'
+                    ? 'linear-gradient(135deg, #6366F1, #8B5CF6)'
+                    : `${accentColor}18`,
+                }}
               >
-                <Package className="h-4 w-4" style={{ color: accentColor }} />
+                <Package className="h-4 w-4" style={{ color: p.source === 'kledo' ? '#fff' : accentColor }} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold truncate" style={{ color: '#1E1B4B' }}>{p.name}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-semibold truncate" style={{ color: '#1E1B4B' }}>{p.name}</p>
+                  {p.source === 'kledo' && (
+                    <span
+                      className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'rgba(99,102,241,.12)', color: '#6366F1' }}
+                    >
+                      Kledo
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px]" style={{ color: '#9CA3AF' }}>
                   SKU: {p.sku || '-'}
                   {p.unit?.name && ` · ${p.unit.name}`}
@@ -130,8 +179,8 @@ export default function ProductSearchDropdown({
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="text-xs font-bold" style={{ color: accentColor }}>{fmtRp(p.hargaJual)}</p>
-                <p className="text-[10px] font-semibold" style={{ color: stockColor(p.stok) }}>
-                  Stok: {p.stok}
+                <p className="text-[10px] font-semibold" style={{ color: stockColor(p.stok, p.source) }}>
+                  {p.source === 'kledo' ? 'Dari Kledo' : `Stok: ${p.stok}`}
                 </p>
               </div>
             </button>

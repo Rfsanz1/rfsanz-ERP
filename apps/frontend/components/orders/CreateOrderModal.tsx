@@ -6,6 +6,7 @@ import { useAuthStore } from '../../lib/store/useAuthStore';
 import { api } from '../../lib/api';
 import CustomerSearchDropdown, { type CustomerOption } from '../ui/CustomerSearchDropdown';
 import ProductSearchDropdown, { type ProductOption } from '../ui/ProductSearchDropdown';
+import SalesDropdown from '../ui/SalesDropdown';
 
 const COLOR = '#00ACC1';
 
@@ -152,14 +153,11 @@ export default function CreateOrderModal({ onClose, onSuccess }: { onClose: () =
 
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: '#1E1B4B' }}>Nama Sales</label>
-                <input
-                  className="w-full rounded-lg px-3 py-2 text-sm"
-                  style={{ border: '1px solid #EDE8F5', color: '#1E1B4B', outline: 'none' }}
-                  placeholder="Nama sales"
+                <SalesDropdown
                   value={salesName}
-                  onChange={e => setSalesName(e.target.value)}
-                  onFocus={e => { e.target.style.borderColor = COLOR; }}
-                  onBlur={e => { e.target.style.borderColor = '#EDE8F5'; }}
+                  onChange={setSalesName}
+                  accentColor={COLOR}
+                  placeholder="Pilih atau ketik nama sales..."
                 />
               </div>
 
