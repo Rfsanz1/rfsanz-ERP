@@ -1,22 +1,32 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../../lib/store/useAuthStore';
 import { OdooLayout } from '../../../components/layout/OdooLayout';
 import { kledoService, type KledoProduct, type KledoContact, type KledoInvoice, type KledoSyncLog } from '../../../lib/services';
 import {
   RefreshCw, CheckCircle, XCircle, BarChart2, Package, Users,
-  FileText, Zap, Clock, AlertCircle, Search, ChevronRight, ExternalLink,
+  FileText, Zap, Clock, AlertCircle, Search, ChevronRight, Timer,
 } from 'lucide-react';
 
 type Tab = 'overview' | 'products' | 'contacts' | 'invoices' | 'sync-logs';
+
+const INTERVAL_OPTIONS = [
+  { label: 'Setiap 15 menit', value: 15 },
+  { label: 'Setiap 30 menit', value: 30 },
+  { label: 'Setiap 1 jam', value: 60 },
+  { label: 'Setiap 6 jam', value: 360 },
+];
 
 const formatRp = (v: number) => {
   if (v >= 1_000_000_000) return `Rp ${(v / 1_000_000_000).toFixed(1)} M`;
   if (v >= 1_000_000) return `Rp ${(v / 1_000_000).toFixed(1)} Jt`;
   return `Rp ${v.toLocaleString('id')}`;
 };
+
+const formatTime = (d: Date) =>
+  d.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 export default function KledoPage() {
   const { token } = useAuthStore();
@@ -33,9 +43,17 @@ export default function KledoPage() {
   const [syncResult, setSyncResult] = useState<{ success: boolean; synced: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [syncMode, setSyncMode] = useState<'all' | 'products' | 'contacts' | 'invoices'>('all');
+  const [syncMessage, setSyncMessage] = useState('');
+  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [autoSyncInterval, setAutoSyncInterval] = useState(30);
+  const [nextSyncIn, setNextSyncIn] = useState<number | null>(null);
+  const autoSyncTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [st, brands] = await Promise.all([
         kledoService.getStatus(),
@@ -53,50 +71,115 @@ export default function KledoPage() {
         if (prods.status === 'fulfilled') setProducts(prods.value?.data ?? []);
         if (conts.status === 'fulfilled') setContacts(conts.value?.data ?? []);
         if (invs.status === 'fulfilled') setInvoices(invs.value?.data ?? []);
-        if (logs.status === 'fulfilled') setSyncLogs(logs.value?.data ?? []);
+        if (logs.status === 'fulfilled') {
+          const logData = logs.value?.data ?? [];
+          setSyncLogs(logData);
+          // Cari last sync sukses
+          const lastOk = logData.find(l => l.status === 'success');
+          if (lastOk) setLastSyncAt(new Date(lastOk.createdAt));
+        }
       } else {
         const logs = await kledoService.getSyncLogs({ limit: 20 }).catch(() => ({ data: [] }));
         setSyncLogs(logs.data);
       }
     } catch { /* silently handle */ }
-    finally { setLoading(false); }
+    finally { if (!silent) setLoading(false); }
   }, []);
 
+  // Auto-sync saat pertama buka halaman jika terhubung & belum pernah sync
+  const triggerSync = useCallback(async (silent = false) => {
+    if (syncing) return;
+    setSyncing(true);
+    if (!silent) { setSyncResult(null); setSyncMessage(''); }
+    try {
+      let res: any;
+      if (syncMode === 'all' || silent) {
+        res = await kledoService.syncAll();
+        if (!silent) setSyncMessage(res.message ?? 'Sync semua dimulai di background');
+      } else if (syncMode === 'products') {
+        res = await kledoService.syncProducts();
+        if (!silent) setSyncMessage(res.message ?? 'Sync produk dimulai');
+      } else if (syncMode === 'contacts') {
+        res = await kledoService.syncContacts();
+        if (!silent) setSyncMessage(res.message ?? 'Sync kontak dimulai');
+      } else {
+        res = await kledoService.syncInvoices(500);
+        if (!silent) setSyncMessage(res.message ?? 'Sync invoice dimulai');
+      }
+      if (!silent) setSyncResult({ success: true, synced: res?.total ?? 0 });
+      setLastSyncAt(new Date());
+      setTimeout(() => load(true), 3000);
+    } catch {
+      if (!silent) setSyncResult({ success: false, synced: 0 });
+    } finally {
+      setSyncing(false);
+    }
+  }, [syncing, syncMode, load]);
+
+  // Pertama load — auto-sync jika terhubung & belum ada data
   useEffect(() => {
     if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
-    load();
+
+    (async () => {
+      setLoading(true);
+      try {
+        const [st] = await Promise.all([kledoService.getStatus(), kledoService.getSpmBrands()]);
+        setStatus(st);
+        if (st.connected) {
+          // Cek apakah sudah pernah sync sebelumnya
+          const logs = await kledoService.getSyncLogs({ limit: 5 }).catch(() => ({ data: [] }));
+          const hasData = logs.data.length > 0;
+          // Jika belum pernah sync → langsung sync otomatis
+          if (!hasData) {
+            await kledoService.syncAll().catch(() => null);
+            setLastSyncAt(new Date());
+            setSyncMessage('Data Kledo berhasil disinkronkan secara otomatis.');
+          } else {
+            const lastOk = logs.data.find((l: any) => l.status === 'success');
+            if (lastOk) setLastSyncAt(new Date(lastOk.createdAt));
+          }
+        }
+      } catch { /* ignore */ }
+      finally { await load(); }
+    })();
   }, [token]);
 
-  const [syncMode, setSyncMode] = useState<'all' | 'products' | 'contacts' | 'invoices'>('all');
-  const [syncMessage, setSyncMessage] = useState('');
+  // Auto-sync berkala
+  useEffect(() => {
+    if (autoSyncTimer.current) clearInterval(autoSyncTimer.current);
+    if (countdownTimer.current) clearInterval(countdownTimer.current);
 
-  const handleSync = async () => {
-    setSyncing(true);
-    setSyncResult(null);
-    setSyncMessage('');
-    try {
-      let res: any;
-      if (syncMode === 'all') {
-        res = await kledoService.syncAll();
-        setSyncMessage(res.message ?? 'Sync semua dimulai di background');
-        setSyncResult({ success: true, synced: 0 });
-      } else if (syncMode === 'products') {
-        res = await kledoService.syncProducts();
-        setSyncMessage(res.message ?? 'Sync produk dimulai');
-        setSyncResult({ success: true, synced: res.total ?? 0 });
-      } else if (syncMode === 'contacts') {
-        res = await kledoService.syncContacts();
-        setSyncMessage(res.message ?? 'Sync kontak dimulai');
-        setSyncResult({ success: true, synced: res.total ?? 0 });
-      } else {
-        res = await kledoService.syncInvoices(500);
-        setSyncMessage(res.message ?? 'Sync invoice dimulai');
-        setSyncResult({ success: true, synced: 0 });
-      }
-      setTimeout(() => load(), 3000);
-    } catch { setSyncResult({ success: false, synced: 0 }); }
-    finally { setSyncing(false); }
+    if (!autoSyncEnabled || !status?.connected) {
+      setNextSyncIn(null);
+      return;
+    }
+
+    const intervalMs = autoSyncInterval * 60 * 1000;
+    let remaining = autoSyncInterval * 60;
+    setNextSyncIn(remaining);
+
+    countdownTimer.current = setInterval(() => {
+      remaining -= 1;
+      setNextSyncIn(remaining);
+    }, 1000);
+
+    autoSyncTimer.current = setInterval(async () => {
+      remaining = autoSyncInterval * 60;
+      setNextSyncIn(remaining);
+      await triggerSync(true);
+    }, intervalMs);
+
+    return () => {
+      if (autoSyncTimer.current) clearInterval(autoSyncTimer.current);
+      if (countdownTimer.current) clearInterval(countdownTimer.current);
+    };
+  }, [autoSyncEnabled, autoSyncInterval, status?.connected]);
+
+  const formatCountdown = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}m ${sec.toString().padStart(2, '0')}s`;
   };
 
   if (!mounted || !token) return null;
@@ -119,7 +202,7 @@ export default function KledoPage() {
 
         {/* Status Banner */}
         <div
-          className="rounded-2xl p-5 flex items-center gap-4"
+          className="rounded-2xl p-5 flex items-center gap-4 flex-wrap"
           style={{
             background: status?.connected
               ? 'linear-gradient(135deg, #22C55E, #15803D)'
@@ -128,8 +211,8 @@ export default function KledoPage() {
           }}
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 flex-shrink-0 text-2xl font-bold">K</div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
               <h2 className="font-bold text-lg">Kledo Accounting</h2>
               {loading ? (
                 <RefreshCw className="h-4 w-4 animate-spin opacity-70" />
@@ -143,25 +226,22 @@ export default function KledoPage() {
                 </span>
               )}
             </div>
-            <p className="text-sm opacity-80 mt-0.5">
-              {status?.message ?? 'Memeriksa koneksi...'}
-            </p>
-            {!status?.connected && !loading && (
-              <p className="text-xs mt-1 opacity-70">
-                💡 Set env var <code className="bg-white/20 px-1 rounded">KLEDO_TOKEN</code> di Settings → Secrets untuk mengaktifkan koneksi
+            <p className="text-sm opacity-80 mt-0.5">{status?.message ?? 'Memeriksa koneksi...'}</p>
+            {lastSyncAt && (
+              <p className="text-xs mt-1 opacity-70 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Terakhir sync: {formatTime(lastSyncAt)}
               </p>
             )}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
             <button
-              onClick={load}
+              onClick={() => load()}
               disabled={loading}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-white/20 hover:bg-white/30 transition"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold bg-white/20 hover:bg-white/30 transition"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Cek Status
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
-
-            {/* Sync mode selector */}
             <select
               value={syncMode}
               onChange={e => setSyncMode(e.target.value as any)}
@@ -173,9 +253,8 @@ export default function KledoPage() {
               <option value="contacts" style={{ color: '#1E1B4B' }}>Kontak</option>
               <option value="invoices" style={{ color: '#1E1B4B' }}>Invoice</option>
             </select>
-
             <button
-              onClick={handleSync}
+              onClick={() => triggerSync(false)}
               disabled={syncing || loading}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-white/20 hover:bg-white/30 transition disabled:opacity-50"
             >
@@ -184,6 +263,54 @@ export default function KledoPage() {
             </button>
           </div>
         </div>
+
+        {/* Auto-sync Panel */}
+        {status?.connected && (
+          <div
+            className="rounded-2xl p-4 flex items-center gap-4 flex-wrap"
+            style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}
+          >
+            <Timer className="h-5 w-5 flex-shrink-0" style={{ color: '#5B52D1' }} />
+            <div className="flex-1">
+              <p className="text-sm font-bold" style={{ color: '#1E1B4B' }}>Sync Otomatis</p>
+              <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+                {autoSyncEnabled
+                  ? nextSyncIn !== null
+                    ? `Sync berikutnya dalam ${formatCountdown(nextSyncIn)}`
+                    : 'Aktif — menunggu jadwal...'
+                  : 'Data Kledo akan di-sync secara berkala ke ERP.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {autoSyncEnabled && (
+                <select
+                  value={autoSyncInterval}
+                  onChange={e => setAutoSyncInterval(Number(e.target.value))}
+                  className="text-xs rounded-lg px-2 py-1.5 outline-none"
+                  style={{ border: '1.5px solid #EDE9FE', color: '#1E1B4B' }}
+                >
+                  {INTERVAL_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              )}
+              {/* Toggle */}
+              <button
+                onClick={() => setAutoSyncEnabled(v => !v)}
+                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                style={{ backgroundColor: autoSyncEnabled ? '#5B52D1' : '#D1D5DB' }}
+              >
+                <span
+                  className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                  style={{ transform: autoSyncEnabled ? 'translateX(22px)' : 'translateX(2px)' }}
+                />
+              </button>
+              <span className="text-xs font-semibold" style={{ color: autoSyncEnabled ? '#5B52D1' : '#9CA3AF' }}>
+                {autoSyncEnabled ? 'Aktif' : 'Nonaktif'}
+              </span>
+            </div>
+          </div>
+        )}
 
         {syncResult && (
           <div
@@ -239,7 +366,24 @@ export default function KledoPage() {
               ))}
             </div>
 
-            {/* SPM Brands */}
+            {/* Cara kerja sync */}
+            <div className="rounded-2xl p-5" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
+              <h3 className="font-bold text-sm mb-3" style={{ color: '#1E1B4B' }}>Cara Kerja Sinkronisasi</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { icon: Zap, color: '#5B52D1', title: 'Sync Pertama Kali', desc: 'Otomatis saat halaman ini pertama dibuka. Data produk, kontak, dan invoice langsung masuk ke ERP.' },
+                  { icon: Timer, color: '#22C55E', title: 'Sync Otomatis Berkala', desc: 'Aktifkan toggle "Sync Otomatis" di atas untuk sinkronisasi tiap 15–360 menit tanpa perlu klik manual.' },
+                  { icon: RefreshCw, color: '#F59E0B', title: 'Sync Manual', desc: 'Klik "Sync Sekarang" kapan saja untuk ambil data terbaru dari Kledo secara langsung.' },
+                ].map((item, i) => (
+                  <div key={i} className="rounded-xl p-4" style={{ backgroundColor: '#F9F8FF' }}>
+                    <item.icon className="h-5 w-5 mb-2" style={{ color: item.color }} />
+                    <p className="text-xs font-bold mb-1" style={{ color: '#1E1B4B' }}>{item.title}</p>
+                    <p className="text-xs leading-relaxed" style={{ color: '#6B7280' }}>{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {spmBrands.length > 0 && (
               <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
                 <div className="px-5 py-4" style={{ borderBottom: '1px solid #EDE9FE' }}>
@@ -247,7 +391,7 @@ export default function KledoPage() {
                   <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Brand SPM dengan margin 15% otomatis dari Kledo</p>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-0 divide-x divide-y" style={{ borderColor: '#EDE9FE' }}>
-                  {spmBrands.map((b, i) => (
+                  {(Array.isArray(spmBrands) ? spmBrands : []).map((b, i) => (
                     <div key={i} className="px-4 py-3 flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg font-bold text-white text-sm flex-shrink-0"
                         style={{ background: 'linear-gradient(135deg, #5B52D1, #8B80F9)' }}>
@@ -263,7 +407,6 @@ export default function KledoPage() {
               </div>
             )}
 
-            {/* Margin Info */}
             <div className="rounded-2xl p-5" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
               <h3 className="font-bold text-sm mb-3" style={{ color: '#1E1B4B' }}>Logika Harga Kledo</h3>
               <div className="grid grid-cols-3 gap-4 text-center">
@@ -304,7 +447,6 @@ export default function KledoPage() {
               <div className="rounded-2xl p-12 text-center" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
                 <XCircle className="h-10 w-10 mx-auto mb-3" style={{ color: '#9CA3AF' }} />
                 <p className="font-semibold" style={{ color: '#1E1B4B' }}>Kledo tidak terhubung</p>
-                <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Set KLEDO_TOKEN di environment secrets untuk melihat produk dari Kledo</p>
               </div>
             ) : (
               <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
@@ -338,7 +480,7 @@ export default function KledoPage() {
                 </table>
                 {!loading && filteredProducts.length === 0 && (
                   <div className="p-8 text-center">
-                    <p className="text-sm" style={{ color: '#9CA3AF' }}>Tidak ada produk ditemukan</p>
+                    <p className="text-sm" style={{ color: '#9CA3AF' }}>Tidak ada produk. Coba klik "Sync Sekarang".</p>
                   </div>
                 )}
               </div>
@@ -445,7 +587,7 @@ export default function KledoPage() {
             {syncLogs.length === 0 && !loading && (
               <div className="rounded-2xl p-12 text-center" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
                 <Clock className="h-8 w-8 mx-auto mb-2" style={{ color: '#9CA3AF' }} />
-                <p className="text-sm" style={{ color: '#9CA3AF' }}>Belum ada riwayat sync. Klik "Sync Sekarang" untuk memulai.</p>
+                <p className="text-sm" style={{ color: '#9CA3AF' }}>Belum ada riwayat sync.</p>
               </div>
             )}
             {syncLogs.map((log, i) => (
