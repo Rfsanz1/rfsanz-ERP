@@ -50,14 +50,15 @@ export default function ProductSearchDropdown({
     setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
   }, []);
 
-  /* update posisi saat scroll / resize */
+  /* tutup dropdown saat scroll (mobile: tidak halangi gesture), update posisi saat resize */
   useEffect(() => {
     if (!open) return;
     updatePos();
-    window.addEventListener('scroll', updatePos, true);
+    const closeOnScroll = () => { setSuggestions([]); setOpen(false); };
+    window.addEventListener('scroll', closeOnScroll, true);
     window.addEventListener('resize', updatePos);
     return () => {
-      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('scroll', closeOnScroll, true);
       window.removeEventListener('resize', updatePos);
     };
   }, [open, updatePos]);
@@ -101,7 +102,9 @@ export default function ProductSearchDropdown({
           hargaJual: Number(p.price ?? 0),
           stok: 0,
           kledoProductId: String(p.id),
-          unit: p.unit ? { name: String(p.unit) } : null,
+          unit: p.unit
+            ? { name: typeof p.unit === 'string' ? p.unit : (p.unit?.name ?? '') }
+            : null,
           source: 'kledo' as const,
         }));
 
@@ -111,15 +114,19 @@ export default function ProductSearchDropdown({
 
         if (q.trim()) {
           const terms = q.toLowerCase().trim().split(/\s+/);
-          const filtered = merged.filter((p) =>
-            terms.every((t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t)),
+          merged = merged.filter((p) =>
+            terms.every(
+              (t) =>
+                p.name.toLowerCase().includes(t) ||
+                (p.sku ?? '').toLowerCase().includes(t),
+            ),
           );
-          merged = filtered.length > 0 ? filtered : merged;
         }
 
         merged = merged.slice(0, 10);
         setSuggestions(merged);
         if (merged.length > 0) { updatePos(); setOpen(true); }
+        else { setSuggestions([]); setOpen(false); }
       } catch { setSuggestions([]); }
       finally { setLoading(false); }
     }, 300);
