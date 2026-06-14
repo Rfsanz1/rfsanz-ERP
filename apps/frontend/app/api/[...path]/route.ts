@@ -8,6 +8,7 @@ async function proxy(req: NextRequest, { params }: { params: { path: string[] } 
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': '1',
   };
 
   const auth = req.headers.get('authorization');
