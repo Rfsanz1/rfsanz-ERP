@@ -45,7 +45,7 @@ externalPort = 8000
 [userenv]
 
 [userenv.shared]
-BACKEND_URL = "https://ganti-dengan-url-backend-kamu.com"
+BACKEND_URL = "https://briskly-underpaid-shucking.ngrok-free.dev"
 NODE_ENV = "development"
 
 [deployment]
