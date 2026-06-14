@@ -77,7 +77,17 @@ export default function CustomerSearchDropdown({
         (c) => !localNames.has(c.name.toLowerCase().trim()),
       );
 
-      const merged = [...localList, ...dedupedKledo].slice(0, 10);
+      let merged = [...localList, ...dedupedKledo];
+
+      // Filter client-side berdasarkan kata yang diketik (fallback jika API tidak filter)
+      if (q && q.trim().length >= 1) {
+        const terms = q.toLowerCase().trim().split(/\s+/);
+        merged = merged.filter((c) =>
+          terms.every((t) => c.name.toLowerCase().includes(t)),
+        );
+      }
+
+      merged = merged.slice(0, 10);
       setSuggestions(merged);
       setNoResult(merged.length === 0);
       setOpen(true);

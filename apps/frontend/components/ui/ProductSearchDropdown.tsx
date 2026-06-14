@@ -44,8 +44,15 @@ export default function ProductSearchDropdown({
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await api.get('/inventory/products', { params: { search: q, limit: 8, active: 'true' } });
-        const list: ProductOption[] = res.data?.data ?? res.data ?? [];
+        const res = await api.get('/inventory/products', { params: { search: q, limit: 20, active: 'true' } });
+        let list: ProductOption[] = res.data?.data ?? res.data ?? [];
+
+        // Filter client-side agar hasil selalu sesuai dengan yang diketik
+        const terms = q.toLowerCase().trim().split(/\s+/);
+        list = list.filter((p) =>
+          terms.every((t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t)),
+        ).slice(0, 8);
+
         setSuggestions(list);
         setOpen(list.length > 0);
       } catch { setSuggestions([]); }
