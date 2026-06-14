@@ -36,9 +36,11 @@ export default function InventoryProductsPage() {
       const r = await api.get('/kledo/products', {
         params: { page: p, per_page: pp, ...(q ? { name: q } : {}) },
       });
+      // Response: { success, data: { current_page, data: [...], total, last_page } }
       const kd = r.data?.data ?? r.data;
-      setData(Array.isArray(kd?.data) ? kd.data : []);
-      setTotal(kd?.total ?? 0);
+      const rows = Array.isArray(kd?.data) ? kd.data : Array.isArray(kd) ? kd : [];
+      setData(rows);
+      setTotal(kd?.total ?? rows.length);
       setLastPage(kd?.last_page ?? 1);
     } catch {
       setData([]);
