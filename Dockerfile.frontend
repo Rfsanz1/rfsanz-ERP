@@ -1,14 +1,19 @@
 # Dockerfile untuk Next.js frontend Gentong Mas ERP (monorepo)
-# Build args: APP_DIR (nama folder di apps/), PORT (port yang dipakai)
-# Contoh: docker build --build-arg APP_DIR=frontend --build-arg PORT=3000 -f Dockerfile.frontend .
+# Build args: APP_DIR, PORT, BACKEND_URL
 
 ARG APP_DIR=frontend
 ARG PORT=3000
+ARG BACKEND_URL=http://127.0.0.1:6000
 
 # ── Stage 1: Builder ──────────────────────────────────────────────
 FROM node:20-alpine AS builder
 ARG APP_DIR
 ARG PORT
+ARG BACKEND_URL
+
+# Expose ke ENV agar next.config.js bisa baca saat build
+ENV BACKEND_URL=${BACKEND_URL}
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 WORKDIR /app
@@ -28,8 +33,7 @@ RUN pnpm install --frozen-lockfile
 # Copy source app
 COPY apps/${APP_DIR}/ ./apps/${APP_DIR}/
 
-# Build Next.js — tambah memory limit untuk server dengan RAM terbatas
-ENV NODE_OPTIONS="--max-old-space-size=2048"
+# Build Next.js
 RUN cd apps/${APP_DIR} && pnpm build
 
 # ── Stage 2: Runner ───────────────────────────────────────────────

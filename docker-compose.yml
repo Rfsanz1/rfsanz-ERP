@@ -15,9 +15,12 @@ services:
       args:
         APP_DIR: frontend
         PORT: 3000
+        BACKEND_URL: ${BACKEND_URL:-https://briskly-underpaid-shucking.ngrok-free.dev}
     restart: unless-stopped
     ports:
       - '${FRONTEND_PORT:-3000}:3000'
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
       PORT: 3000
