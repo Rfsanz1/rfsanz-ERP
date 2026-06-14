@@ -1,44 +1,108 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { Search, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Search, RefreshCw, AlertTriangle, Link2, Plus } from 'lucide-react';
 
-const C = { primary: '#7C3AED', border: '#EDE9FE', textDark: '#1E1B4B', textMid: '#6B7280', textLight: '#9CA3AF' };
+const C      = '#00ACC1';
+const PURPLE = '#6366F1';
 
 const STATUS_CFG: Record<string, { label: string; color: string }> = {
-  paid:      { label: 'Lunas',       color: '#22C55E' },
-  unpaid:    { label: 'Belum Bayar', color: '#EF4444' },
-  partial:   { label: 'Sebagian',    color: '#F59E0B' },
-  overdue:   { label: 'Jatuh Tempo', color: '#DC2626' },
-  draft:     { label: 'Draft',       color: '#9CA3AF' },
-  cancelled: { label: 'Dibatalkan',  color: '#9CA3AF' },
+  paid:      { label: 'Lunas',        color: '#22C55E' },
+  unpaid:    { label: 'Belum Bayar',  color: '#EF4444' },
+  partial:   { label: 'Sebagian',     color: '#F59E0B' },
+  overdue:   { label: 'Jatuh Tempo',  color: '#DC2626' },
+  draft:     { label: 'Draft',        color: '#9CA3AF' },
+  sent:      { label: 'Terkirim',     color: '#3B82F6' },
+  cancelled: { label: 'Dibatalkan',   color: '#6B7280' },
 };
-
-const DEMO: any[] = [
-  { id: 'i1', number: 'INV-2024-001', customerName: 'PT Maju Sejahtera',   totalAmount: 3250000, amountDue: 0,       status: 'paid',    dueDate: '2024-02-15', createdAt: '2024-01-15' },
-  { id: 'i2', number: 'INV-2024-002', customerName: 'CV Berkah Jaya',       totalAmount: 1875000, amountDue: 1875000, status: 'unpaid',  dueDate: '2024-02-14', createdAt: '2024-01-14' },
-  { id: 'i3', number: 'INV-2024-003', customerName: 'Toko Bangunan Sejuk', totalAmount: 950000,  amountDue: 450000,  status: 'partial', dueDate: '2024-02-01', createdAt: '2024-01-13' },
-  { id: 'i4', number: 'INV-2024-004', customerName: 'UD Subur Makmur',      totalAmount: 5100000, amountDue: 5100000, status: 'overdue', dueDate: '2024-01-10', createdAt: '2024-01-05' },
-];
 
 function Badge({ status }: { status: string }) {
   const cfg = STATUS_CFG[status] ?? { label: status, color: '#9CA3AF' };
-  return <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 100, color: cfg.color, backgroundColor: `${cfg.color}18`, border: `1px solid ${cfg.color}30` }}>{cfg.label}</span>;
+  return (
+    <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100, color: cfg.color, background: cfg.color + '1A', border: `1px solid ${cfg.color}30` }}>
+      {cfg.label}
+    </span>
+  );
+}
+
+interface FakturRow {
+  id: string;
+  number: string;
+  customerName: string;
+  totalAmount: number;
+  amountDue: number;
+  status: string;
+  dueDate: string;
+  createdAt: string;
+  source: 'local' | 'kledo';
+  kledoId?: string | number;
 }
 
 export default function FakturPage() {
-  const [rows, setRows] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const router  = useRouter();
+  const [rows, setRows]                 = useState<FakturRow[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [search, setSearch]             = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [source, setSource]             = useState<'merged' | 'local' | 'kledo'>('merged');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/invoice/list?limit=50');
-      const data = res.data?.data ?? res.data?.items ?? res.data;
-      setRows(Array.isArray(data) ? data : DEMO);
-    } catch { setRows(DEMO); }
+      /* Ambil dari lokal + Kledo secara paralel */
+      const [localRes, kledoRes] = await Promise.allSettled([
+        api.get('/invoices?limit=200'),
+        api.get('/kledo/invoices', { params: { per_page: 200 } }),
+      ]);
+
+      /* Lokal */
+      const localRaw: any[] = (() => {
+        if (localRes.status !== 'fulfilled') return [];
+        const d = localRes.value.data;
+        return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
+      })();
+      const localList: FakturRow[] = localRaw.map(r => ({
+        id:           String(r.id),
+        number:       r.noInvoice ?? r.invoiceNumber ?? `INV-${r.id}`,
+        customerName: r.customer?.name ?? r.customerName ?? '–',
+        totalAmount:  Number(r.grandTotal ?? r.totalAmount ?? 0),
+        amountDue:    Number(r.grandTotal ?? 0) - Number(r.paidAmount ?? 0),
+        status:       r.status ?? 'draft',
+        dueDate:      r.dueDate ?? '',
+        createdAt:    r.tanggal ?? r.createdAt ?? '',
+        source:       'local',
+        kledoId:      r.kledoInvoiceId ?? undefined,
+      }));
+
+      /* Kledo */
+      const kledoRaw: any[] = (() => {
+        if (kledoRes.status !== 'fulfilled') return [];
+        const d = kledoRes.value.data;
+        const inner = d?.data ?? d;
+        return Array.isArray(inner?.data) ? inner.data : Array.isArray(inner) ? inner : [];
+      })();
+      const localKledoIds = new Set(localList.map(r => String(r.kledoId)).filter(Boolean));
+
+      const kledoList: FakturRow[] = kledoRaw
+        .filter((r: any) => !localKledoIds.has(String(r.id)))
+        .map((r: any) => ({
+          id:           `kledo-${r.id}`,
+          number:       r.ref_number ?? r.trans_no ?? `K-${r.id}`,
+          customerName: r.contact?.name ?? r.contact_name ?? '–',
+          totalAmount:  Number(r.amount ?? r.total ?? 0),
+          amountDue:    Number(r.amount_due ?? r.remaining ?? 0),
+          status:       r.status ?? 'draft',
+          dueDate:      r.due_date ?? '',
+          createdAt:    r.trans_date ?? '',
+          source:       'kledo',
+          kledoId:      r.id,
+        }));
+
+      const merged = [...localList, ...kledoList];
+      setRows(merged);
+      setSource(merged.length > 0 ? 'merged' : 'local');
+    } catch { setRows([]); }
     finally { setLoading(false); }
   }, []);
 
@@ -49,93 +113,125 @@ export default function FakturPage() {
     (!search || (r.number + (r.customerName ?? '')).toLowerCase().includes(search.toLowerCase()))
   );
 
-  const formatRp = (v: number) => `Rp ${Number(v).toLocaleString('id-ID')}`;
-  const formatDate = (v: string) => v ? new Date(v).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '–';
-  const totalOutstanding = filtered.reduce((s, r) => s + (r.amountDue ?? 0), 0);
-  const overdueCount = filtered.filter(r => r.status === 'overdue').length;
+  const fmtRp   = (v: number) => `Rp ${Number(v ?? 0).toLocaleString('id-ID')}`;
+  const fmtDate = (v: string) => v ? new Date(v).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '–';
+
+  const totalOutstanding  = filtered.reduce((s, r) => s + (r.amountDue > 0 ? r.amountDue : 0), 0);
+  const overdueCount      = filtered.filter(r => r.status === 'overdue' || (r.dueDate && new Date(r.dueDate) < new Date() && r.status !== 'paid')).length;
+  const localCount        = rows.filter(r => r.source === 'local').length;
+  const kledoCount        = rows.filter(r => r.source === 'kledo').length;
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: C.textDark, margin: '0 0 4px' }}>Faktur / Invoice</h2>
-          <p style={{ fontSize: 13, color: C.textLight, margin: 0 }}>Pantau status pembayaran pelanggan</p>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Faktur / Invoice</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+            {localCount} lokal + {kledoCount} dari Kledo · total {rows.length}
+          </p>
         </div>
-        <button onClick={fetchData} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: `1.5px solid ${C.border}`, background: '#fff', color: C.textMid, fontSize: 13, cursor: 'pointer' }}>
-          <RefreshCw size={13} /> Refresh
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={fetchData}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Refresh
+          </button>
+          <button onClick={() => router.push('/sales/invoices/new')}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: C, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Plus size={14} /> Invoice Baru
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 14, marginBottom: 20 }}>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 14, marginBottom: 20 }}>
         {[
-          { label: 'Total Piutang',      value: formatRp(totalOutstanding),                                     color: '#EF4444', bg: '#FEF2F2' },
-          { label: 'Invoice Jatuh Tempo', value: `${overdueCount} invoice`,                                    color: '#DC2626', bg: '#FFF1F2' },
-          { label: 'Invoice Lunas',       value: `${filtered.filter(r => r.status === 'paid').length} invoice`, color: '#22C55E', bg: '#F0FDF4' },
-          { label: 'Belum Bayar',         value: `${filtered.filter(r => r.status === 'unpaid').length} invoice`,color: '#F59E0B', bg: '#FFFBEB' },
+          { label: 'Total Piutang',       value: fmtRp(totalOutstanding),                                       color: '#EF4444', bg: 'rgba(239,68,68,.07)'  },
+          { label: 'Jatuh Tempo',         value: `${overdueCount} invoice`,                                     color: '#DC2626', bg: 'rgba(220,38,38,.07)'  },
+          { label: 'Lunas',               value: `${filtered.filter(r => r.status === 'paid').length} invoice`,  color: '#22C55E', bg: 'rgba(34,197,94,.07)'  },
+          { label: 'Belum Bayar',         value: `${filtered.filter(r => r.status === 'unpaid' || r.status === 'draft').length} invoice`, color: '#F59E0B', bg: 'rgba(245,158,11,.07)' },
+          { label: 'Dari Kledo',          value: `${kledoCount} invoice`,                                        color: PURPLE,    bg: `${PURPLE}0D`          },
         ].map(card => (
-          <div key={card.label} style={{ backgroundColor: card.bg, borderRadius: 14, padding: '16px 18px', border: `1px solid ${card.color}20` }}>
-            <p style={{ fontSize: 11, color: card.color, fontWeight: 700, textTransform: 'uppercase', margin: '0 0 6px' }}>{card.label}</p>
-            <p style={{ fontSize: 20, fontWeight: 800, color: card.color, margin: 0 }}>{card.value}</p>
+          <div key={card.label} style={{ borderRadius: 14, padding: '14px 16px', border: `1.5px solid ${card.color}25`, background: card.bg }}>
+            <p style={{ fontSize: 10, color: card.color, fontWeight: 700, textTransform: 'uppercase', margin: '0 0 6px', letterSpacing: '.04em' }}>{card.label}</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: card.color, margin: 0 }}>{card.value}</p>
           </div>
         ))}
       </div>
 
+      {/* Alert jatuh tempo */}
       {overdueCount > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, backgroundColor: '#FEF2F2', border: '1.5px solid rgba(239,68,68,.2)', marginBottom: 16 }}>
-          <AlertTriangle size={16} style={{ color: '#DC2626', flexShrink: 0 }} />
-          <p style={{ fontSize: 13, color: '#DC2626', fontWeight: 600, margin: 0 }}>{overdueCount} invoice sudah melewati jatuh tempo. Segera lakukan penagihan.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, backgroundColor: 'rgba(239,68,68,.07)', border: '1.5px solid rgba(239,68,68,.2)', marginBottom: 16 }}>
+          <AlertTriangle size={15} style={{ color: '#DC2626', flexShrink: 0 }} />
+          <p style={{ fontSize: 13, color: '#DC2626', fontWeight: 600, margin: 0 }}>
+            {overdueCount} invoice sudah melewati jatuh tempo — segera lakukan penagihan.
+          </p>
         </div>
       )}
 
+      {/* Filter */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.textLight }} />
+          <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari no. invoice / pelanggan…"
-            style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: 12, border: `1.5px solid ${C.border}`, outline: 'none', fontSize: 13, boxSizing: 'border-box', color: C.textDark }} />
+            style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 10, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
         </div>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          style={{ padding: '9px 14px', borderRadius: 12, border: `1.5px solid ${C.border}`, outline: 'none', fontSize: 13, cursor: 'pointer', color: C.textMid }}>
+          style={{ padding: '9px 14px', borderRadius: 10, border: '1px solid var(--border)', outline: 'none', fontSize: 13, cursor: 'pointer', color: 'var(--text-secondary)', background: 'var(--surface-sunken)' }}>
           <option value="">Semua Status</option>
           {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
       </div>
 
-      <div style={{ backgroundColor: '#fff', borderRadius: 16, border: `1.5px solid ${C.border}`, overflow: 'hidden' }}>
+      {/* Tabel */}
+      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: `1.5px solid ${C.border}` }}>
-                {['No. Invoice', 'Pelanggan', 'Tanggal', 'Jatuh Tempo', 'Total', 'Sisa Bayar', 'Status'].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+              <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-sunken)' }}>
+                {['No. Invoice', 'Pelanggan', 'Tanggal', 'Jatuh Tempo', 'Total', 'Sisa Bayar', 'Status', 'Sumber'].map(h => (
+                  <th key={h} style={{ padding: '11px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} style={{ padding: 40, textAlign: 'center', color: C.textLight }}>Memuat…</td></tr>
+                <tr><td colSpan={8} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Memuat data dari Kledo…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: 40, textAlign: 'center', color: C.textLight }}>Tidak ada invoice</td></tr>
-              ) : filtered.map(r => (
-                <tr key={r.id}
-                  style={{ borderBottom: `1px solid ${C.border}`, cursor: 'pointer', backgroundColor: r.status === 'overdue' ? 'rgba(239,68,68,.03)' : 'transparent', transition: 'background .15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = r.status === 'overdue' ? 'rgba(239,68,68,.07)' : '#F5F3FF')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = r.status === 'overdue' ? 'rgba(239,68,68,.03)' : 'transparent')}
-                >
-                  <td style={{ padding: '13px 16px', fontWeight: 700, color: C.primary }}>{r.number ?? r.invoiceNumber}</td>
-                  <td style={{ padding: '13px 16px', color: C.textDark }}>{r.customerName ?? r.customer?.name ?? '–'}</td>
-                  <td style={{ padding: '13px 16px', color: C.textMid }}>{formatDate(r.createdAt)}</td>
-                  <td style={{ padding: '13px 16px', color: r.status === 'overdue' ? '#DC2626' : C.textMid, fontWeight: r.status === 'overdue' ? 700 : 400 }}>{formatDate(r.dueDate)}</td>
-                  <td style={{ padding: '13px 16px', fontWeight: 700, color: C.textDark }}>{formatRp(r.totalAmount ?? r.total ?? 0)}</td>
-                  <td style={{ padding: '13px 16px', fontWeight: 700, color: (r.amountDue ?? 0) > 0 ? '#EF4444' : '#22C55E' }}>{formatRp(r.amountDue ?? 0)}</td>
-                  <td style={{ padding: '13px 16px' }}><Badge status={r.status} /></td>
-                </tr>
-              ))}
+                <tr><td colSpan={8} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Tidak ada invoice ditemukan</td></tr>
+              ) : filtered.map(r => {
+                const isOverdue = r.dueDate && new Date(r.dueDate) < new Date() && r.status !== 'paid';
+                return (
+                  <tr key={r.id}
+                    onClick={() => r.source === 'local' ? router.push(`/sales/invoices/${r.id}`) : undefined}
+                    style={{ borderBottom: '1px solid var(--border)', cursor: r.source === 'local' ? 'pointer' : 'default', background: isOverdue ? 'rgba(239,68,68,.03)' : 'transparent', transition: 'background .12s' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = isOverdue ? 'rgba(239,68,68,.07)' : 'var(--brand-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = isOverdue ? 'rgba(239,68,68,.03)' : 'transparent')}>
+                    <td style={{ padding: '13px 16px', fontWeight: 700, color: r.source === 'kledo' ? PURPLE : C, fontSize: 11, fontFamily: 'monospace' }}>{r.number}</td>
+                    <td style={{ padding: '13px 16px', color: 'var(--text-primary)', fontWeight: 500 }}>{r.customerName}</td>
+                    <td style={{ padding: '13px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{fmtDate(r.createdAt)}</td>
+                    <td style={{ padding: '13px 16px', color: isOverdue ? '#DC2626' : 'var(--text-muted)', fontSize: 12, fontWeight: isOverdue ? 700 : 400 }}>{fmtDate(r.dueDate)}</td>
+                    <td style={{ padding: '13px 16px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmtRp(r.totalAmount)}</td>
+                    <td style={{ padding: '13px 16px', fontWeight: 700, color: r.amountDue > 0 ? '#EF4444' : '#22C55E' }}>{fmtRp(Math.max(0, r.amountDue))}</td>
+                    <td style={{ padding: '13px 16px' }}><Badge status={r.status} /></td>
+                    <td style={{ padding: '13px 16px' }}>
+                      {r.source === 'kledo' ? (
+                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 100, color: PURPLE, background: PURPLE + '12', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                          <Link2 size={8} /> Kledo
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 100, color: C, background: C + '12' }}>ERP</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
         {filtered.length > 0 && (
-          <div style={{ padding: '10px 16px', borderTop: `1px solid ${C.border}`, color: C.textLight, fontSize: 12 }}>
-            {filtered.length} invoice · Total piutang: <strong style={{ color: '#EF4444' }}>{formatRp(totalOutstanding)}</strong>
+          <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 12 }}>
+            {filtered.length} invoice · Total piutang: <strong style={{ color: '#EF4444' }}>{fmtRp(totalOutstanding)}</strong>
           </div>
         )}
       </div>
