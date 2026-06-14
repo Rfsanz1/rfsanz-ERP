@@ -27,8 +27,8 @@ interface AuthState {
 
 const TOKEN_KEY = 'gm_auth_token';
 
-const ADMIN_EMAIL = 'admin@example.com';
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_EMAIL = 'admin@rfsanz.com';
+const ADMIN_PASSWORD = 'root';
 
 const STATIC_USER: AuthUser = {
   id: '1',
