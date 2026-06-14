@@ -29,9 +29,11 @@ export default function InventoryProductsPage() {
   const [loading, setLoading]   = useState(true);
   const [page, setPage]         = useState(1);
   const [perPage, setPerPage]   = useState(25);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const load = async (p = 1, q = '', pp = perPage) => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const r = await api.get('/kledo/products', {
         params: { page: p, per_page: pp, ...(q ? { name: q } : {}) },
@@ -42,7 +44,10 @@ export default function InventoryProductsPage() {
       setData(rows);
       setTotal(kd?.total ?? rows.length);
       setLastPage(kd?.last_page ?? 1);
-    } catch {
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? String(err);
+      console.error('[kledo/products] error:', err?.response?.status, msg, err);
+      setErrorMsg(`${err?.response?.status ?? 'Error'}: ${msg}`);
       setData([]);
     } finally {
       setLoading(false);
@@ -157,10 +162,12 @@ export default function InventoryProductsPage() {
                 ) : data.length === 0 ? (
                   <tr>
                     <td colSpan={6} style={{ padding: 48, textAlign: 'center' }}>
-                      <Package size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block' }} />
-                      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Tidak ada produk</p>
-                      <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                        {search ? `Tidak ditemukan hasil untuk "${search}"` : 'Tidak ada produk dari Kledo.'}
+                      <Package size={36} style={{ color: errorMsg ? '#EF4444' : 'var(--text-muted)', margin: '0 auto 12px', display: 'block' }} />
+                      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                        {errorMsg ? 'Gagal memuat produk' : 'Tidak ada produk'}
+                      </p>
+                      <p style={{ fontSize: 13, color: errorMsg ? '#EF4444' : 'var(--text-muted)', margin: 0, fontFamily: errorMsg ? 'monospace' : undefined }}>
+                        {errorMsg ?? (search ? `Tidak ditemukan hasil untuk "${search}"` : 'Tidak ada produk dari Kledo.')}
                       </p>
                     </td>
                   </tr>
