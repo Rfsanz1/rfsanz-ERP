@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Search, Package } from 'lucide-react';
 import { api } from '../../lib/api';
 
@@ -24,7 +24,8 @@ interface Props {
   disabled?: boolean;
 }
 
-const fmtRp = (v: number) => v.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+const fmtRp = (v: number) =>
+  v.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
 export default function ProductSearchDropdown({
   value,
@@ -37,7 +38,29 @@ export default function ProductSearchDropdown({
   const [suggestions, setSuggestions] = useState<ProductOption[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  /* posisi fixed dropdown — ikuti input, tidak ikut scroll */
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const updatePos = useCallback(() => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  /* update posisi saat scroll / resize */
+  useEffect(() => {
+    if (!open) return;
+    updatePos();
+    window.addEventListener('scroll', updatePos, true);
+    window.addEventListener('resize', updatePos);
+    return () => {
+      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePos);
+    };
+  }, [open, updatePos]);
 
   const search = useCallback(async (q: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -46,19 +69,13 @@ export default function ProductSearchDropdown({
       setLoading(true);
       try {
         const [localRes, kledoRes] = await Promise.allSettled([
-          // Local inventory: param search, response { data: [...] } atau langsung array
           api.get('/inventory/products', { params: { search: q, limit: 30 } }),
-          // Kledo: param name (bukan search), response { success, data: { data: [...] } }
           api.get('/kledo/products', { params: { name: q, per_page: 30 } }),
         ]);
 
-        // Parse local — bisa array langsung atau { data: [...] }
         const localRaw: any[] =
           localRes.status === 'fulfilled'
-            ? (() => {
-                const d = localRes.value.data;
-                return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
-              })()
+            ? (() => { const d = localRes.value.data; return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : []; })()
             : [];
 
         const localList: ProductOption[] = localRaw.map((p: any) => ({
@@ -72,14 +89,9 @@ export default function ProductSearchDropdown({
           source: 'local' as const,
         }));
 
-        // Parse Kledo — response: { success, data: { data: [...], total, ... } }
         const kledoRaw: any[] =
           kledoRes.status === 'fulfilled'
-            ? (() => {
-                const d = kledoRes.value.data;
-                const inner = d?.data ?? d;
-                return Array.isArray(inner?.data) ? inner.data : Array.isArray(inner) ? inner : [];
-              })()
+            ? (() => { const d = kledoRes.value.data; const inner = d?.data ?? d; return Array.isArray(inner?.data) ? inner.data : Array.isArray(inner) ? inner : []; })()
             : [];
 
         const kledoList: ProductOption[] = kledoRaw.map((p: any) => ({
@@ -93,36 +105,29 @@ export default function ProductSearchDropdown({
           source: 'kledo' as const,
         }));
 
-        // Dedup: hilangkan dari Kledo kalau sudah ada di lokal
         const localNames = new Set(localList.map((p) => p.name.toLowerCase().trim()));
         const dedupedKledo = kledoList.filter((p) => !localNames.has(p.name.toLowerCase().trim()));
-
         let merged = [...localList, ...dedupedKledo];
 
-        // Filter client-side — setiap kata harus ada di nama/SKU
         if (q.trim()) {
           const terms = q.toLowerCase().trim().split(/\s+/);
           const filtered = merged.filter((p) =>
-            terms.every(
-              (t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t),
-            ),
+            terms.every((t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t)),
           );
-          // Kalau filter terlalu ketat dan hasilnya kosong, tampilkan semua hasil API
           merged = filtered.length > 0 ? filtered : merged;
         }
 
         merged = merged.slice(0, 10);
         setSuggestions(merged);
-        setOpen(merged.length > 0);
+        if (merged.length > 0) { updatePos(); setOpen(true); }
       } catch { setSuggestions([]); }
       finally { setLoading(false); }
     }, 300);
-  }, []);
+  }, [updatePos]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    onChange?.(v);
-    search(v);
+    onChange?.(e.target.value);
+    search(e.target.value);
   };
 
   const handleSelect = (p: ProductOption) => {
@@ -139,21 +144,24 @@ export default function ProductSearchDropdown({
   };
 
   return (
-    <div className="relative w-full">
+    <div ref={containerRef} className="relative w-full">
       <div className="relative">
         <input
-          className="w-full rounded-lg px-3 py-2 text-sm pr-8"
-          style={{ border: `1px solid ${open ? accentColor : '#EDE8F5'}`, color: '#1E1B4B', outline: 'none', background: '#fff' }}
+          className="w-full rounded-xl px-3 py-2.5 text-sm pr-8"
+          style={{
+            border: `1.5px solid ${open ? accentColor : '#E5E7EB'}`,
+            color: '#1E1B4B',
+            outline: 'none',
+            background: '#fff',
+            transition: 'border-color .15s',
+          }}
           placeholder={placeholder}
           value={value}
           disabled={disabled}
           autoComplete="off"
           onChange={handleChange}
-          onFocus={(e) => { e.target.style.borderColor = accentColor; if (value.length >= 2) search(value); }}
-          onBlur={(e) => {
-            e.target.style.borderColor = '#EDE8F5';
-            setTimeout(() => { setSuggestions([]); setOpen(false); }, 200);
-          }}
+          onFocus={() => { updatePos(); if (value.length >= 2) search(value); }}
+          onBlur={() => setTimeout(() => { setSuggestions([]); setOpen(false); }, 180)}
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
           {loading
@@ -162,21 +170,32 @@ export default function ProductSearchDropdown({
         </div>
       </div>
 
+      {/* Dropdown render dengan position:fixed agar tidak ikut scroll */}
       {open && suggestions.length > 0 && (
         <div
-          className="absolute left-0 right-0 top-full mt-1 z-50 bg-white rounded-xl overflow-hidden"
-          style={{ border: '1px solid #EDE8F5', boxShadow: '0 8px 24px rgba(47,43,61,.14)' }}
+          style={{
+            position: 'fixed',
+            top: dropPos.top,
+            left: dropPos.left,
+            width: dropPos.width,
+            zIndex: 99999,
+            background: '#fff',
+            borderRadius: 14,
+            border: '1.5px solid #EDE8F5',
+            boxShadow: '0 12px 40px rgba(47,43,61,.18)',
+            overflow: 'hidden',
+          }}
         >
           {suggestions.map((p) => (
             <button
               key={p.id}
               type="button"
               onMouseDown={() => handleSelect(p)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition"
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
               style={{ borderBottom: '1px solid #F5F3FF' }}
             >
               <div
-                className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
+                className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0"
                 style={{
                   background: p.source === 'kledo'
                     ? 'linear-gradient(135deg, #6366F1, #8B5CF6)'
@@ -187,24 +206,21 @@ export default function ProductSearchDropdown({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-semibold truncate" style={{ color: '#1E1B4B' }}>{p.name}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: '#1E1B4B' }}>{p.name}</p>
                   {p.source === 'kledo' && (
-                    <span
-                      className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                      style={{ background: 'rgba(99,102,241,.12)', color: '#6366F1' }}
-                    >
+                    <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'rgba(99,102,241,.12)', color: '#6366F1' }}>
                       Kledo
                     </span>
                   )}
                 </div>
-                <p className="text-[11px]" style={{ color: '#9CA3AF' }}>
-                  SKU: {p.sku || '-'}
-                  {p.unit?.name && ` · ${p.unit.name}`}
+                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+                  SKU: {p.sku || '-'}{p.unit?.name ? ` · ${p.unit.name}` : ''}
                 </p>
               </div>
-              <div className="text-right flex-shrink-0">
-                <p className="text-xs font-bold" style={{ color: accentColor }}>{fmtRp(p.hargaJual)}</p>
-                <p className="text-[10px] font-semibold" style={{ color: stockColor(p.stok, p.source) }}>
+              <div className="text-right flex-shrink-0 pl-2">
+                <p className="text-sm font-bold" style={{ color: accentColor }}>{fmtRp(p.hargaJual)}</p>
+                <p className="text-[11px] font-semibold mt-0.5" style={{ color: stockColor(p.stok, p.source) }}>
                   {p.source === 'kledo' ? 'Dari Kledo' : `Stok: ${p.stok}`}
                 </p>
               </div>
