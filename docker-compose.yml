@@ -1,65 +1,12 @@
 # =====================================================
-# Gentong Mas ERP — Docker Compose untuk CasaOS
+# Gentong Mas ERP — Frontend Only (Backend via ngrok)
 # =====================================================
 # Sebelum jalankan:
-# 1. Salin .env.example → .env lalu isi SERVER_IP dan JWT secrets
+# 1. Salin .env.example → .env lalu isi BACKEND_URL
 # 2. docker compose up -d --build
 # =====================================================
 
 services:
-
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-erp}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-erp_password}
-      POSTGRES_DB: ${POSTGRES_DB:-gentong_mas_erp}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-erp} -d ${POSTGRES_DB:-gentong_mas_erp}']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - erp-net
-
-  backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
-    restart: unless-stopped
-    ports:
-      - '8000:8000'
-    environment:
-      NODE_ENV: production
-      PORT: 8000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-erp}:${POSTGRES_PASSWORD:-erp_password}@postgres:5432/${POSTGRES_DB:-gentong_mas_erp}
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-use-openssl-rand}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-use-openssl-rand}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
-      APP_URL: http://${SERVER_IP:-localhost}:8000
-      CORS_ORIGINS: ${CORS_ORIGINS:-}
-      FONNTE_TOKEN: ${FONNTE_TOKEN:-}
-      FONNTE_GROUP_INVOICE: ${FONNTE_GROUP_INVOICE:-}
-      FONNTE_GROUP_BUKTI_TF: ${FONNTE_GROUP_BUKTI_TF:-}
-      KLEDO_TOKEN: ${KLEDO_TOKEN:-}
-      KLEDO_BASE_URL: ${KLEDO_BASE_URL:-https://api.kledo.com/api/v1}
-      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
-      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:8000/api/health || exit 1']
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 120s
-    networks:
-      - erp-net
 
   frontend:
     build:
@@ -74,18 +21,5 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      BACKEND_URL: http://backend:8000
-      NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:8000
+      BACKEND_URL: ${BACKEND_URL:-https://briskly-underpaid-shucking.ngrok-free.dev}
       NEXT_PUBLIC_APP_NAME: "Gentong Mas ERP"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - erp-net
-
-networks:
-  erp-net:
-    driver: bridge
-
-volumes:
-  postgres_data:
