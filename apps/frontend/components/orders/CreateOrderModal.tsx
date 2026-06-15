@@ -279,35 +279,14 @@ export default function CreateOrderModal({
             </div>
           </section>
 
-          {/* ── SEKSI 2: Info Transaksi (sesuai Kledo) ── */}
+          {/* ── SEKSI 2: Info Transaksi ── */}
           <section className="space-y-4">
             <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Info Transaksi</p>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label><Calendar className="h-3 w-3 inline mr-1" style={{ color: COLOR }} />Tanggal Transaksi</Label>
-                <input type="date" className={inputCls} style={inputSt}
-                  value={tanggal} onChange={e => setTanggal(e.target.value)}
-                  onFocus={e => (e.target.style.borderColor = COLOR)} onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
-              </div>
-              <div>
-                <Label optional><Calendar className="h-3 w-3 inline mr-1" style={{ color: '#9CA3AF' }} />Jatuh Tempo</Label>
-                <input type="date" className={inputCls} style={inputSt}
-                  value={jatuhTempo} onChange={e => setJatuhTempo(e.target.value)}
-                  onFocus={e => (e.target.style.borderColor = COLOR)} onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
-              </div>
-              <div>
-                <Label optional><FileText className="h-3 w-3 inline mr-1" style={{ color: '#9CA3AF' }} />No. Referensi</Label>
-                <input className={inputCls} style={inputSt} placeholder="cth: SO-2024-001"
-                  value={noReferensi} onChange={e => setNoReferensi(e.target.value)}
-                  onFocus={e => (e.target.style.borderColor = COLOR)} onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
-              </div>
-              <div>
-                <Label optional>Catatan / Memo</Label>
-                <input className={inputCls} style={inputSt} placeholder="Catatan untuk Kledo..."
-                  value={catatan} onChange={e => setCatatan(e.target.value)}
-                  onFocus={e => (e.target.style.borderColor = COLOR)} onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
-              </div>
+            <div>
+              <Label optional>Catatan / Pesan</Label>
+              <input className={inputCls} style={inputSt} placeholder="Catatan atau pesan untuk order ini..."
+                value={catatan} onChange={e => setCatatan(e.target.value)}
+                onFocus={e => (e.target.style.borderColor = COLOR)} onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
             </div>
           </section>
 

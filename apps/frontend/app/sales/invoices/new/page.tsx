@@ -271,26 +271,12 @@ export default function NewInvoicePage() {
             </div>
           </Section>
 
-          {/* ── Info Transaksi (sesuai Kledo) ── */}
+          {/* ── Info Transaksi ── */}
           <Section title="Info Transaksi">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Tanggal Transaksi">
-                <input type="date" className={inputCls} style={inputSt} value={tanggal}
-                  onChange={e => setTanggal(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
-              </Field>
-              <Field label="Jatuh Tempo" optional>
-                <input type="date" className={inputCls} style={inputSt} value={dueDate}
-                  onChange={e => setDueDate(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
-              </Field>
-              <Field label="No. Referensi" optional>
-                <input className={inputCls} style={inputSt} placeholder="cth: INV-2024-001"
-                  value={noRef} onChange={e => setNoRef(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
-              </Field>
-              <Field label="Catatan / Memo" optional>
-                <input className={inputCls} style={inputSt} placeholder="Catatan untuk Kledo..."
-                  value={notes} onChange={e => setNotes(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
-              </Field>
-            </div>
+            <Field label="Catatan / Pesan" optional>
+              <input className={inputCls} style={inputSt} placeholder="Catatan atau pesan untuk order ini..."
+                value={notes} onChange={e => setNotes(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
+            </Field>
           </Section>
 
           {/* ── Item Invoice ── */}
