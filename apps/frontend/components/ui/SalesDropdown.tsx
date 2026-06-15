@@ -39,10 +39,11 @@ export default function SalesDropdown({
   accentColor = '#00ACC1',
   placeholder = 'Pilih nama sales...',
 }: Props) {
-  const [options, setOptions]   = useState<SalesOption[]>(STATIC_SALES);
-  const [open, setOpen]         = useState(false);
-  const [selected, setSelected] = useState<SalesOption | null>(null);
-  const containerRef            = useRef<HTMLDivElement>(null);
+  const [options, setOptions]     = useState<SalesOption[]>(STATIC_SALES);
+  const [open, setOpen]           = useState(false);
+  const [query, setQuery]         = useState('');        // teks yang diketik user
+  const [selected, setSelected]   = useState<SalesOption | null>(null);
+  const containerRef              = useRef<HTMLDivElement>(null);
 
   /* Coba muat tambahan dari backend; jika gagal tetap pakai STATIC_SALES */
   const loadExtra = useCallback(async () => {
@@ -58,24 +59,44 @@ export default function SalesDropdown({
         .map(u => ({ id: u.id, name: u.name ?? u.email, phone: u.phone ?? u.noHp ?? null, role: u.role }));
 
       if (backendSales.length > 0) {
-        /* Gabung: static dulu, tambahkan backend yang belum ada di static */
         const staticNames = new Set(STATIC_SALES.map(s => s.name.toLowerCase()));
         const extra = backendSales.filter(u => !staticNames.has(u.name.toLowerCase()));
         setOptions([...STATIC_SALES, ...extra]);
       }
     } catch {
-      /* Tidak masalah — tetap pakai STATIC_SALES */
+      /* tidak masalah — tetap pakai STATIC_SALES */
     }
   }, []);
 
   useEffect(() => { loadExtra(); }, [loadExtra]);
 
-  const filtered = options.filter(o =>
-    !value || o.name.toLowerCase().includes(value.toLowerCase()),
-  );
+  /* Sinkronkan selected saat value berubah dari luar */
+  useEffect(() => {
+    if (!value) { setSelected(null); return; }
+    const match = options.find(o => o.name.toLowerCase() === value.toLowerCase());
+    if (match) setSelected(match);
+  }, [value, options]);
+
+  /* Filter berdasarkan query (bukan value) agar hasil dari luar tidak menyaring daftar */
+  const filtered = query
+    ? options.filter(o => o.name.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  const handleFocus = () => {
+    setQuery('');   // reset query agar semua opsi terlihat
+    setOpen(true);
+  };
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    onChange(e.target.value);   // nilai mentah (belum dipilih dari daftar)
+    setSelected(null);
+    setOpen(true);
+  };
 
   const handleSelect = (s: SalesOption) => {
     setSelected(s);
+    setQuery('');
     onChange(s.name);
     setOpen(false);
     onSelect?.(s);
@@ -83,26 +104,32 @@ export default function SalesDropdown({
 
   const handleClear = () => {
     setSelected(null);
+    setQuery('');
     onChange('');
     setOpen(false);
   };
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node))
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
+        setQuery('');
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  /* Warna avatar per inisial (deterministik) */
+  /* Warna avatar deterministik dari nama */
   const avatarColor = (name: string) => {
     const colors = ['#00ACC1', '#6366F1', '#F59E0B', '#22C55E', '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899', '#F97316'];
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
   };
+
+  /* Teks yang tampil di input: saat open & belum ada yang dipilih → tampilkan query; selain itu tampilkan value */
+  const displayText = open && !selected ? query : value;
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -115,26 +142,29 @@ export default function SalesDropdown({
           className="w-full rounded-xl py-2.5 text-sm"
           style={{
             paddingLeft: '2.2rem',
-            paddingRight: selected ? '3.5rem' : '2.2rem',
+            paddingRight: selected || value ? '3.5rem' : '2.2rem',
             border: `1.5px solid ${open ? accentColor : '#EDE8F5'}`,
             color: '#1E1B4B',
             outline: 'none',
             background: '#fff',
             transition: 'border-color 0.15s',
           }}
-          placeholder={placeholder}
-          value={value}
+          placeholder={open ? 'Ketik untuk cari...' : placeholder}
+          value={displayText}
           autoComplete="off"
-          onChange={e => { onChange(e.target.value); setSelected(null); setOpen(true); }}
-          onFocus={() => setOpen(true)}
+          onChange={handleInput}
+          onFocus={handleFocus}
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {selected && (
+          {(selected || value) && (
             <button type="button" onMouseDown={handleClear} className="p-0.5 rounded hover:bg-gray-100">
               <X className="h-3 w-3" style={{ color: '#9CA3AF' }} />
             </button>
           )}
-          <ChevronDown className="h-3.5 w-3.5" style={{ color: '#9CA3AF', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+          <ChevronDown
+            className="h-3.5 w-3.5"
+            style={{ color: '#9CA3AF', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}
+          />
         </div>
       </div>
 
@@ -145,10 +175,9 @@ export default function SalesDropdown({
           style={{ zIndex: 9999, boxShadow: '0 8px 32px rgba(47,43,61,.18)', border: '1.5px solid #EDE8F5', maxHeight: 320, overflowY: 'auto' }}
         >
           {filtered.length === 0 ? (
-            /* Ketik manual */
             <div className="px-4 py-3">
-              <p className="text-xs font-semibold" style={{ color: '#1E1B4B' }}>{value}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: '#9CA3AF' }}>Tekan Enter untuk pakai nama ini</p>
+              <p className="text-xs font-semibold" style={{ color: '#1E1B4B' }}>{query}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: '#9CA3AF' }}>Tekan Enter atau klik di luar untuk pakai nama ini</p>
             </div>
           ) : (
             filtered.map(s => {
