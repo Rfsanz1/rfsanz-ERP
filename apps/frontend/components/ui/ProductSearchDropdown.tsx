@@ -39,7 +39,6 @@ export default function ProductSearchDropdown({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  /* posisi fixed dropdown — ikuti input, tidak ikut scroll */
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -50,7 +49,6 @@ export default function ProductSearchDropdown({
     setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
   }, []);
 
-  /* tutup dropdown saat scroll (mobile: tidak halangi gesture), update posisi saat resize */
   useEffect(() => {
     if (!open) return;
     updatePos();
@@ -115,11 +113,7 @@ export default function ProductSearchDropdown({
         if (q.trim()) {
           const terms = q.toLowerCase().trim().split(/\s+/);
           merged = merged.filter((p) =>
-            terms.every(
-              (t) =>
-                p.name.toLowerCase().includes(t) ||
-                (p.sku ?? '').toLowerCase().includes(t),
-            ),
+            terms.every((t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t)),
           );
         }
 
@@ -156,10 +150,10 @@ export default function ProductSearchDropdown({
         <input
           className="w-full rounded-xl px-3 py-2.5 text-sm pr-8"
           style={{
-            border: `1.5px solid ${open ? accentColor : '#E5E7EB'}`,
-            color: '#1E1B4B',
+            border: `1.5px solid ${open ? accentColor : 'var(--border)'}`,
+            color: 'var(--text-primary)',
             outline: 'none',
-            background: '#fff',
+            background: 'var(--surface)',
             transition: 'border-color .15s',
           }}
           placeholder={placeholder}
@@ -172,12 +166,11 @@ export default function ProductSearchDropdown({
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
           {loading
-            ? <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" />
-            : <Search className="h-3.5 w-3.5 text-gray-300" />}
+            ? <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--text-secondary)' }} />
+            : <Search className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />}
         </div>
       </div>
 
-      {/* Dropdown render dengan position:fixed agar tidak ikut scroll */}
       {open && suggestions.length > 0 && (
         <div
           style={{
@@ -186,10 +179,10 @@ export default function ProductSearchDropdown({
             left: dropPos.left,
             width: dropPos.width,
             zIndex: 99999,
-            background: '#fff',
+            background: 'var(--surface)',
             borderRadius: 14,
-            border: '1.5px solid #EDE8F5',
-            boxShadow: '0 12px 40px rgba(47,43,61,.18)',
+            border: '1.5px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
             overflow: 'hidden',
           }}
         >
@@ -198,8 +191,10 @@ export default function ProductSearchDropdown({
               key={p.id}
               type="button"
               onMouseDown={() => handleSelect(p)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-              style={{ borderBottom: '1px solid #F5F3FF' }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors"
+              style={{ borderBottom: '1px solid var(--border)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0"
@@ -213,7 +208,7 @@ export default function ProductSearchDropdown({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-semibold truncate" style={{ color: '#1E1B4B' }}>{p.name}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{p.name}</p>
                   {p.source === 'kledo' && (
                     <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
                       style={{ background: 'rgba(99,102,241,.12)', color: '#6366F1' }}>
@@ -221,7 +216,7 @@ export default function ProductSearchDropdown({
                     </span>
                   )}
                 </div>
-                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                   SKU: {p.sku || '-'}{p.unit?.name ? ` · ${p.unit.name}` : ''}
                 </p>
               </div>

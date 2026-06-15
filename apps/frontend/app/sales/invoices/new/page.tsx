@@ -6,7 +6,7 @@ import { useAuthStore } from '../../../../lib/store/useAuthStore';
 import AppShell from '../../../../components/layout/AppShell';
 import { api } from '@/lib/api';
 import {
-  ArrowLeft, Plus, Trash2, Calendar, Tag, Percent,
+  ArrowLeft, Plus, Trash2, Tag, Percent, Truck,
   Link2, CheckCircle2, AlertCircle, Package,
 } from 'lucide-react';
 import CustomerSearchDropdown, { type CustomerOption } from '../../../../components/ui/CustomerSearchDropdown';
@@ -17,16 +17,20 @@ const C = '#00ACC1';
 const today = () => new Date().toISOString().slice(0, 10);
 
 const inputCls = 'w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-colors';
-const inputSt = { border: '1.5px solid #E5E7EB', color: '#1E1B4B', backgroundColor: '#fff' };
+const inputSt: React.CSSProperties = {
+  border: '1.5px solid var(--border)',
+  color: 'var(--text-primary)',
+  backgroundColor: 'var(--surface)',
+};
 const focusBorder = (e: React.FocusEvent<any>) => (e.target.style.borderColor = C);
-const blurBorder  = (e: React.FocusEvent<any>) => (e.target.style.borderColor = '#E5E7EB');
+const blurBorder  = (e: React.FocusEvent<any>) => (e.target.style.borderColor = 'var(--border)');
 
 function Field({ label, optional, children }: { label: string; optional?: boolean; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold" style={{ color: '#374151' }}>
+      <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
         {label}
-        {optional && <span className="ml-1 font-normal text-[11px]" style={{ color: '#9CA3AF' }}>(opsional)</span>}
+        {optional && <span className="ml-1 font-normal text-[11px]" style={{ color: 'var(--text-muted)' }}>(opsional)</span>}
       </label>
       {children}
     </div>
@@ -35,9 +39,9 @@ function Field({ label, optional, children }: { label: string; optional?: boolea
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl p-6 space-y-4"
-      style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)', overflow: 'visible' }}>
-      <h3 className="text-sm font-bold" style={{ color: '#1E1B4B' }}>{title}</h3>
+    <div className="rounded-2xl p-6 space-y-4"
+      style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', boxShadow: 'var(--shadow-sm)', overflow: 'visible' }}>
+      <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
       {children}
     </div>
   );
@@ -62,30 +66,27 @@ export default function NewInvoicePage() {
   const { user } = useAuthStore();
   const router = useRouter();
 
-  const [customerName, setCustomerName]   = useState('');
-  const [customerId, setCustomerId]       = useState('');
+  const [customerName, setCustomerName]     = useState('');
+  const [customerId, setCustomerId]         = useState('');
   const [kledoContactId, setKledoContactId] = useState('');
   const [resolvingCustomer, setResolvingCustomer] = useState(false);
 
-  const [salesName, setSalesName] = useState(user?.name ?? '');
-  const [tanggal, setTanggal]     = useState(today());
-  const [dueDate, setDueDate]     = useState('');
-  const [noRef, setNoRef]         = useState('');
-  const [notes, setNotes]         = useState('');
+  const [salesName, setSalesName]     = useState(user?.name ?? '');
+  const [tanggal]                     = useState(today());
+  const [notes, setNotes]             = useState('');
   const [diskonTotal, setDiskonTotal] = useState(0);
-  const [pajak, setPajak]         = useState(0);
+  const [pajak, setPajak]             = useState(0);
+  const [ongkir, setOngkir]           = useState(0);
 
-  const [items, setItems] = useState<InvoiceItem[]>([emptyItem()]);
-  const [loading, setLoading]     = useState(false);
+  const [items, setItems]       = useState<InvoiceItem[]>([emptyItem()]);
+  const [loading, setLoading]   = useState(false);
   const [kledoStatus, setKledoStatus] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle');
-  const [error, setError]         = useState('');
+  const [error, setError]       = useState('');
 
-  /* ── Derived ── */
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
-  const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak);
+  const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
   const fmtRp = (v: number) => v.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
-  /* ── Handlers ── */
   const handleCustomerSelect = async (c: CustomerOption) => {
     if (c.source === 'local') {
       setCustomerId(c.id);
@@ -141,49 +142,40 @@ export default function NewInvoicePage() {
         resolvedId = res.data.id;
       }
 
-      /* 1. Simpan invoice ke backend lokal */
       const res = await api.post('/invoices', {
         customerId: resolvedId,
         salesName: salesName.trim() || undefined,
         tanggal,
-        dueDate: dueDate || undefined,
-        noReferensi: noRef.trim() || undefined,
         notes: notes.trim() || undefined,
         diskon: diskonTotal || undefined,
         pajak: pajak || undefined,
+        ongkir: ongkir || undefined,
         subtotal: subtotalBruto,
         grandTotal,
         items: items.map(it => ({
-          nama: it.nama,
-          qty: it.qty,
-          harga: it.harga,
-          diskon: it.diskonItem || undefined,
-          subtotal: it.subtotal,
-          productId: it.productId,
-          kledoProductId: it.kledoProductId ?? undefined,
+          nama: it.nama, qty: it.qty, harga: it.harga,
+          diskon: it.diskonItem || undefined, subtotal: it.subtotal,
+          productId: it.productId, kledoProductId: it.kledoProductId ?? undefined,
         })),
       });
 
-      /* 2. Push ke Kledo sebagai invoice */
       setKledoStatus('syncing');
       try {
         await api.post('/kledo/invoices', {
           trans_date: tanggal,
-          due_date: dueDate || undefined,
-          ref_number: noRef.trim() || undefined,
           memo: notes.trim() || undefined,
           contact_id: kledoContactId ? Number(kledoContactId) : undefined,
           contact_name: customerName.trim(),
           discount: diskonTotal || undefined,
           include_tax: pajak > 0 ? 1 : 0,
-          items: items.map(it => ({
-            product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
-            name_item: it.nama,
-            qty: it.qty,
-            rate: it.harga,
-            discount: it.diskonItem || undefined,
-            unit: it.unit,
-          })),
+          items: [
+            ...items.map(it => ({
+              product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
+              name_item: it.nama, qty: it.qty, rate: it.harga,
+              discount: it.diskonItem || undefined, unit: it.unit,
+            })),
+            ...(ongkir > 0 ? [{ name_item: 'Biaya Pengiriman', qty: 1, rate: ongkir }] : []),
+          ],
         });
         setKledoStatus('ok');
       } catch { setKledoStatus('error'); }
@@ -201,12 +193,13 @@ export default function NewInvoicePage() {
 
         {/* Header */}
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 rounded-xl" style={{ border: '1.5px solid #EDE8F5', color: C }}>
+          <button onClick={() => router.back()} className="p-2 rounded-xl transition-colors"
+            style={{ border: '1.5px solid var(--border)', color: C }}>
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-xl font-bold" style={{ color: '#1E1B4B' }}>Buat Invoice Baru</h1>
-            <p className="text-sm mt-0.5 flex items-center gap-1.5" style={{ color: '#9CA3AF' }}>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Buat Invoice Baru</h1>
+            <p className="text-sm mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
               <Link2 className="h-3.5 w-3.5" /> Tersinkron otomatis ke Kledo
             </p>
           </div>
@@ -214,16 +207,16 @@ export default function NewInvoicePage() {
 
         {error && (
           <div className="rounded-xl p-3 text-sm flex items-center gap-2"
-            style={{ backgroundColor: 'rgba(244,67,54,.08)', color: '#F44336', border: '1.5px solid rgba(244,67,54,.2)' }}>
+            style={{ backgroundColor: 'var(--danger-light)', color: 'var(--danger)', border: '1.5px solid rgba(239,68,68,.25)' }}>
             ⚠ {error}
           </div>
         )}
         {kledoStatus !== 'idle' && (
           <div className="flex items-center gap-2 rounded-xl p-3 text-sm"
             style={{
-              background: kledoStatus === 'ok' ? 'rgba(34,197,94,.08)' : kledoStatus === 'error' ? 'rgba(234,84,85,.08)' : `${C}0A`,
-              border: `1.5px solid ${kledoStatus === 'ok' ? 'rgba(34,197,94,.25)' : kledoStatus === 'error' ? 'rgba(234,84,85,.25)' : `${C}25`}`,
-              color: kledoStatus === 'ok' ? '#16A34A' : kledoStatus === 'error' ? '#EA5455' : C,
+              background: kledoStatus === 'ok' ? 'var(--success-light)' : kledoStatus === 'error' ? 'var(--danger-light)' : `${C}0A`,
+              border: `1.5px solid ${kledoStatus === 'ok' ? 'rgba(16,185,129,.25)' : kledoStatus === 'error' ? 'rgba(239,68,68,.25)' : `${C}25`}`,
+              color: kledoStatus === 'ok' ? 'var(--success)' : kledoStatus === 'error' ? 'var(--danger)' : C,
             }}>
             {kledoStatus === 'syncing' && <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: `${C}40`, borderTopColor: C }} />}
             {kledoStatus === 'ok' && <CheckCircle2 className="h-4 w-4" />}
@@ -242,7 +235,7 @@ export default function NewInvoicePage() {
           <Section title="Info Pelanggan">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <Field label="Pelanggan" >
+                <Field label="Pelanggan">
                   <CustomerSearchDropdown
                     value={customerName}
                     onChange={v => { setCustomerName(v); setCustomerId(''); setKledoContactId(''); }}
@@ -284,15 +277,14 @@ export default function NewInvoicePage() {
             <div className="space-y-3">
               {items.map((it, idx) => (
                 <div key={it.id} className="rounded-2xl p-4 space-y-3"
-                  style={{ border: '1.5px solid #F0EDFB', background: '#FDFCFF' }}>
+                  style={{ border: '1.5px solid var(--border)', background: 'var(--surface-sunken)' }}>
 
-                  {/* Header kartu */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="flex h-6 w-6 items-center justify-center rounded-lg text-[11px] font-bold text-white" style={{ background: C }}>
                         {idx + 1}
                       </div>
-                      <span className="text-xs font-semibold" style={{ color: '#6B7280' }}>Produk #{idx + 1}</span>
+                      <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Produk #{idx + 1}</span>
                       {it.unit && (
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${C}14`, color: C }}>{it.unit}</span>
                       )}
@@ -304,18 +296,19 @@ export default function NewInvoicePage() {
                     </div>
                     {items.length > 1 && (
                       <button type="button" onClick={() => removeItem(it.id)}
-                        className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                        style={{ color: '#EA5455' }}>
+                        className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-colors"
+                        style={{ color: 'var(--danger)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--danger-light)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                         <Trash2 className="h-3.5 w-3.5" /> Hapus
                       </button>
                     )}
                   </div>
 
-                  {/* Nama Produk (dengan dropdown) */}
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                       <Package className="h-3 w-3 inline mr-1" style={{ color: C }} />
-                      Nama Produk / Jasa <span style={{ color: '#EA5455' }}>*</span>
+                      Nama Produk / Jasa <span style={{ color: 'var(--danger)' }}>*</span>
                     </label>
                     <ProductSearchDropdown
                       value={it.nama}
@@ -326,23 +319,22 @@ export default function NewInvoicePage() {
                     />
                   </div>
 
-                  {/* Qty + Harga + Diskon + Subtotal */}
                   <div className="grid grid-cols-4 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>Qty</label>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Qty</label>
                       <input type="number" className={`${inputCls} text-center`} style={inputSt} min={1}
                         value={it.qty} onChange={e => updateItem(it.id, 'qty', Number(e.target.value) || 1)}
                         onFocus={focusBorder} onBlur={blurBorder} />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>Harga Satuan (Rp)</label>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Harga Satuan (Rp)</label>
                       <input type="number" className={`${inputCls} text-right`} style={inputSt} min={0}
                         value={it.harga} onChange={e => updateItem(it.id, 'harga', Number(e.target.value) || 0)}
                         onFocus={focusBorder} onBlur={blurBorder} />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>
-                        <Tag className="h-3 w-3 inline mr-0.5" style={{ color: '#9CA3AF' }} /> Diskon Item (Rp)
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                        <Tag className="h-3 w-3 inline mr-0.5" style={{ color: 'var(--text-muted)' }} /> Diskon Item (Rp)
                       </label>
                       <input type="number" className={`${inputCls} text-right`} style={inputSt} min={0}
                         value={it.diskonItem || ''} placeholder="0"
@@ -350,7 +342,7 @@ export default function NewInvoicePage() {
                         onFocus={focusBorder} onBlur={blurBorder} />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#374151' }}>Subtotal</label>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Subtotal</label>
                       <div className="w-full rounded-xl px-3 py-2.5 text-sm text-right font-bold"
                         style={{ background: `${C}0D`, color: C, border: `1.5px solid ${C}30` }}>
                         {fmtRp(it.subtotal)}
@@ -372,34 +364,45 @@ export default function NewInvoicePage() {
           <Section title="Ringkasan">
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#6B7280' }}>Subtotal ({items.length} item)</span>
-                <span className="font-semibold" style={{ color: '#1E1B4B' }}>{fmtRp(subtotalBruto)}</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Subtotal ({items.length} item)</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{fmtRp(subtotalBruto)}</span>
               </div>
 
               <div className="flex items-center justify-between gap-4">
-                <span className="text-sm flex items-center gap-1.5" style={{ color: '#6B7280' }}>
+                <span className="text-sm flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
                   <Tag className="h-3.5 w-3.5" /> Diskon Total (Rp)
                 </span>
                 <input type="number" min={0} className="w-36 rounded-xl px-3 py-2 text-sm text-right outline-none"
-                  style={{ border: '1.5px solid #E5E7EB', color: '#1E1B4B' }}
+                  style={{ border: '1.5px solid var(--border)', color: 'var(--text-primary)', background: 'var(--surface)' }}
                   value={diskonTotal || ''} placeholder="0"
                   onChange={e => setDiskonTotal(Number(e.target.value) || 0)}
                   onFocus={focusBorder} onBlur={blurBorder} />
               </div>
 
               <div className="flex items-center justify-between gap-4">
-                <span className="text-sm flex items-center gap-1.5" style={{ color: '#6B7280' }}>
+                <span className="text-sm flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
                   <Percent className="h-3.5 w-3.5" /> Pajak / PPN (Rp)
                 </span>
                 <input type="number" min={0} className="w-36 rounded-xl px-3 py-2 text-sm text-right outline-none"
-                  style={{ border: '1.5px solid #E5E7EB', color: '#1E1B4B' }}
+                  style={{ border: '1.5px solid var(--border)', color: 'var(--text-primary)', background: 'var(--surface)' }}
                   value={pajak || ''} placeholder="0"
                   onChange={e => setPajak(Number(e.target.value) || 0)}
                   onFocus={focusBorder} onBlur={blurBorder} />
               </div>
 
-              <div className="flex justify-between items-center pt-3" style={{ borderTop: '1.5px solid #E5E7EB' }}>
-                <span className="text-sm font-bold" style={{ color: '#1E1B4B' }}>Grand Total</span>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-sm flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  <Truck className="h-3.5 w-3.5" /> Biaya Pengiriman (Rp)
+                </span>
+                <input type="number" min={0} className="w-36 rounded-xl px-3 py-2 text-sm text-right outline-none"
+                  style={{ border: '1.5px solid var(--border)', color: 'var(--text-primary)', background: 'var(--surface)' }}
+                  value={ongkir || ''} placeholder="0"
+                  onChange={e => setOngkir(Number(e.target.value) || 0)}
+                  onFocus={focusBorder} onBlur={blurBorder} />
+              </div>
+
+              <div className="flex justify-between items-center pt-3" style={{ borderTop: '1.5px solid var(--border)' }}>
+                <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Grand Total</span>
                 <span className="text-2xl font-bold" style={{ color: C }}>{fmtRp(grandTotal)}</span>
               </div>
             </div>
@@ -408,7 +411,7 @@ export default function NewInvoicePage() {
           <div className="flex gap-3 justify-end">
             <button type="button" onClick={() => router.back()}
               className="px-5 py-2.5 rounded-xl text-sm font-semibold"
-              style={{ border: '1.5px solid #E5E7EB', color: '#9CA3AF' }}>
+              style={{ border: '1.5px solid var(--border)', color: 'var(--text-muted)' }}>
               Batal
             </button>
             <button type="submit" disabled={loading || resolvingCustomer}
