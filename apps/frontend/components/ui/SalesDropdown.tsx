@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, User, Phone, X } from 'lucide-react';
+import { ChevronDown, Phone, X, User } from 'lucide-react';
 import { api } from '../../lib/api';
 
 export interface SalesOption {
@@ -10,6 +10,19 @@ export interface SalesOption {
   phone?: string | null;
   role?: string;
 }
+
+/* ── Daftar sales tetap ── */
+const STATIC_SALES: SalesOption[] = [
+  { id: 's1', name: 'Lehan',    phone: '0857-2982-4485', role: 'sales' },
+  { id: 's2', name: 'Priyanto', phone: '0823-3479-2357', role: 'sales' },
+  { id: 's3', name: 'Agus',     phone: '0857-3084-5708', role: 'sales' },
+  { id: 's4', name: 'Dhani',    phone: '0812-1599-2058', role: 'sales' },
+  { id: 's5', name: 'Imam',     phone: '0858-9233-3127', role: 'sales' },
+  { id: 's6', name: 'Wiwit',    phone: '0857-4115-6110', role: 'sales' },
+  { id: 's7', name: 'Agung',    phone: '0882-3368-4224', role: 'sales' },
+  { id: 's8', name: 'Rio',      phone: '0859-5282-5277', role: 'sales' },
+  { id: 's9', name: 'Andre',    phone: '0821-3763-3912', role: 'sales' },
+];
 
 interface Props {
   value: string;
@@ -24,54 +37,42 @@ export default function SalesDropdown({
   onChange,
   onSelect,
   accentColor = '#00ACC1',
-  placeholder = 'Pilih atau ketik nama sales...',
+  placeholder = 'Pilih nama sales...',
 }: Props) {
-  const [options, setOptions] = useState<SalesOption[]>([]);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [options, setOptions]   = useState<SalesOption[]>(STATIC_SALES);
+  const [open, setOpen]         = useState(false);
   const [selected, setSelected] = useState<SalesOption | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef            = useRef<HTMLDivElement>(null);
 
-  const loadSales = useCallback(async () => {
-    if (options.length > 0) return;
-    setLoading(true);
+  /* Coba muat tambahan dari backend; jika gagal tetap pakai STATIC_SALES */
+  const loadExtra = useCallback(async () => {
     try {
       const res = await api.get('/users');
-      const users: any[] = res.data ?? [];
-      const salesUsers: SalesOption[] = users
-        .filter((u) => u.active !== false)
-        .filter((u) => {
+      const users: any[] = Array.isArray(res.data) ? res.data : [];
+      const backendSales: SalesOption[] = users
+        .filter(u => u.active !== false)
+        .filter(u => {
           const role = (u.role ?? '').toLowerCase();
           return role === 'sales' || role === 'admin' || role === 'owner' || role === 'super admin';
         })
-        .map((u) => ({
-          id: u.id,
-          name: u.name ?? u.email,
-          phone: u.phone ?? u.noHp ?? null,
-          role: u.role,
-        }));
-      setOptions(salesUsers);
-    } catch {
-      setOptions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [options.length]);
+        .map(u => ({ id: u.id, name: u.name ?? u.email, phone: u.phone ?? u.noHp ?? null, role: u.role }));
 
-  const filtered = options.filter((o) =>
+      if (backendSales.length > 0) {
+        /* Gabung: static dulu, tambahkan backend yang belum ada di static */
+        const staticNames = new Set(STATIC_SALES.map(s => s.name.toLowerCase()));
+        const extra = backendSales.filter(u => !staticNames.has(u.name.toLowerCase()));
+        setOptions([...STATIC_SALES, ...extra]);
+      }
+    } catch {
+      /* Tidak masalah — tetap pakai STATIC_SALES */
+    }
+  }, []);
+
+  useEffect(() => { loadExtra(); }, [loadExtra]);
+
+  const filtered = options.filter(o =>
     !value || o.name.toLowerCase().includes(value.toLowerCase()),
   );
-
-  const handleFocus = () => {
-    loadSales();
-    setOpen(true);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-    setSelected(null);
-    setOpen(true);
-  };
 
   const handleSelect = (s: SalesOption) => {
     setSelected(s);
@@ -87,27 +88,35 @@ export default function SalesDropdown({
   };
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node))
         setOpen(false);
-      }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const ROLE_COLOR: Record<string, string> = {
-    sales: '#0891B2', admin: '#6366F1', owner: '#D97706', 'super admin': '#DC2626',
+  /* Warna avatar per inisial (deterministik) */
+  const avatarColor = (name: string) => {
+    const colors = ['#00ACC1', '#6366F1', '#F59E0B', '#22C55E', '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899', '#F97316'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
   };
-  const roleColor = (r?: string) => ROLE_COLOR[(r ?? '').toLowerCase()] ?? '#9CA3AF';
 
   return (
     <div ref={containerRef} className="relative w-full">
+      {/* Input */}
       <div className="relative">
+        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+          <User className="h-3.5 w-3.5" style={{ color: open ? accentColor : '#C4B5FD' }} />
+        </div>
         <input
-          className="w-full rounded-lg px-3 py-2 text-sm pr-16"
+          className="w-full rounded-xl py-2.5 text-sm"
           style={{
-            border: `1px solid ${open ? accentColor : '#EDE8F5'}`,
+            paddingLeft: '2.2rem',
+            paddingRight: selected ? '3.5rem' : '2.2rem',
+            border: `1.5px solid ${open ? accentColor : '#EDE8F5'}`,
             color: '#1E1B4B',
             outline: 'none',
             background: '#fff',
@@ -116,89 +125,83 @@ export default function SalesDropdown({
           placeholder={placeholder}
           value={value}
           autoComplete="off"
-          onChange={handleChange}
-          onFocus={handleFocus}
+          onChange={e => { onChange(e.target.value); setSelected(null); setOpen(true); }}
+          onFocus={() => setOpen(true)}
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {loading && (
-            <div className="w-3.5 h-3.5 border-2 border-gray-200 rounded-full animate-spin"
-              style={{ borderTopColor: accentColor }} />
-          )}
-          {selected && !loading && (
+          {selected && (
             <button type="button" onMouseDown={handleClear} className="p-0.5 rounded hover:bg-gray-100">
-              <X className="h-3 w-3 text-gray-400" />
+              <X className="h-3 w-3" style={{ color: '#9CA3AF' }} />
             </button>
           )}
-          {!loading && (
-            <ChevronDown className="h-3.5 w-3.5 text-gray-300" />
-          )}
+          <ChevronDown className="h-3.5 w-3.5" style={{ color: '#9CA3AF', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
         </div>
       </div>
 
-      {open && (filtered.length > 0 || loading) && (
+      {/* Dropdown */}
+      {open && (
         <div
-          className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl overflow-hidden"
-          style={{ zIndex: 9999, boxShadow: '0 8px 32px rgba(47,43,61,.18)', border: '1px solid #EDE8F5' }}
+          className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl overflow-hidden"
+          style={{ zIndex: 9999, boxShadow: '0 8px 32px rgba(47,43,61,.18)', border: '1.5px solid #EDE8F5', maxHeight: 320, overflowY: 'auto' }}
         >
-          {loading ? (
-            <div className="px-4 py-4 text-center">
-              <div className="w-4 h-4 border-2 rounded-full animate-spin mx-auto"
-                style={{ borderColor: `${accentColor}30`, borderTopColor: accentColor }} />
+          {filtered.length === 0 ? (
+            /* Ketik manual */
+            <div className="px-4 py-3">
+              <p className="text-xs font-semibold" style={{ color: '#1E1B4B' }}>{value}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: '#9CA3AF' }}>Tekan Enter untuk pakai nama ini</p>
             </div>
           ) : (
-            filtered.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onMouseDown={() => handleSelect(s)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
-              >
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 text-white text-xs font-bold"
-                  style={{ background: `linear-gradient(135deg, ${roleColor(s.role)}, ${roleColor(s.role)}99)` }}
+            filtered.map(s => {
+              const color = avatarColor(s.name);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onMouseDown={() => handleSelect(s)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors"
+                  style={{ borderBottom: '1px solid #F5F3FF' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#FDFCFF')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  {(s.name ?? '?').charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold truncate" style={{ color: '#1E1B4B' }}>{s.name}</p>
-                    {s.role && (
-                      <span
-                        className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full capitalize"
-                        style={{ background: `${roleColor(s.role)}18`, color: roleColor(s.role) }}
-                      >
-                        {s.role}
-                      </span>
+                  {/* Avatar */}
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0 text-white text-xs font-bold"
+                    style={{ background: `linear-gradient(135deg, ${color}, ${color}BB)` }}
+                  >
+                    {s.name.charAt(0).toUpperCase()}
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: '#1E1B4B' }}>{s.name}</p>
+                    {s.phone && (
+                      <p className="text-[11px] flex items-center gap-0.5 mt-0.5" style={{ color: '#9CA3AF' }}>
+                        <Phone className="h-2.5 w-2.5" /> {s.phone}
+                      </p>
                     )}
                   </div>
+                  {/* WA quick-link */}
                   {s.phone && (
-                    <p className="text-[11px] flex items-center gap-0.5" style={{ color: '#9CA3AF' }}>
-                      <Phone className="h-2.5 w-2.5" /> {s.phone}
-                    </p>
+                    <a
+                      href={`https://wa.me/62${s.phone.replace(/^0/, '').replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onMouseDown={e => e.stopPropagation()}
+                      className="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: '#25D36618', color: '#25D366' }}
+                    >
+                      WA
+                    </a>
                   )}
-                </div>
-              </button>
-            ))
+                </button>
+              );
+            })
           )}
-
-          {!loading && filtered.length === 0 && value && (
-            <div className="px-3 py-2.5">
-              <p className="text-xs font-medium" style={{ color: '#1E1B4B' }}>{value}</p>
-              <p className="text-[10px]" style={{ color: '#9CA3AF' }}>Ketik manual — tidak ada di daftar</p>
-            </div>
-          )}
-
-          <div className="px-3 py-2 border-t" style={{ borderColor: '#F5F3FF' }}>
-            <p className="text-[10px]" style={{ color: '#C4B5FD' }}>
-              <User className="h-3 w-3 inline mr-1" />
-              Pilih dari daftar atau ketik nama langsung
-            </p>
-          </div>
         </div>
       )}
 
+      {/* Nomor HP sales yang dipilih */}
       {selected?.phone && (
-        <p className="mt-1 text-[11px] flex items-center gap-1" style={{ color: accentColor }}>
+        <p className="mt-1.5 text-[11px] flex items-center gap-1 font-medium" style={{ color: accentColor }}>
           <Phone className="h-3 w-3" /> {selected.phone}
         </p>
       )}
