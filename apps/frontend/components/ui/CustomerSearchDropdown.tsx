@@ -36,9 +36,43 @@ export default function CustomerSearchDropdown({
   const [loadingKledo, setLoadingKledo] = useState(false);
   const [noResult, setNoResult] = useState(false);
   const [selected, setSelected] = useState<CustomerOption | null>(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const searchSeqRef = useRef(0);
+
+  const updatePos = useCallback(() => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePos();
+    window.addEventListener('resize', updatePos);
+    return () => window.removeEventListener('resize', updatePos);
+  }, [open, updatePos]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (
+        !containerRef.current?.contains(target) &&
+        !dropdownRef.current?.contains(target)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, []);
 
   const doSearch = useCallback(async (q: string) => {
     const seq = ++searchSeqRef.current;
@@ -55,11 +89,9 @@ export default function CustomerSearchDropdown({
       const localRes = await api.get('/customers', {
         params: { limit: 50, active: 'true', ...(q ? { search: q } : {}) },
       });
-
       if (seq !== searchSeqRef.current) return;
 
       const localRaw: any[] = localRes.data?.data ?? localRes.data ?? [];
-
       localList = localRaw
         .filter((c: any) => {
           if (!q) return true;
@@ -90,7 +122,6 @@ export default function CustomerSearchDropdown({
       const kledoRes = await fetch(
         `/api/direct/kledo-search?type=contacts&q=${encodeURIComponent(q)}`,
       ).then((r) => r.json());
-
       if (seq !== searchSeqRef.current) return;
 
       const kledoRaw: CustomerOption[] =
@@ -109,8 +140,7 @@ export default function CustomerSearchDropdown({
       const dedupedKledo = kledoRaw.filter(
         (c) => !localNames.has(c.name.toLowerCase().trim()),
       );
-      const merged = [...localList, ...dedupedKledo].slice(0, 15);
-
+      const merged = [...localList, ...dedupedKledo].slice(0, 20);
       setSuggestions(merged);
       setNoResult(merged.length === 0);
     } catch {
@@ -136,6 +166,7 @@ export default function CustomerSearchDropdown({
   };
 
   const handleFocus = () => {
+    updatePos();
     doSearch(value);
   };
 
@@ -159,15 +190,6 @@ export default function CustomerSearchDropdown({
     setLoadingLocal(false);
     setLoadingKledo(false);
   };
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const isLoading = loadingLocal || loadingKledo;
 
@@ -208,16 +230,22 @@ export default function CustomerSearchDropdown({
 
       {open && (
         <div
-          className="absolute left-0 right-0 top-full mt-1 rounded-xl"
+          ref={dropdownRef}
           style={{
-            zIndex: 9999,
-            boxShadow: 'var(--shadow-lg)',
-            border: '1.5px solid var(--border)',
+            position: 'fixed',
+            top: dropPos.top,
+            left: dropPos.left,
+            width: dropPos.width,
+            zIndex: 99999,
             background: 'var(--surface)',
-            maxHeight: 232,
+            borderRadius: 14,
+            border: '1.5px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
+            maxHeight: 240,
             overflowY: 'auto',
             overflowX: 'hidden',
             WebkitOverflowScrolling: 'touch' as any,
+            touchAction: 'pan-y',
           }}
         >
           {loadingLocal ? (
@@ -236,7 +264,7 @@ export default function CustomerSearchDropdown({
                 <button
                   key={c.id}
                   type="button"
-                  onMouseDown={() => handleSelect(c)}
+                  onClick={() => handleSelect(c)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors"
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-sunken)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -284,10 +312,7 @@ export default function CustomerSearchDropdown({
                   className="flex items-center gap-2 px-3 py-2"
                   style={{ borderTop: '1px solid var(--border)' }}
                 >
-                  <Loader2
-                    className="h-3 w-3 animate-spin flex-shrink-0"
-                    style={{ color: '#10B981' }}
-                  />
+                  <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" style={{ color: '#10B981' }} />
                   <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                     Memuat data dari Kledo...
                   </p>
@@ -314,10 +339,7 @@ export default function CustomerSearchDropdown({
             </div>
           ) : noResult && loadingKledo ? (
             <div className="flex items-center gap-2 px-4 py-3">
-              <Loader2
-                className="h-4 w-4 animate-spin flex-shrink-0"
-                style={{ color: '#10B981' }}
-              />
+              <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: '#10B981' }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
                   Tidak ditemukan di data lokal

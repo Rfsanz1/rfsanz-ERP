@@ -203,17 +203,18 @@ export default function ProductSearchDropdown({
             borderRadius: 14,
             border: '1.5px solid var(--border)',
             boxShadow: 'var(--shadow-lg)',
-            overflow: 'hidden',
             maxHeight: dropHeight + 'px',
             overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
+            overflowX: 'hidden',
+            WebkitOverflowScrolling: 'touch' as any,
+            touchAction: 'pan-y',
           }}
         >
           {suggestions.map((p) => (
             <button
               key={p.id}
               type="button"
-              onPointerDown={(e) => { e.preventDefault(); handleSelect(p); }}
+              onClick={() => handleSelect(p)}
               className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors"
               style={{ borderBottom: '1px solid var(--border)', minHeight: ITEM_HEIGHT }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
