@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND = process.env.BACKEND_URL || '';
+const rawBackend = process.env.BACKEND_URL || '';
+const BACKEND = rawBackend && !rawBackend.startsWith('http://') && !rawBackend.startsWith('https://')
+  ? `https://${rawBackend}`
+  : rawBackend;
 
 async function proxy(req: NextRequest, { params }: { params: { path: string[] } }) {
   const path = (await params).path.join('/');

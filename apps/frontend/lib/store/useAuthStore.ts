@@ -77,16 +77,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (res.ok) {
         const data = await res.json();
-        const token: string = data.token ?? data.access_token ?? data.accessToken ?? '';
+        console.log('[autoLogin] backend response keys:', Object.keys(data));
+        const token: string =
+          data.token ??
+          data.access_token ??
+          data.accessToken ??
+          data.data?.token ??
+          data.data?.access_token ??
+          data.data?.accessToken ??
+          '';
         if (token) {
           setAuthToken(token);
           localStorage.setItem(TOKEN_KEY, token);
           set({ token, user: STATIC_USER, loading: false, initialized: true, authReady: true });
           return;
         }
+        console.warn('[autoLogin] login 200 tapi token tidak ditemukan. Response:', JSON.stringify(data).slice(0, 200));
       }
-    } catch {
-      // Network error, fall through
+    } catch (e) {
+      console.error('[autoLogin] network error:', e);
     }
 
     set({ loading: false, initialized: true, authReady: true });
