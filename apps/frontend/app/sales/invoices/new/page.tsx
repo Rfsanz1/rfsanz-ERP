@@ -73,6 +73,10 @@ export default function NewInvoicePage() {
 
   const [salesName, setSalesName]     = useState(user?.name ?? '');
   const [tanggal]                     = useState(today());
+  const [dueDate, setDueDate]         = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 30);
+    return d.toISOString().slice(0, 10);
+  });
   const [notes, setNotes]             = useState('');
   const [diskonTotal, setDiskonTotal] = useState(0);
   const [pajak, setPajak]             = useState(0);
@@ -81,6 +85,7 @@ export default function NewInvoicePage() {
   const [items, setItems]       = useState<InvoiceItem[]>([emptyItem()]);
   const [loading, setLoading]   = useState(false);
   const [kledoStatus, setKledoStatus] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle');
+  const [kledoError, setKledoError]   = useState('');
   const [error, setError]       = useState('');
 
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
@@ -159,10 +164,15 @@ export default function NewInvoicePage() {
         })),
       });
 
-      setKledoStatus('syncing');
+      const savedInvoice = res.data?.data ?? res.data ?? {};
+      const refNumber = savedInvoice.nomorInvoice ?? savedInvoice.invoiceNumber ?? savedInvoice.nomor ?? savedInvoice.ref_number ?? undefined;
+
+      setKledoStatus('syncing'); setKledoError('');
       try {
-        await api.post('/kledo/invoices', {
+        const kledoRes = await api.post('/kledo/invoices', {
           trans_date: tanggal,
+          due_date: dueDate,
+          ref_number: refNumber,
           memo: notes.trim() || undefined,
           contact_id: kledoContactId ? Number(kledoContactId) : undefined,
           contact_name: customerName.trim(),
@@ -178,9 +188,16 @@ export default function NewInvoicePage() {
           ],
         });
         setKledoStatus('ok');
-      } catch { setKledoStatus('error'); }
-
-      router.push(`/sales/invoices/${res.data?.data?.id ?? res.data?.id ?? ''}`);
+        router.push(`/sales/invoices/${savedInvoice.id ?? ''}`);
+      } catch (kledoErr: any) {
+        const msg = kledoErr?.response?.data?.message
+          ?? kledoErr?.response?.data?.error
+          ?? kledoErr?.message
+          ?? 'Gagal kirim ke Kledo';
+        setKledoError(msg);
+        setKledoStatus('error');
+        // tetap di halaman agar user bisa lihat error, tapi invoice sudah tersimpan
+      }
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Terjadi kesalahan.');
       setKledoStatus('idle');
@@ -212,20 +229,25 @@ export default function NewInvoicePage() {
           </div>
         )}
         {kledoStatus !== 'idle' && (
-          <div className="flex items-center gap-2 rounded-xl p-3 text-sm"
+          <div className="rounded-xl p-3 text-sm"
             style={{
               background: kledoStatus === 'ok' ? 'var(--success-light)' : kledoStatus === 'error' ? 'var(--danger-light)' : `${C}0A`,
               border: `1.5px solid ${kledoStatus === 'ok' ? 'rgba(16,185,129,.25)' : kledoStatus === 'error' ? 'rgba(239,68,68,.25)' : `${C}25`}`,
               color: kledoStatus === 'ok' ? 'var(--success)' : kledoStatus === 'error' ? 'var(--danger)' : C,
             }}>
-            {kledoStatus === 'syncing' && <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: `${C}40`, borderTopColor: C }} />}
-            {kledoStatus === 'ok' && <CheckCircle2 className="h-4 w-4" />}
-            {kledoStatus === 'error' && <AlertCircle className="h-4 w-4" />}
-            <span>
-              {kledoStatus === 'syncing' && 'Mengirim invoice ke Kledo…'}
-              {kledoStatus === 'ok' && 'Invoice berhasil dikirim ke Kledo'}
-              {kledoStatus === 'error' && 'Kledo tidak terjangkau — invoice tetap tersimpan di ERP'}
-            </span>
+            <div className="flex items-center gap-2">
+              {kledoStatus === 'syncing' && <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin flex-shrink-0" style={{ borderColor: `${C}40`, borderTopColor: C }} />}
+              {kledoStatus === 'ok' && <CheckCircle2 className="h-4 w-4 flex-shrink-0" />}
+              {kledoStatus === 'error' && <AlertCircle className="h-4 w-4 flex-shrink-0" />}
+              <span>
+                {kledoStatus === 'syncing' && 'Mengirim invoice ke Kledo…'}
+                {kledoStatus === 'ok' && 'Invoice berhasil dikirim ke Kledo ✓'}
+                {kledoStatus === 'error' && 'Invoice tersimpan di ERP, gagal kirim ke Kledo'}
+              </span>
+            </div>
+            {kledoStatus === 'error' && kledoError && (
+              <p className="mt-1.5 ml-6 text-xs opacity-80 font-mono break-all">{kledoError}</p>
+            )}
           </div>
         )}
 
@@ -266,6 +288,26 @@ export default function NewInvoicePage() {
 
           {/* ── Info Transaksi ── */}
           <Section title="Info Transaksi">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Tanggal Invoice">
+                <div className="w-full rounded-xl px-3 py-2.5 text-sm"
+                  style={{ border: '1.5px solid var(--border)', color: 'var(--text-muted)', background: 'var(--surface-sunken)' }}>
+                  {tanggal}
+                </div>
+              </Field>
+              <Field label="Jatuh Tempo">
+                <input
+                  type="date"
+                  className={inputCls}
+                  style={inputSt}
+                  value={dueDate}
+                  onChange={e => setDueDate(e.target.value)}
+                  onFocus={focusBorder}
+                  onBlur={blurBorder}
+                  min={tanggal}
+                />
+              </Field>
+            </div>
             <Field label="Catatan / Pesan" optional>
               <input className={inputCls} style={inputSt} placeholder="Catatan atau pesan untuk order ini..."
                 value={notes} onChange={e => setNotes(e.target.value)} onFocus={focusBorder} onBlur={blurBorder} />
