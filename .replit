@@ -27,7 +27,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pnpm --filter @erp-modern/frontend dev"
+args = "cd apps/frontend && pnpm dev"
 waitForPort = 5000
 
 [[ports]]
