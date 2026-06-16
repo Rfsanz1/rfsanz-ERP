@@ -1,14 +1,15 @@
 'use client';
 import { useRouter, usePathname } from 'next/navigation';
-import { Home, Package, ClipboardList, User } from 'lucide-react';
+import { Home, Package, BarChart2, FolderOpen, User } from 'lucide-react';
 
 const C = '#475569';
 
 const NAV_ITEMS = [
-  { href: '/driver',            label: 'Beranda',  icon: Home },
-  { href: '/driver/deliveries', label: 'Tugas',    icon: Package },
-  { href: '/driver/history',    label: 'Riwayat',  icon: ClipboardList },
-  { href: '/driver/profile',    label: 'Profil',   icon: User },
+  { href: '/driver',              label: 'Beranda',  icon: Home },
+  { href: '/driver/deliveries',   label: 'Tugas',    icon: Package },
+  { href: '/driver/report',       label: 'Laporan',  icon: BarChart2 },
+  { href: '/driver/documents',    label: 'Dokumen',  icon: FolderOpen },
+  { href: '/driver/profile',      label: 'Profil',   icon: User },
 ];
 
 export default function DriverBottomNav() {
