@@ -40,7 +40,9 @@ export default function ProductSearchDropdown({
   const [loading, setLoading] = useState(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchSeqRef = useRef(0);
 
   const updatePos = useCallback(() => {
     if (!containerRef.current) return;
@@ -51,23 +53,40 @@ export default function ProductSearchDropdown({
   useEffect(() => {
     if (!open) return;
     updatePos();
-    const closeOnScroll = () => { setSuggestions([]); setOpen(false); };
-    window.addEventListener('scroll', closeOnScroll, true);
     window.addEventListener('resize', updatePos);
     return () => {
-      window.removeEventListener('scroll', closeOnScroll, true);
       window.removeEventListener('resize', updatePos);
     };
   }, [open, updatePos]);
 
+  useEffect(() => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      const insideContainer = containerRef.current?.contains(target);
+      const insideDropdown = dropdownRef.current?.contains(target);
+      if (!insideContainer && !insideDropdown) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, []);
+
   const doSearch = useCallback(async (q: string) => {
     if (!q || q.length < 1) { setSuggestions([]); setOpen(false); return; }
+    const seq = ++searchSeqRef.current;
     setLoading(true);
     try {
       const [localRes, kledoRes] = await Promise.allSettled([
         api.get('/inventory/products', { params: { search: q, limit: 30 } }),
         fetch(`/api/direct/kledo-search?type=products&q=${encodeURIComponent(q)}`).then(r => r.json()),
       ]);
+
+      if (seq !== searchSeqRef.current) return;
 
       const localRaw: any[] =
         localRes.status === 'fulfilled'
@@ -104,15 +123,16 @@ export default function ProductSearchDropdown({
 
       const localNames = new Set(localList.map(p => p.name.toLowerCase().trim()));
       const dedupedKledo = kledoList.filter(p => !localNames.has(p.name.toLowerCase().trim()));
-      const merged = [...localList, ...dedupedKledo].slice(0, 10);
+      const merged = [...localList, ...dedupedKledo].slice(0, 20);
 
       setSuggestions(merged);
       if (merged.length > 0) { updatePos(); setOpen(true); }
       else { setSuggestions([]); setOpen(false); }
     } catch {
+      if (seq !== searchSeqRef.current) return;
       setSuggestions([]);
     } finally {
-      setLoading(false);
+      if (seq === searchSeqRef.current) setLoading(false);
     }
   }, [updatePos]);
 
@@ -139,6 +159,10 @@ export default function ProductSearchDropdown({
     return '#EF4444';
   };
 
+  const ITEM_HEIGHT = 68;
+  const MAX_VISIBLE = 3;
+  const dropHeight = Math.min(suggestions.length, MAX_VISIBLE) * ITEM_HEIGHT;
+
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative">
@@ -157,7 +181,6 @@ export default function ProductSearchDropdown({
           autoComplete="off"
           onChange={handleChange}
           onFocus={() => { updatePos(); if (value.length >= 1) search(value); }}
-          onBlur={() => setTimeout(() => { setSuggestions([]); setOpen(false); }, 180)}
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
           {loading
@@ -169,16 +192,30 @@ export default function ProductSearchDropdown({
 
       {open && suggestions.length > 0 && (
         <div
+          ref={dropdownRef}
           style={{
-            position: 'fixed', top: dropPos.top, left: dropPos.left, width: dropPos.width,
-            zIndex: 99999, background: 'var(--surface)', borderRadius: 14,
-            border: '1.5px solid var(--border)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden',
+            position: 'fixed',
+            top: dropPos.top,
+            left: dropPos.left,
+            width: dropPos.width,
+            zIndex: 99999,
+            background: 'var(--surface)',
+            borderRadius: 14,
+            border: '1.5px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
+            overflow: 'hidden',
+            maxHeight: dropHeight + 'px',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
           }}
         >
           {suggestions.map((p) => (
-            <button key={p.id} type="button" onMouseDown={() => handleSelect(p)}
+            <button
+              key={p.id}
+              type="button"
+              onPointerDown={(e) => { e.preventDefault(); handleSelect(p); }}
               className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors"
-              style={{ borderBottom: '1px solid var(--border)' }}
+              style={{ borderBottom: '1px solid var(--border)', minHeight: ITEM_HEIGHT }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
