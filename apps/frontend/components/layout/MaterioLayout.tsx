@@ -1,10 +1,16 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Box from '@mui/material/Box';
-import { MaterioSidebar, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './MaterioSidebar';
+import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './MaterioSidebar';
 import { MaterioTopbar } from './MaterioTopbar';
 import { MobileBottomNav } from './MobileBottomNav';
+
+const MaterioSidebar = dynamic(
+  () => import('./MaterioSidebar').then((m) => ({ default: m.MaterioSidebar })),
+  { ssr: false }
+);
 
 interface MaterioLayoutProps {
   children: ReactNode;
