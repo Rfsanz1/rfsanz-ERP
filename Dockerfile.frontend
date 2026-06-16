@@ -2,7 +2,7 @@
 # Build args: APP_DIR, PORT, BACKEND_URL
 
 ARG APP_DIR=frontend
-ARG PORT=3000
+ARG PORT=5000
 ARG BACKEND_URL=http://127.0.0.1:6000
 
 # ── Stage 1: Builder ──────────────────────────────────────────────
