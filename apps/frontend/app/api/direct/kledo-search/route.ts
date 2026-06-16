@@ -84,9 +84,9 @@ export async function GET(req: NextRequest) {
 
     const filtered = q
       ? productsCache.data.filter(p => textMatch(p.name, q) || textMatch(p.sku, q))
-      : productsCache.data.slice(0, 10);
+      : productsCache.data;
 
-    return NextResponse.json({ success: true, data: filtered.slice(0, 15), total: productsCache.data.length });
+    return NextResponse.json({ success: true, data: filtered, total: productsCache.data.length });
   }
 
   // contacts
@@ -107,9 +107,9 @@ export async function GET(req: NextRequest) {
         textMatch(c.name, q) ||
         (c.phone && c.phone.includes(q)),
       )
-    : contactsCache.data.slice(0, 10);
+    : contactsCache.data;
 
-  return NextResponse.json({ success: true, data: filtered.slice(0, 15), total: contactsCache.data.length });
+  return NextResponse.json({ success: true, data: filtered, total: contactsCache.data.length });
 }
 
 export async function DELETE() {
