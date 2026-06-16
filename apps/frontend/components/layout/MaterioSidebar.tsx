@@ -337,6 +337,7 @@ export function MaterioSidebar({ collapsed, mobileOpen, onMobileClose }: Sidebar
     <>
       {/* Desktop */}
       <aside
+        suppressHydrationWarning
         style={{
           width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
           flexShrink: 0,
