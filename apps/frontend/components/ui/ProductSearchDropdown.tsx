@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Search, Package } from 'lucide-react';
+import { Search, Package, Loader2 } from 'lucide-react';
 import { api } from '../../lib/api';
 
 export interface ProductOption {
@@ -27,6 +27,29 @@ interface Props {
 const fmtRp = (v: number) =>
   v.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
+// ── Module-level product cache (shared across all instances) ──
+// Full catalogue cache (fetched once, filtered locally for instant results)
+let _allLocalProducts: ProductOption[] = [];
+let _allKledoProducts: ProductOption[] = [];
+let _localCacheTs = 0;
+let _kledoCacheTs = 0;
+const LOCAL_TTL = 2 * 60 * 1000;
+const KLEDO_TTL = 10 * 60 * 1000;
+
+// Per-query result cache for instant re-open
+const _queryCache = new Map<string, ProductOption[]>();
+
+function filterProducts(local: ProductOption[], kledo: ProductOption[], q: string): ProductOption[] {
+  const terms = q.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const match = (p: ProductOption) =>
+    terms.length === 0 ||
+    terms.every(t => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t));
+  const localFiltered = local.filter(match);
+  const localNames = new Set(localFiltered.map(p => p.name.toLowerCase().trim()));
+  const kledoFiltered = kledo.filter(p => match(p) && !localNames.has(p.name.toLowerCase().trim()));
+  return [...localFiltered, ...kledoFiltered].slice(0, 20);
+}
+
 export default function ProductSearchDropdown({
   value,
   onSelect,
@@ -37,8 +60,9 @@ export default function ProductSearchDropdown({
 }: Props) {
   const [suggestions, setSuggestions] = useState<ProductOption[]>([]);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
+
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,17 +78,13 @@ export default function ProductSearchDropdown({
     if (!open) return;
     updatePos();
     window.addEventListener('resize', updatePos);
-    return () => {
-      window.removeEventListener('resize', updatePos);
-    };
+    return () => window.removeEventListener('resize', updatePos);
   }, [open, updatePos]);
 
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
       const target = e.target as Node;
-      const insideContainer = containerRef.current?.contains(target);
-      const insideDropdown = dropdownRef.current?.contains(target);
-      if (!insideContainer && !insideDropdown) {
+      if (!containerRef.current?.contains(target) && !dropdownRef.current?.contains(target)) {
         setOpen(false);
       }
     };
@@ -79,23 +99,36 @@ export default function ProductSearchDropdown({
   const doSearch = useCallback(async (q: string) => {
     if (!q || q.length < 1) { setSuggestions([]); setOpen(false); return; }
     const seq = ++searchSeqRef.current;
-    setLoading(true);
-    try {
-      const [localRes, kledoRes] = await Promise.allSettled([
-        api.get('/inventory/products', { params: { search: q, limit: 30 } }),
-        fetch(`/api/direct/kledo-search?type=products&q=${encodeURIComponent(q)}`).then(r => r.json()),
-      ]);
+    const now = Date.now();
 
-      if (seq !== searchSeqRef.current) return;
+    // ── Show cached query result instantly ──
+    const cached = _queryCache.get(q);
+    if (cached && cached.length > 0) {
+      setSuggestions(cached);
+      setOpen(true);
+    } else {
+      // Try filtering from full catalogue cache
+      const fromCatalogue = filterProducts(_allLocalProducts, _allKledoProducts, q);
+      if (fromCatalogue.length > 0) {
+        setSuggestions(fromCatalogue);
+        _queryCache.set(q, fromCatalogue);
+        setOpen(true);
+      }
+    }
 
-      const localRaw: any[] =
-        localRes.status === 'fulfilled'
-          ? (() => { const d = localRes.value.data; return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : []; })()
-          : [];
+    const needLocalRefresh = now - _localCacheTs > LOCAL_TTL;
+    const needKledoRefresh = now - _kledoCacheTs > KLEDO_TTL;
+    if (!needLocalRefresh && !needKledoRefresh) return;
 
-      const terms = q.toLowerCase().trim().split(/\s+/);
-      const localList: ProductOption[] = localRaw
-        .map((p: any) => ({
+    setRefreshing(true);
+
+    // ── Refresh local catalogue ──
+    if (needLocalRefresh) {
+      try {
+        const res = await api.get('/inventory/products', { params: { limit: 500 } });
+        if (seq !== searchSeqRef.current) return;
+        const raw: any[] = (() => { const d = res.data; return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : []; })();
+        _allLocalProducts = raw.map((p: any) => ({
           id: String(p.id),
           name: p.name ?? '',
           sku: p.sku ?? p.code ?? '',
@@ -104,51 +137,71 @@ export default function ProductSearchDropdown({
           kledoProductId: p.kledoProductId ?? null,
           unit: p.unit ?? null,
           source: 'local' as const,
-        }))
-        .filter(p => terms.every(t => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t)));
-
-      const kledoList: ProductOption[] =
-        kledoRes.status === 'fulfilled' && kledoRes.value?.success
-          ? (kledoRes.value.data ?? []).map((p: any) => ({
-              id: p.id,
-              name: p.name ?? '',
-              sku: p.sku ?? '',
-              hargaJual: Number(p.price ?? 0),
-              stok: 0,
-              kledoProductId: String(p.kledoId ?? ''),
-              unit: p.unit ? { name: p.unit } : null,
-              source: 'kledo' as const,
-            }))
-          : [];
-
-      const localNames = new Set(localList.map(p => p.name.toLowerCase().trim()));
-      const dedupedKledo = kledoList.filter(p => !localNames.has(p.name.toLowerCase().trim()));
-      const merged = [...localList, ...dedupedKledo].slice(0, 20);
-
-      setSuggestions(merged);
-      if (merged.length > 0) { updatePos(); setOpen(true); }
-      else { setSuggestions([]); setOpen(false); }
-    } catch {
-      if (seq !== searchSeqRef.current) return;
-      setSuggestions([]);
-    } finally {
-      if (seq === searchSeqRef.current) setLoading(false);
+        }));
+        _localCacheTs = Date.now();
+        _queryCache.clear(); // invalidate query cache after catalogue refresh
+        if (seq === searchSeqRef.current) {
+          const merged = filterProducts(_allLocalProducts, _allKledoProducts, q);
+          setSuggestions(merged);
+          _queryCache.set(q, merged);
+          if (merged.length > 0) setOpen(true);
+        }
+      } catch { /* keep existing cache */ }
     }
-  }, [updatePos]);
 
-  const search = useCallback((q: string) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => doSearch(q), 300);
-  }, [doSearch]);
+    // ── Refresh Kledo catalogue ──
+    if (needKledoRefresh) {
+      try {
+        const res = await fetch(`/api/direct/kledo-search?type=products&q=`).then(r => r.json());
+        if (seq !== searchSeqRef.current) return;
+        if (res?.success) {
+          _allKledoProducts = (res.data ?? []).map((p: any) => ({
+            id: p.id,
+            name: p.name ?? '',
+            sku: p.sku ?? '',
+            hargaJual: Number(p.price ?? 0),
+            stok: 0,
+            kledoProductId: String(p.kledoId ?? ''),
+            unit: p.unit ? { name: p.unit } : null,
+            source: 'kledo' as const,
+          }));
+          _kledoCacheTs = Date.now();
+          _queryCache.clear();
+          if (seq === searchSeqRef.current) {
+            const merged = filterProducts(_allLocalProducts, _allKledoProducts, q);
+            setSuggestions(merged);
+            _queryCache.set(q, merged);
+            if (merged.length > 0) setOpen(true);
+          }
+        }
+      } catch { /* keep existing cache */ }
+    }
+
+    if (seq === searchSeqRef.current) setRefreshing(false);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange?.(e.target.value);
-    search(e.target.value);
+    const q = e.target.value;
+    onChange?.(q);
+
+    if (!q) { setSuggestions([]); setOpen(false); return; }
+
+    // Instant filter from catalogue cache
+    const instant = filterProducts(_allLocalProducts, _allKledoProducts, q);
+    if (instant.length > 0) {
+      setSuggestions(instant);
+      setOpen(true);
+    }
+
+    // Debounce API refresh
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => doSearch(q), 400);
   };
 
   const handleSelect = (p: ProductOption) => {
     setSuggestions([]);
     setOpen(false);
+    setRefreshing(false);
     onSelect(p);
   };
 
@@ -161,7 +214,7 @@ export default function ProductSearchDropdown({
 
   const ITEM_HEIGHT = 68;
   const MAX_VISIBLE = 3;
-  const dropHeight = Math.min(suggestions.length, MAX_VISIBLE) * ITEM_HEIGHT;
+  const dropHeight = Math.min(Math.max(suggestions.length, 1), MAX_VISIBLE) * ITEM_HEIGHT;
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -180,12 +233,11 @@ export default function ProductSearchDropdown({
           disabled={disabled}
           autoComplete="off"
           onChange={handleChange}
-          onFocus={() => { updatePos(); if (value.length >= 1) search(value); }}
+          onFocus={() => { updatePos(); if (value.length >= 1) doSearch(value); }}
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-          {loading
-            ? <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
-                style={{ borderColor: 'var(--border)', borderTopColor: 'var(--text-secondary)' }} />
+          {refreshing
+            ? <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: accentColor }} />
             : <Search className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />}
         </div>
       </div>

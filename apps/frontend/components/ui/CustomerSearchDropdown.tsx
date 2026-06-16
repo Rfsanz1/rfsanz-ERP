@@ -22,6 +22,28 @@ interface Props {
   required?: boolean;
 }
 
+// ── Module-level cache (shared across all instances, persists between opens) ──
+let _localCache: CustomerOption[] = [];
+let _kledoCache: CustomerOption[] = [];
+let _localCacheTs = 0;
+let _kledoCacheTs = 0;
+const LOCAL_TTL = 2 * 60 * 1000;  // 2 menit
+const KLEDO_TTL = 10 * 60 * 1000; // 10 menit
+
+function mergeResults(local: CustomerOption[], kledo: CustomerOption[], q: string): CustomerOption[] {
+  const filtered = (list: CustomerOption[]) => {
+    if (!q) return list;
+    const t = q.toLowerCase();
+    return list.filter(
+      c => (c.name ?? '').toLowerCase().includes(t) || (c.phone ?? '').toLowerCase().includes(t),
+    );
+  };
+  const localFiltered = filtered(local);
+  const localNames = new Set(localFiltered.map(c => c.name.toLowerCase().trim()));
+  const kledoFiltered = filtered(kledo).filter(c => !localNames.has(c.name.toLowerCase().trim()));
+  return [...localFiltered, ...kledoFiltered].slice(0, 20);
+}
+
 export default function CustomerSearchDropdown({
   value,
   onChange,
@@ -32,8 +54,7 @@ export default function CustomerSearchDropdown({
 }: Props) {
   const [suggestions, setSuggestions] = useState<CustomerOption[]>([]);
   const [open, setOpen] = useState(false);
-  const [loadingLocal, setLoadingLocal] = useState(false);
-  const [loadingKledo, setLoadingKledo] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [noResult, setNoResult] = useState(false);
   const [selected, setSelected] = useState<CustomerOption | null>(null);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
@@ -59,10 +80,7 @@ export default function CustomerSearchDropdown({
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
       const target = e.target as Node;
-      if (
-        !containerRef.current?.contains(target) &&
-        !dropdownRef.current?.contains(target)
-      ) {
+      if (!containerRef.current?.contains(target) && !dropdownRef.current?.contains(target)) {
         setOpen(false);
       }
     };
@@ -76,30 +94,30 @@ export default function CustomerSearchDropdown({
 
   const doSearch = useCallback(async (q: string) => {
     const seq = ++searchSeqRef.current;
+    const now = Date.now();
 
-    setLoadingLocal(true);
-    setLoadingKledo(true);
-    setNoResult(false);
-    setOpen(true);
-    setSuggestions([]);
+    // ── Show cached data immediately ──
+    const cachedMerged = mergeResults(_localCache, _kledoCache, q);
+    if (cachedMerged.length > 0) {
+      setSuggestions(cachedMerged);
+      setNoResult(false);
+      setOpen(true);
+    }
 
-    let localList: CustomerOption[] = [];
+    const needLocalRefresh = now - _localCacheTs > LOCAL_TTL;
+    const needKledoRefresh = now - _kledoCacheTs > KLEDO_TTL;
 
-    try {
-      const localRes = await api.get('/customers', {
-        params: { limit: 50, active: 'true', ...(q ? { search: q } : {}) },
-      });
-      if (seq !== searchSeqRef.current) return;
+    if (!needLocalRefresh && !needKledoRefresh) return; // cache fresh, no API call needed
 
-      const localRaw: any[] = localRes.data?.data ?? localRes.data ?? [];
-      localList = localRaw
-        .filter((c: any) => {
-          if (!q) return true;
-          const t = q.toLowerCase();
-          return (c.name ?? '').toLowerCase().includes(t) ||
-                 (c.phone ?? '').toLowerCase().includes(t);
-        })
-        .map((c: any) => ({
+    setRefreshing(true);
+
+    // ── Refresh local cache ──
+    if (needLocalRefresh) {
+      try {
+        const res = await api.get('/customers', { params: { limit: 200, active: 'true' } });
+        if (seq !== searchSeqRef.current) return;
+        const raw: any[] = res.data?.data ?? res.data ?? [];
+        _localCache = raw.map((c: any) => ({
           id: String(c.id),
           name: c.name ?? '',
           phone: c.phone ?? null,
@@ -107,56 +125,53 @@ export default function CustomerSearchDropdown({
           address: c.address ?? null,
           source: 'local' as const,
         }));
-
-      setSuggestions(localList);
-      setNoResult(localList.length === 0);
-    } catch {
-      if (seq !== searchSeqRef.current) return;
-      localList = [];
-      setSuggestions([]);
-    } finally {
-      if (seq === searchSeqRef.current) setLoadingLocal(false);
+        _localCacheTs = Date.now();
+        if (seq === searchSeqRef.current) {
+          const merged = mergeResults(_localCache, _kledoCache, q);
+          setSuggestions(merged);
+          setNoResult(merged.length === 0);
+          setOpen(true);
+        }
+      } catch { /* keep existing cache */ }
     }
 
-    try {
-      const kledoRes = await fetch(
-        `/api/direct/kledo-search?type=contacts&q=${encodeURIComponent(q)}`,
-      ).then((r) => r.json());
-      if (seq !== searchSeqRef.current) return;
-
-      const kledoRaw: CustomerOption[] =
-        kledoRes?.success
-          ? (kledoRes.data ?? []).map((c: any) => ({
-              id: c.id,
-              name: c.name ?? '',
-              phone: c.phone ?? null,
-              email: c.email ?? null,
-              address: null,
-              source: 'kledo' as const,
-            }))
-          : [];
-
-      const localNames = new Set(localList.map((c) => c.name.toLowerCase().trim()));
-      const dedupedKledo = kledoRaw.filter(
-        (c) => !localNames.has(c.name.toLowerCase().trim()),
-      );
-      const merged = [...localList, ...dedupedKledo].slice(0, 20);
-      setSuggestions(merged);
-      setNoResult(merged.length === 0);
-    } catch {
-      if (seq !== searchSeqRef.current) return;
-    } finally {
-      if (seq === searchSeqRef.current) setLoadingKledo(false);
+    // ── Refresh Kledo cache ──
+    if (needKledoRefresh) {
+      try {
+        const res = await fetch('/api/direct/kledo-search?type=contacts&q=').then(r => r.json());
+        if (seq !== searchSeqRef.current) return;
+        if (res?.success) {
+          _kledoCache = (res.data ?? []).map((c: any) => ({
+            id: c.id,
+            name: c.name ?? '',
+            phone: c.phone ?? null,
+            email: c.email ?? null,
+            address: null,
+            source: 'kledo' as const,
+          }));
+          _kledoCacheTs = Date.now();
+          if (seq === searchSeqRef.current) {
+            const merged = mergeResults(_localCache, _kledoCache, q);
+            setSuggestions(merged);
+            setNoResult(merged.length === 0);
+            setOpen(true);
+          }
+        }
+      } catch { /* keep existing cache */ }
     }
+
+    if (seq === searchSeqRef.current) setRefreshing(false);
   }, []);
 
-  const triggerSearch = useCallback(
-    (q: string) => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => doSearch(q), 350);
-    },
-    [doSearch],
-  );
+  const triggerSearch = useCallback((q: string) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    // Filter from cache instantly, then debounce API refresh
+    const instant = mergeResults(_localCache, _kledoCache, q);
+    setSuggestions(instant);
+    setNoResult(instant.length === 0);
+    if (instant.length > 0 || q.length === 0) setOpen(true);
+    timerRef.current = setTimeout(() => doSearch(q), 400);
+  }, [doSearch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
@@ -176,8 +191,7 @@ export default function CustomerSearchDropdown({
     setSuggestions([]);
     setOpen(false);
     setNoResult(false);
-    setLoadingLocal(false);
-    setLoadingKledo(false);
+    setRefreshing(false);
     onSelect?.(c);
   };
 
@@ -187,11 +201,8 @@ export default function CustomerSearchDropdown({
     setSuggestions([]);
     setOpen(false);
     setNoResult(false);
-    setLoadingLocal(false);
-    setLoadingKledo(false);
+    setRefreshing(false);
   };
-
-  const isLoading = loadingLocal || loadingKledo;
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -213,18 +224,18 @@ export default function CustomerSearchDropdown({
           onFocus={handleFocus}
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {isLoading && (
+          {refreshing && (
             <div
-              className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
+              className="w-3 h-3 border-2 rounded-full animate-spin"
               style={{ borderColor: 'var(--border)', borderTopColor: accentColor }}
             />
           )}
-          {selected && !isLoading && (
-            <button type="button" onMouseDown={handleClear} className="p-0.5 rounded hover:bg-gray-100">
+          {selected && !refreshing && (
+            <button type="button" onMouseDown={handleClear} className="p-0.5 rounded">
               <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
             </button>
           )}
-          {!isLoading && <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />}
+          <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
         </div>
       </div>
 
@@ -248,17 +259,7 @@ export default function CustomerSearchDropdown({
             touchAction: 'pan-y',
           }}
         >
-          {loadingLocal ? (
-            <div className="px-4 py-4 text-center">
-              <div
-                className="w-4 h-4 border-2 rounded-full animate-spin mx-auto"
-                style={{ borderColor: 'var(--border)', borderTopColor: accentColor }}
-              />
-              <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                Mencari pelanggan...
-              </p>
-            </div>
-          ) : suggestions.length > 0 ? (
+          {suggestions.length > 0 ? (
             <>
               {suggestions.map((c) => (
                 <button
@@ -266,68 +267,45 @@ export default function CustomerSearchDropdown({
                   type="button"
                   onClick={() => handleSelect(c)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors"
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-sunken)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   <div
                     className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 text-white text-xs font-bold"
                     style={{
-                      background:
-                        c.source === 'kledo'
-                          ? 'linear-gradient(135deg,#10B981,#059669)'
-                          : `linear-gradient(135deg,${accentColor},${accentColor}99)`,
+                      background: c.source === 'kledo'
+                        ? 'linear-gradient(135deg,#10B981,#059669)'
+                        : `linear-gradient(135deg,${accentColor},${accentColor}99)`,
                     }}
                   >
                     {c.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                        {c.name}
-                      </p>
+                      <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{c.name}</p>
                       {c.source === 'kledo' && (
-                        <span
-                          className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                          style={{ background: 'rgba(16,185,129,.12)', color: '#059669' }}
-                        >
-                          Kledo
-                        </span>
+                        <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{ background: 'rgba(16,185,129,.12)', color: '#059669' }}>Kledo</span>
                       )}
                     </div>
                     {c.phone && (
-                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
-                        📞 {c.phone}
-                      </p>
+                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>📞 {c.phone}</p>
                     )}
                     {!c.phone && c.email && (
-                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
-                        ✉ {c.email}
-                      </p>
+                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>✉ {c.email}</p>
                     )}
                   </div>
                 </button>
               ))}
-              {loadingKledo && (
-                <div
-                  className="flex items-center gap-2 px-3 py-2"
-                  style={{ borderTop: '1px solid var(--border)' }}
-                >
-                  <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" style={{ color: '#10B981' }} />
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                    Memuat data dari Kledo...
-                  </p>
-                </div>
-              )}
-              {!loadingKledo && (
-                <div className="px-3 py-2" style={{ borderTop: '1px solid var(--border)' }}>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                    <User className="h-3 w-3 inline mr-1" />
-                    Lokal &amp; Kledo · Ketik nama baru untuk buat pelanggan baru
-                  </p>
-                </div>
-              )}
+              <div className="px-3 py-2 flex items-center gap-1.5" style={{ borderTop: '1px solid var(--border)' }}>
+                {refreshing && <Loader2 className="h-3 w-3 animate-spin" style={{ color: '#10B981' }} />}
+                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                  <User className="h-3 w-3 inline mr-1" />
+                  {refreshing ? 'Memperbarui data...' : 'Lokal & Kledo · Ketik nama baru untuk buat pelanggan baru'}
+                </p>
+              </div>
             </>
-          ) : noResult && !loadingKledo ? (
+          ) : noResult ? (
             <div className="px-4 py-5 text-center">
               <Search className="h-5 w-5 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
               <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
@@ -336,18 +314,12 @@ export default function CustomerSearchDropdown({
               <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 Ketik nama baru → akan dibuat otomatis saat simpan
               </p>
-            </div>
-          ) : noResult && loadingKledo ? (
-            <div className="flex items-center gap-2 px-4 py-3">
-              <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: '#10B981' }} />
-              <div>
-                <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                  Tidak ditemukan di data lokal
-                </p>
-                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                  Sedang mencari di Kledo...
-                </p>
-              </div>
+              {refreshing && (
+                <div className="flex items-center justify-center gap-1 mt-2">
+                  <Loader2 className="h-3 w-3 animate-spin" style={{ color: '#10B981' }} />
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Sedang mencari di Kledo...</p>
+                </div>
+              )}
             </div>
           ) : null}
         </div>
@@ -356,18 +328,14 @@ export default function CustomerSearchDropdown({
       {selected && (
         <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
           {selected.source === 'kledo' && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
-              style={{ backgroundColor: 'rgba(16,185,129,.12)', color: '#059669' }}
-            >
+            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
+              style={{ backgroundColor: 'rgba(16,185,129,.12)', color: '#059669' }}>
               ✓ Dari Kledo
             </span>
           )}
           {selected.phone && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
-            >
+            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: `${accentColor}15`, color: accentColor }}>
               📞 {selected.phone}
             </span>
           )}
