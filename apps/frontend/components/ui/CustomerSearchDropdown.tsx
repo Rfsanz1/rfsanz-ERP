@@ -22,31 +22,110 @@ interface Props {
   required?: boolean;
 }
 
-// Per-query result cache so identical searches are instant
-const _queryCache = new Map<string, CustomerOption[]>();
+// ── Module-level caches (survive re-renders & re-mounts) ──────────────
+let _localContacts: CustomerOption[] = [];
+let _localCacheTs = 0;
+const LOCAL_TTL = 5 * 60 * 1000; // 5 min
 
-function buildKey(q: string) { return q.toLowerCase().trim(); }
+let _kledoContacts: CustomerOption[] = [];
+let _kledoCacheTs = 0;
+const KLEDO_TTL = 10 * 60 * 1000; // 10 min
+
+// Track in-flight warm request so only one fires globally
+let _warmPromise: Promise<void> | null = null;
+
+function textMatch(s: string, q: string) {
+  return s.toLowerCase().includes(q.toLowerCase());
+}
+
+function filterAndMerge(q: string): CustomerOption[] {
+  const t = q.trim();
+  const local = t
+    ? _localContacts.filter(c => textMatch(c.name, t) || textMatch(c.phone ?? '', t))
+    : _localContacts.slice(0, 8);
+  const localNames = new Set(local.map(c => c.name.toLowerCase().trim()));
+  const kledo = t
+    ? _kledoContacts.filter(c =>
+        !localNames.has(c.name.toLowerCase().trim()) &&
+        (textMatch(c.name, t) || textMatch(c.phone ?? '', t)),
+      )
+    : _kledoContacts.filter(c => !localNames.has(c.name.toLowerCase().trim())).slice(0, 8);
+  return [...local, ...kledo].slice(0, 20);
+}
+
+async function warmKledo() {
+  if (Date.now() - _kledoCacheTs < KLEDO_TTL) return; // already fresh
+  if (_warmPromise) return _warmPromise; // already in-flight
+  _warmPromise = fetch('/api/direct/kledo-search?type=contacts&q=')
+    .then(r => r.json())
+    .then(res => {
+      if (res?.success) {
+        _kledoContacts = (res.data ?? []).map((c: any) => ({
+          id: c.id,
+          name: c.name ?? '',
+          phone: c.phone ?? null,
+          email: c.email ?? null,
+          address: null,
+          source: 'kledo' as const,
+        }));
+        _kledoCacheTs = Date.now();
+      }
+    })
+    .catch(() => {})
+    .finally(() => { _warmPromise = null; });
+  return _warmPromise;
+}
+
+async function warmLocal() {
+  if (Date.now() - _localCacheTs < LOCAL_TTL) return;
+  try {
+    const res = await api.get('/customers', { params: { limit: 500, active: 'true' } });
+    const raw: any[] = res.data?.data ?? res.data ?? [];
+    _localContacts = raw.map((c: any) => ({
+      id: String(c.id),
+      name: c.name ?? '',
+      phone: c.phone ?? null,
+      email: c.email ?? null,
+      address: c.address ?? null,
+      source: 'local' as const,
+    }));
+    _localCacheTs = Date.now();
+  } catch { /* ignore */ }
+}
 
 export default function CustomerSearchDropdown({
   value,
   onChange,
   onSelect,
-  placeholder = 'Ketik nama pelanggan atau cari dari Kledo...',
+  placeholder = 'Ketik nama pelanggan...',
   accentColor = '#00ACC1',
   required = false,
 }: Props) {
   const [suggestions, setSuggestions] = useState<CustomerOption[]>([]);
   const [open, setOpen] = useState(false);
-  const [loadingLocal, setLoadingLocal] = useState(false);
-  const [loadingKledo, setLoadingKledo] = useState(false);
+  const [warming, setWarming] = useState(false);
   const [selected, setSelected] = useState<CustomerOption | null>(null);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
 
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const seqRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warmingRef = useRef(false);
 
+  // ── Pre-warm caches on mount ──────────────────────────────────────────
+  useEffect(() => {
+    const doWarm = async () => {
+      if (warmingRef.current) return;
+      warmingRef.current = true;
+      const needsKledo = Date.now() - _kledoCacheTs >= KLEDO_TTL;
+      if (needsKledo) setWarming(true);
+      await Promise.all([warmLocal(), warmKledo()]);
+      setWarming(false);
+    };
+    doWarm();
+  }, []);
+
+  // ── Position dropdown ─────────────────────────────────────────────────
   const updatePos = useCallback(() => {
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
@@ -57,9 +136,14 @@ export default function CustomerSearchDropdown({
     if (!open) return;
     updatePos();
     window.addEventListener('resize', updatePos);
-    return () => window.removeEventListener('resize', updatePos);
+    window.addEventListener('scroll', updatePos, true);
+    return () => {
+      window.removeEventListener('resize', updatePos);
+      window.removeEventListener('scroll', updatePos, true);
+    };
   }, [open, updatePos]);
 
+  // ── Outside click ─────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
       const t = e.target as Node;
@@ -74,109 +158,42 @@ export default function CustomerSearchDropdown({
     };
   }, []);
 
-  const doSearch = useCallback(async (q: string) => {
-    const seq = ++seqRef.current;
-    const key = buildKey(q);
-
-    // Show cached result instantly if available
-    const cached = _queryCache.get(key);
-    if (cached) {
-      setSuggestions(cached);
-      setOpen(true);
-      setLoadingLocal(false);
-      setLoadingKledo(false);
-      return;
-    }
-
+  // ── Core search (purely client-side after cache is warm) ─────────────
+  const runSearch = useCallback((q: string) => {
+    const results = filterAndMerge(q);
+    setSuggestions(results);
     setOpen(true);
-    setLoadingLocal(true);
-    setLoadingKledo(true);
-
-    let localList: CustomerOption[] = [];
-
-    // ── Step 1: local DB (fast ~150ms) ──────────────────────────
-    try {
-      const res = await api.get('/customers', {
-        params: { limit: 100, active: 'true', ...(q ? { search: q } : {}) },
-      });
-      if (seq !== seqRef.current) return;
-
-      const raw: any[] = res.data?.data ?? res.data ?? [];
-      localList = raw
-        .filter((c: any) => {
-          if (!q) return true;
-          const t = q.toLowerCase();
-          return (c.name ?? '').toLowerCase().includes(t) ||
-                 (c.phone ?? '').toLowerCase().includes(t);
-        })
-        .map((c: any) => ({
-          id: String(c.id),
-          name: c.name ?? '',
-          phone: c.phone ?? null,
-          email: c.email ?? null,
-          address: c.address ?? null,
-          source: 'local' as const,
-        }));
-
-      setSuggestions(localList);
-    } catch { /* ignore */ } finally {
-      if (seq === seqRef.current) setLoadingLocal(false);
-    }
-
-    // ── Step 2: Kledo search with the actual query (server caches) ──
-    try {
-      const res = await fetch(
-        `/api/direct/kledo-search?type=contacts&q=${encodeURIComponent(q)}`,
-      ).then(r => r.json());
-      if (seq !== seqRef.current) return;
-
-      const kledoList: CustomerOption[] =
-        res?.success
-          ? (res.data ?? []).map((c: any) => ({
-              id: c.id,
-              name: c.name ?? '',
-              phone: c.phone ?? null,
-              email: c.email ?? null,
-              address: null,
-              source: 'kledo' as const,
-            }))
-          : [];
-
-      const localNames = new Set(localList.map(c => c.name.toLowerCase().trim()));
-      const merged = [
-        ...localList,
-        ...kledoList.filter(c => !localNames.has(c.name.toLowerCase().trim())),
-      ].slice(0, 20);
-
-      setSuggestions(merged);
-      _queryCache.set(key, merged); // cache this query result
-    } catch { /* ignore */ } finally {
-      if (seq === seqRef.current) setLoadingKledo(false);
-    }
   }, []);
+
+  // ── If Kledo cache is still loading, wait then re-run search ──────────
+  const searchAfterWarm = useCallback(async (q: string) => {
+    if (_warmPromise) {
+      await _warmPromise;
+    }
+    runSearch(q);
+  }, [runSearch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
     onChange(v);
     setSelected(null);
-    if (timerRef.current) clearTimeout(timerRef.current);
 
-    // Instant cache lookup
-    const cached = _queryCache.get(buildKey(v));
-    if (cached) {
-      setSuggestions(cached);
-      setOpen(true);
-      return;
+    // Show local+cached-kledo results instantly
+    runSearch(v);
+
+    // If Kledo cache is still loading, re-run once it's done
+    if (_warmPromise) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => searchAfterWarm(v), 100);
     }
-
-    // Show empty state + debounce
-    setSuggestions([]);
-    timerRef.current = setTimeout(() => doSearch(v), 350);
   };
 
   const handleFocus = () => {
     updatePos();
-    doSearch(value);
+    runSearch(value);
+    if (_warmPromise) {
+      searchAfterWarm(value);
+    }
   };
 
   const handleSelect = (c: CustomerOption) => {
@@ -184,8 +201,6 @@ export default function CustomerSearchDropdown({
     onChange(c.name);
     setSuggestions([]);
     setOpen(false);
-    setLoadingLocal(false);
-    setLoadingKledo(false);
     onSelect?.(c);
   };
 
@@ -194,12 +209,10 @@ export default function CustomerSearchDropdown({
     onChange('');
     setSuggestions([]);
     setOpen(false);
-    setLoadingLocal(false);
-    setLoadingKledo(false);
   };
 
-  const isLoading = loadingLocal || loadingKledo;
-  const noResult = !isLoading && suggestions.length === 0 && open;
+  const kledoReady = _kledoCacheTs > 0;
+  const noResult = !warming && suggestions.length === 0 && open;
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -220,12 +233,13 @@ export default function CustomerSearchDropdown({
           onChange={handleChange}
           onFocus={handleFocus}
         />
-        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {isLoading && (
-            <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
-              style={{ borderColor: 'var(--border)', borderTopColor: accentColor }} />
+        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          {warming && (
+            <span title="Memuat kontak Kledo...">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: accentColor }} />
+            </span>
           )}
-          {selected && !isLoading && (
+          {selected && !warming && (
             <button type="button" onMouseDown={handleClear} className="p-0.5 rounded">
               <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
             </button>
@@ -233,6 +247,13 @@ export default function CustomerSearchDropdown({
           <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
         </div>
       </div>
+
+      {/* Warm status hint below field */}
+      {warming && (
+        <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
+          Memuat kontak dari Kledo... (pertama kali ±10 detik)
+        </p>
+      )}
 
       {open && (
         <div
@@ -247,20 +268,22 @@ export default function CustomerSearchDropdown({
             borderRadius: 14,
             border: '1.5px solid var(--border)',
             boxShadow: 'var(--shadow-lg)',
-            maxHeight: 240,
+            maxHeight: 260,
             overflowY: 'auto',
             overflowX: 'hidden',
             WebkitOverflowScrolling: 'touch' as any,
             touchAction: 'pan-y',
           }}
         >
-          {/* Loading state */}
-          {isLoading && suggestions.length === 0 && (
-            <div className="px-4 py-4 text-center">
-              <div className="w-4 h-4 border-2 rounded-full animate-spin mx-auto"
-                style={{ borderColor: 'var(--border)', borderTopColor: accentColor }} />
-              <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                Mencari pelanggan...
+          {/* Loading Kledo */}
+          {warming && suggestions.length === 0 && (
+            <div className="px-4 py-5 text-center">
+              <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" style={{ color: accentColor }} />
+              <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Memuat kontak dari Kledo...
+              </p>
+              <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                Sekali muat, selanjutnya instan
               </p>
             </div>
           )}
@@ -273,37 +296,59 @@ export default function CustomerSearchDropdown({
                   key={c.id}
                   type="button"
                   onClick={() => handleSelect(c)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
+                  style={{ background: 'transparent', transition: 'background 0.1s' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 text-white text-xs font-bold"
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 text-white text-xs font-bold"
                     style={{
                       background: c.source === 'kledo'
                         ? 'linear-gradient(135deg,#10B981,#059669)'
                         : `linear-gradient(135deg,${accentColor},${accentColor}99)`,
-                    }}>
+                    }}
+                  >
                     {c.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{c.name}</p>
+                      <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                        {c.name}
+                      </p>
                       {c.source === 'kledo' && (
-                        <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                          style={{ background: 'rgba(16,185,129,.12)', color: '#059669' }}>Kledo</span>
+                        <span
+                          className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{ background: 'rgba(16,185,129,.12)', color: '#059669' }}
+                        >
+                          Kledo
+                        </span>
                       )}
                     </div>
-                    {c.phone && <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>📞 {c.phone}</p>}
-                    {!c.phone && c.email && <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>✉ {c.email}</p>}
+                    {c.phone && (
+                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
+                        📞 {c.phone}
+                      </p>
+                    )}
+                    {!c.phone && c.email && (
+                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
+                        ✉ {c.email}
+                      </p>
+                    )}
                   </div>
                 </button>
               ))}
 
-              {/* Footer: loading kledo indicator */}
-              <div className="px-3 py-2 flex items-center gap-1.5" style={{ borderTop: '1px solid var(--border)' }}>
-                {loadingKledo
-                  ? <><Loader2 className="h-3 w-3 animate-spin" style={{ color: '#10B981' }} /><p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Memuat dari Kledo...</p></>
-                  : <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}><User className="h-3 w-3 inline mr-1" />Lokal &amp; Kledo · Ketik nama baru untuk buat pelanggan baru</p>
+              <div
+                className="px-3 py-2 flex items-center gap-1.5"
+                style={{ borderTop: '1px solid var(--border)' }}
+              >
+                {warming
+                  ? <><Loader2 className="h-3 w-3 animate-spin" style={{ color: '#10B981' }} /><p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Kledo masih memuat...</p></>
+                  : <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      <User className="h-3 w-3 inline mr-1" />
+                      {kledoReady ? `${_kledoContacts.length} kontak Kledo` : 'Lokal'} · Ketik nama baru → buat otomatis
+                    </p>
                 }
               </div>
             </>
@@ -327,14 +372,18 @@ export default function CustomerSearchDropdown({
       {selected && (
         <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
           {selected.source === 'kledo' && (
-            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
-              style={{ backgroundColor: 'rgba(16,185,129,.12)', color: '#059669' }}>
+            <span
+              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
+              style={{ backgroundColor: 'rgba(16,185,129,.12)', color: '#059669' }}
+            >
               ✓ Dari Kledo
             </span>
           )}
           {selected.phone && (
-            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: `${accentColor}15`, color: accentColor }}>
+            <span
+              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+            >
               📞 {selected.phone}
             </span>
           )}
