@@ -22,6 +22,39 @@ interface Props {
   required?: boolean;
 }
 
+let kledoContactsCache: CustomerOption[] | null = null;
+let kledoCacheLoading = false;
+const kledoCacheListeners: Array<() => void> = [];
+
+async function preloadKledoContacts() {
+  if (kledoContactsCache !== null || kledoCacheLoading) return;
+  kledoCacheLoading = true;
+  try {
+    const res = await api.get('/kledo/contacts', { params: { per_page: 300 } });
+    const raw: any[] = res.data?.data?.data ?? res.data?.data ?? [];
+    kledoContactsCache = raw.map((c: any) => ({
+      id: `kledo-${c.id}`,
+      name: c.name ?? '',
+      phone: c.phone ?? null,
+      email: c.email ?? null,
+      address: null,
+      source: 'kledo' as const,
+    }));
+  } catch {
+    kledoContactsCache = [];
+  } finally {
+    kledoCacheLoading = false;
+    kledoCacheListeners.forEach(fn => fn());
+    kledoCacheListeners.length = 0;
+  }
+}
+
+function filterKledo(list: CustomerOption[], q: string): CustomerOption[] {
+  if (!q || q.trim().length === 0) return list.slice(0, 8);
+  const terms = q.toLowerCase().trim().split(/\s+/);
+  return list.filter(c => terms.every(t => c.name.toLowerCase().includes(t))).slice(0, 8);
+}
+
 export default function CustomerSearchDropdown({
   value,
   onChange,
@@ -37,50 +70,44 @@ export default function CustomerSearchDropdown({
   const [selected, setSelected] = useState<CustomerOption | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    preloadKledoContacts();
+  }, []);
 
   const doSearch = useCallback(async (q: string) => {
     setLoading(true);
     setNoResult(false);
     try {
-      const params: any = { limit: 10, active: 'true' };
+      const params: any = { limit: 20, active: 'true' };
       if (q && q.length >= 1) params.search = q;
 
-      const [localRes, kledoRes] = await Promise.allSettled([
-        api.get('/customers', { params }),
-        q && q.length >= 1
-          ? api.get('/kledo/contacts', { params: { search: q, per_page: 8, type: 'customer' } })
-          : Promise.resolve({ data: { data: [] } }),
-      ]);
-
-      const localList: CustomerOption[] =
-        localRes.status === 'fulfilled'
-          ? (localRes.value.data?.data ?? []).map((c: any) => ({ ...c, source: 'local' as const }))
-          : [];
-
-      const kledoRaw: any[] =
-        kledoRes.status === 'fulfilled'
-          ? (kledoRes.value.data?.data?.data ?? kledoRes.value.data?.data ?? [])
-          : [];
-
-      const kledoList: CustomerOption[] = kledoRaw.map((c: any) => ({
-        id: `kledo-${c.id}`,
-        name: c.name,
-        phone: c.phone ?? null,
-        email: c.email ?? null,
-        address: null,
-        source: 'kledo' as const,
+      const localRes = await api.get('/customers', { params }).catch(() => null);
+      const localRaw: any[] = localRes?.data?.data ?? localRes?.data ?? [];
+      const localList: CustomerOption[] = localRaw.map((c: any) => ({
+        ...c,
+        id: String(c.id),
+        source: 'local' as const,
       }));
 
-      const localNames = new Set(localList.map((c) => c.name.toLowerCase().trim()));
-      const dedupedKledo = kledoList.filter((c) => !localNames.has(c.name.toLowerCase().trim()));
-      let merged = [...localList, ...dedupedKledo];
+      const clientFilteredLocal = q && q.trim().length >= 1
+        ? localList.filter(c => {
+            const terms = q.toLowerCase().trim().split(/\s+/);
+            return terms.every(t =>
+              c.name.toLowerCase().includes(t) ||
+              (c.phone ?? '').toLowerCase().includes(t),
+            );
+          })
+        : localList;
 
-      if (q && q.trim().length >= 1) {
-        const terms = q.toLowerCase().trim().split(/\s+/);
-        merged = merged.filter((c) => terms.every((t) => c.name.toLowerCase().includes(t)));
-      }
+      const kledo = kledoContactsCache ?? [];
+      const kledoFiltered = filterKledo(kledo, q);
 
-      merged = merged.slice(0, 10);
+      const localNames = new Set(clientFilteredLocal.map(c => c.name.toLowerCase().trim()));
+      const dedupedKledo = kledoFiltered.filter(c => !localNames.has(c.name.toLowerCase().trim()));
+
+      const merged = [...clientFilteredLocal, ...dedupedKledo].slice(0, 10);
       setSuggestions(merged);
       setNoResult(merged.length === 0);
       setOpen(true);
@@ -95,7 +122,7 @@ export default function CustomerSearchDropdown({
 
   const search = useCallback((q: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => doSearch(q), 280);
+    timerRef.current = setTimeout(() => doSearch(q), 250);
   }, [doSearch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -27,6 +27,40 @@ interface Props {
 const fmtRp = (v: number) =>
   v.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
+let kledoProductsCache: ProductOption[] | null = null;
+let kledoProductsCacheLoading = false;
+
+async function preloadKledoProducts() {
+  if (kledoProductsCache !== null || kledoProductsCacheLoading) return;
+  kledoProductsCacheLoading = true;
+  try {
+    const res = await api.get('/kledo/products', { params: { per_page: 300 } });
+    const raw: any[] = res.data?.data?.data ?? res.data?.data ?? [];
+    kledoProductsCache = raw.map((p: any) => ({
+      id: `kledo-${p.id}`,
+      name: p.name ?? '',
+      sku: p.code ?? '',
+      hargaJual: Number(p.price ?? 0),
+      stok: 0,
+      kledoProductId: String(p.id),
+      unit: p.unit ? { name: typeof p.unit === 'string' ? p.unit : (p.unit?.name ?? '') } : null,
+      source: 'kledo' as const,
+    }));
+  } catch {
+    kledoProductsCache = [];
+  } finally {
+    kledoProductsCacheLoading = false;
+  }
+}
+
+function filterKledoProducts(list: ProductOption[], q: string): ProductOption[] {
+  if (!q || q.trim().length === 0) return [];
+  const terms = q.toLowerCase().trim().split(/\s+/);
+  return list
+    .filter(p => terms.every(t => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t)))
+    .slice(0, 8);
+}
+
 export default function ProductSearchDropdown({
   value,
   onSelect,
@@ -50,6 +84,10 @@ export default function ProductSearchDropdown({
   }, []);
 
   useEffect(() => {
+    preloadKledoProducts();
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     updatePos();
     const closeOnScroll = () => { setSuggestions([]); setOpen(false); };
@@ -63,67 +101,45 @@ export default function ProductSearchDropdown({
 
   const search = useCallback(async (q: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    if (!q || q.length < 2) { setSuggestions([]); setOpen(false); return; }
+    if (!q || q.length < 1) { setSuggestions([]); setOpen(false); return; }
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const [localRes, kledoRes] = await Promise.allSettled([
-          api.get('/inventory/products', { params: { search: q, limit: 30 } }),
-          api.get('/kledo/products', { params: { name: q, per_page: 30 } }),
-        ]);
+        const localRes = await api.get('/inventory/products', { params: { search: q, limit: 30 } }).catch(() => null);
+        const localRaw: any[] = localRes
+          ? (() => { const d = localRes.data; return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : []; })()
+          : [];
 
-        const localRaw: any[] =
-          localRes.status === 'fulfilled'
-            ? (() => { const d = localRes.value.data; return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : []; })()
-            : [];
+        const terms = q.toLowerCase().trim().split(/\s+/);
+        const localList: ProductOption[] = localRaw
+          .map((p: any) => ({
+            id: String(p.id),
+            name: p.name ?? '',
+            sku: p.sku ?? p.code ?? '',
+            hargaJual: Number(p.hargaJual ?? p.price ?? 0),
+            stok: Number(p.stok ?? p.stock ?? p.qty ?? 0),
+            kledoProductId: p.kledoProductId ?? null,
+            unit: p.unit ?? null,
+            source: 'local' as const,
+          }))
+          .filter(p => terms.every(t => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t)));
 
-        const localList: ProductOption[] = localRaw.map((p: any) => ({
-          id: String(p.id),
-          name: p.name ?? '',
-          sku: p.sku ?? p.code ?? '',
-          hargaJual: Number(p.hargaJual ?? p.price ?? 0),
-          stok: Number(p.stok ?? p.stock ?? p.qty ?? 0),
-          kledoProductId: p.kledoProductId ?? null,
-          unit: p.unit ?? null,
-          source: 'local' as const,
-        }));
+        const kledo = kledoProductsCache ?? [];
+        const kledoFiltered = filterKledoProducts(kledo, q);
 
-        const kledoRaw: any[] =
-          kledoRes.status === 'fulfilled'
-            ? (() => { const d = kledoRes.value.data; const inner = d?.data ?? d; return Array.isArray(inner?.data) ? inner.data : Array.isArray(inner) ? inner : []; })()
-            : [];
+        const localNames = new Set(localList.map(p => p.name.toLowerCase().trim()));
+        const dedupedKledo = kledoFiltered.filter(p => !localNames.has(p.name.toLowerCase().trim()));
 
-        const kledoList: ProductOption[] = kledoRaw.map((p: any) => ({
-          id: `kledo-${p.id}`,
-          name: p.name ?? '',
-          sku: p.code ?? '',
-          hargaJual: Number(p.price ?? 0),
-          stok: 0,
-          kledoProductId: String(p.id),
-          unit: p.unit
-            ? { name: typeof p.unit === 'string' ? p.unit : (p.unit?.name ?? '') }
-            : null,
-          source: 'kledo' as const,
-        }));
-
-        const localNames = new Set(localList.map((p) => p.name.toLowerCase().trim()));
-        const dedupedKledo = kledoList.filter((p) => !localNames.has(p.name.toLowerCase().trim()));
-        let merged = [...localList, ...dedupedKledo];
-
-        if (q.trim()) {
-          const terms = q.toLowerCase().trim().split(/\s+/);
-          merged = merged.filter((p) =>
-            terms.every((t) => p.name.toLowerCase().includes(t) || (p.sku ?? '').toLowerCase().includes(t)),
-          );
-        }
-
-        merged = merged.slice(0, 10);
+        const merged = [...localList, ...dedupedKledo].slice(0, 10);
         setSuggestions(merged);
         if (merged.length > 0) { updatePos(); setOpen(true); }
         else { setSuggestions([]); setOpen(false); }
-      } catch { setSuggestions([]); }
-      finally { setLoading(false); }
-    }, 300);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
   }, [updatePos]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,7 +177,7 @@ export default function ProductSearchDropdown({
           disabled={disabled}
           autoComplete="off"
           onChange={handleChange}
-          onFocus={() => { updatePos(); if (value.length >= 2) search(value); }}
+          onFocus={() => { updatePos(); if (value.length >= 1) search(value); }}
           onBlur={() => setTimeout(() => { setSuggestions([]); setOpen(false); }, 180)}
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
