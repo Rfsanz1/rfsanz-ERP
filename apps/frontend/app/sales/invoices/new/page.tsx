@@ -145,117 +145,185 @@ export default function NewInvoicePage() {
     if (items.some(it => !it.nama)) { setError('Semua produk harus diisi.'); return; }
     setLoading(true); setError('');
 
-    try {
-      let resolvedId = customerId;
-      if (!resolvedId) {
-        const res = await api.post('/customers/find-or-create', { name: customerName.trim() });
-        resolvedId = res.data.id;
-      }
-
-      const res = await api.post('/invoices', {
-        customerId: resolvedId,
-        salesName: salesName.trim() || undefined,
-        tanggal,
-        notes: notes.trim() || undefined,
-        diskon: diskonTotal || undefined,
-        pajak: pajak || undefined,
-        ongkir: ongkir || undefined,
-        subtotal: subtotalBruto,
-        grandTotal,
-        items: items.map(it => ({
-          nama: it.nama, qty: it.qty, harga: it.harga,
-          diskon: it.diskonItem || undefined, subtotal: it.subtotal,
-          productId: it.productId, kledoProductId: it.kledoProductId ?? undefined,
-        })),
-      });
-
-      const savedInvoice = res.data?.data ?? res.data ?? {};
-      const refNumber = savedInvoice.nomorInvoice ?? savedInvoice.invoiceNumber ?? savedInvoice.nomor ?? savedInvoice.ref_number ?? undefined;
-
-      setKledoStatus('syncing'); setKledoError('');
-      const invoicePayload = {
-        trans_date: tanggal,
-        due_date: dueDate,
-        ref_number: refNumber,
-        memo: notes.trim() || undefined,
-        contact_id: kledoContactId ? Number(kledoContactId) : undefined,
-        contact_name: customerName.trim(),
-        discount: diskonTotal || undefined,
-        include_tax: pajak > 0 ? 1 : 0,
-        items: [
-          ...items.map(it => ({
-            product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
-            name_item: it.nama, qty: it.qty, rate: it.harga,
-            discount: it.diskonItem || undefined, unit: it.unit,
-          })),
-          ...(ongkir > 0 ? [{ name_item: 'Biaya Pengiriman', qty: 1, rate: ongkir }] : []),
-        ],
-      };
-
-      let kledoOk = false;
+    // --- 1. Resolve customer ID ---
+    let resolvedId = customerId;
+    if (!resolvedId) {
       try {
-        await api.post('/kledo/invoices', invoicePayload);
-        kledoOk = true;
-      } catch {}
-
-      if (!kledoOk) {
-        try {
-          const kledoLocal = JSON.parse(localStorage.getItem('erp_intg_kledo') ?? '{}');
-          if (kledoLocal.token) {
-            const dr = await fetch('/api/direct/kledo-invoice', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token: kledoLocal.token, baseUrl: kledoLocal.baseUrl, invoice: invoicePayload }),
-            });
-            const dd = await dr.json();
-            if (dr.ok && dd.success) kledoOk = true;
-            else setKledoError(dd.message ?? 'Gagal kirim ke Kledo');
-          } else {
-            setKledoError('Token Kledo belum diatur. Isi di Settings → API Integration → Kledo.');
-          }
-        } catch (e: any) {
-          setKledoError(e?.message ?? 'Gagal kirim ke Kledo');
-        }
+        const cRes = await api.post('/customers', {
+          name: customerName.trim(),
+          phone: waPhone?.trim() || undefined,
+        });
+        resolvedId = cRes.data?.data?.id ?? cRes.data?.id ?? null;
+      } catch {
+        // customer create failed; continue without ID
       }
+    }
 
-      setKledoStatus(kledoOk ? 'ok' : 'error');
+    // --- 2. Generate invoice number client-side as fallback ---
+    const nowStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const rndSuffix = Math.floor(Math.random() * 9000 + 1000);
+    const fallbackRef = `INV-${nowStr}-${rndSuffix}`;
 
-      if (sendWa && waPhone.trim()) {
-        setWaStatus('sending'); setWaError('');
-        try {
-          const fonnteConfig = JSON.parse(localStorage.getItem('erp_intg_fonnte') ?? '{}');
-          const fonnteToken = fonnteConfig.token ?? '';
-          if (!fonnteToken) {
-            setWaError('Token Fonnte belum diatur. Isi di Settings → WA Gateway.');
-            setWaStatus('error');
-          } else {
-            const dueFmt = new Date(dueDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-            const amtFmt = `Rp ${grandTotal.toLocaleString('id-ID')}`;
-            const waMsg = `Halo ${customerName}, invoice ${refNumber ?? 'baru'} senilai ${amtFmt} jatuh tempo pada ${dueFmt}. Mohon segera melakukan pembayaran. Terima kasih.`;
-            const wr = await fetch('/api/direct/whatsapp', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token: fonnteToken, target: waPhone.trim(), message: waMsg }),
-            });
-            const wd = await wr.json();
-            if (wr.ok && wd.status !== false) {
-              setWaStatus('ok');
-            } else {
-              setWaError(wd.reason ?? wd.message ?? 'Gagal kirim WA');
-              setWaStatus('error');
-            }
-          }
-        } catch (e: any) {
-          setWaError(e?.message ?? 'Gagal kirim WA');
+    // --- 3. Try save invoice to ERP (non-blocking: continue on failure) ---
+    let savedInvoice: Record<string, any> = {};
+    let erpSaved = false;
+    if (resolvedId) {
+      try {
+        const res = await api.post('/invoices', {
+          customerId: resolvedId,
+          salesName: salesName.trim() || undefined,
+          tanggal,
+          notes: notes.trim() || undefined,
+          diskon: diskonTotal || undefined,
+          pajak: pajak || undefined,
+          ongkir: ongkir || undefined,
+          subtotal: subtotalBruto,
+          grandTotal,
+          items: items.map(it => ({
+            nama: it.nama, qty: it.qty, harga: it.harga,
+            diskon: it.diskonItem || undefined, subtotal: it.subtotal,
+            productId: it.productId, kledoProductId: it.kledoProductId ?? undefined,
+          })),
+        });
+        savedInvoice = res.data?.data ?? res.data ?? {};
+        erpSaved = true;
+      } catch {
+        // ERP save failed; proceed to Kledo & WA anyway
+      }
+    }
+
+    const refNumber: string = savedInvoice.nomorInvoice ?? savedInvoice.invoiceNumber ?? savedInvoice.nomor ?? savedInvoice.ref_number ?? fallbackRef;
+
+    // --- 4. Push ke Kledo ---
+    setKledoStatus('syncing'); setKledoError('');
+    const invoicePayload = {
+      trans_date: tanggal,
+      due_date: dueDate,
+      ref_number: refNumber,
+      memo: notes.trim() || undefined,
+      contact_id: kledoContactId ? Number(kledoContactId) : undefined,
+      contact_name: customerName.trim(),
+      discount: diskonTotal || undefined,
+      include_tax: pajak > 0 ? 1 : 0,
+      items: [
+        ...items.map(it => ({
+          product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
+          name_item: it.nama, qty: it.qty, rate: it.harga,
+          discount: it.diskonItem || undefined, unit: it.unit,
+        })),
+        ...(ongkir > 0 ? [{ name_item: 'Biaya Pengiriman', qty: 1, rate: ongkir }] : []),
+      ],
+    };
+
+    let kledoOk = false;
+    try {
+      const kr = await api.post('/kledo/invoices', invoicePayload);
+      kledoOk = kr.data?.success !== false;
+    } catch {}
+
+    if (!kledoOk) {
+      try {
+        const kledoLocal = JSON.parse(localStorage.getItem('erp_intg_kledo') ?? '{}');
+        if (kledoLocal.token) {
+          // Fallback A: direct Kledo route dengan localStorage token
+          const dr = await fetch('/api/direct/kledo-invoice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: kledoLocal.token, baseUrl: kledoLocal.baseUrl, invoice: invoicePayload }),
+          });
+          const dd = await dr.json();
+          if (dr.ok && dd.success) kledoOk = true;
+          else setKledoError(dd.message ?? 'Gagal kirim ke Kledo');
+        }
+      } catch (e: any) {
+        setKledoError(e?.message ?? 'Gagal kirim ke Kledo');
+      }
+    }
+
+    if (!kledoOk) {
+      try {
+        // Fallback B: test-invoice route — ambil token Kledo dari backend settings otomatis
+        const authToken = localStorage.getItem('gm_auth_token') ?? '';
+        const fonnteConfig = JSON.parse(localStorage.getItem('erp_intg_fonnte') ?? '{}');
+        const tr = await fetch('/api/direct/test-invoice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+          body: JSON.stringify({
+            invoice: {
+              trans_date: invoicePayload.trans_date,
+              due_date: invoicePayload.due_date,
+              ref_number: invoicePayload.ref_number,
+              memo: invoicePayload.memo,
+              contact_id: invoicePayload.contact_id,
+              contact_name: invoicePayload.contact_name,
+              include_tax: invoicePayload.include_tax,
+              items: invoicePayload.items.map((it: any) => ({
+                name_item: it.name_item, qty: it.qty, rate: it.rate,
+                discount: it.discount, unit: it.unit,
+              })),
+            },
+            fonnte_token: undefined,
+            wa_phone: undefined,
+          }),
+        });
+        const td = await tr.json();
+        if (tr.ok && td.kledo) {
+          kledoOk = true;
+          setKledoError('');
+        } else {
+          setKledoError(td.message ?? 'Gagal kirim ke Kledo (fallback)');
+        }
+      } catch (e: any) {
+        setKledoError(e?.message ?? 'Gagal kirim ke Kledo (fallback)');
+      }
+    }
+
+    setKledoStatus(kledoOk ? 'ok' : 'error');
+    if (!erpSaved && !kledoOk) {
+      setError('Gagal menyimpan invoice ke ERP dan Kledo. Periksa koneksi backend.');
+    }
+
+    // --- 5. Kirim WA ---
+    if (sendWa && waPhone.trim()) {
+      setWaStatus('sending'); setWaError('');
+      try {
+        const fonnteConfig = JSON.parse(localStorage.getItem('erp_intg_fonnte') ?? '{}');
+        const fonnteToken = fonnteConfig.token ?? '';
+        if (!fonnteToken) {
+          setWaError('Token Fonnte belum diatur. Isi di Settings → WA Gateway.');
           setWaStatus('error');
+        } else {
+          const dueFmt = new Date(dueDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+          const amtFmt = `Rp ${grandTotal.toLocaleString('id-ID')}`;
+          const waMsg = `Halo ${customerName}, invoice ${refNumber} senilai ${amtFmt} jatuh tempo pada ${dueFmt}. Mohon segera melakukan pembayaran. Terima kasih.`;
+          const wr = await fetch('/api/direct/whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: fonnteToken, target: waPhone.trim(), message: waMsg }),
+          });
+          const wd = await wr.json();
+          if (wr.ok && wd.status !== false) {
+            setWaStatus('ok');
+          } else {
+            setWaError(wd.reason ?? wd.message ?? 'Gagal kirim WA');
+            setWaStatus('error');
+          }
         }
+      } catch (e: any) {
+        setWaError(e?.message ?? 'Gagal kirim WA');
+        setWaStatus('error');
       }
+    }
 
-      router.push(`/sales/invoices/${savedInvoice.id ?? ''}`);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Terjadi kesalahan.');
-      setKledoStatus('idle');
-    } finally { setLoading(false); }
+    setLoading(false);
+
+    // Redirect: ke detail jika ada ID, ke list jika tidak
+    if (savedInvoice.id) {
+      router.push(`/sales/invoices/${savedInvoice.id}`);
+    } else if (kledoOk) {
+      router.push('/sales/invoices');
+    }
+    // jika keduanya gagal, tetap di halaman agar user bisa lihat error
   };
 
   return (
