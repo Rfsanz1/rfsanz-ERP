@@ -25,7 +25,7 @@ export default function BatchPayrollPage() {
   const [processing, setProcessing] = useState(false);
   const [processed, setProcessed] = useState(false);
 
-  if (!token) return null;
+
 
   const toggleSelect = (id: number) => setEmployees(es => es.map(e => e.id === id ? { ...e, selected: !e.selected } : e));
   const selectAll = () => setEmployees(es => es.map(e => ({ ...e, selected: true })));

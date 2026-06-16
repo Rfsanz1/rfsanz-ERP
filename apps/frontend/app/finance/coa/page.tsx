@@ -37,7 +37,7 @@ export default function COAPage() {
     } catch {} finally { setLoading(false); }
   };
   useEffect(() => { if (token) load(); }, [search, token]);
-  if (!token) return null;
+
 
   return (
     <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/finance/coa">

@@ -36,7 +36,7 @@ export default function PosCashierPage() {
   };
 
   const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
-  if (!token) return null;
+
 
   return (
     <AppShell {...POS_CONFIG} navItems={POS_NAV} activeHref="/pos/cashier">

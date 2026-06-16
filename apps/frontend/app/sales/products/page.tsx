@@ -81,7 +81,7 @@ export default function SalesProductsPage() {
   }, []);
 
   useEffect(() => { if (token) load(); }, [token, load]);
-  if (!token) return null;
+
 
   const filtered = data.filter(p => {
     const matchSrc = sourceFilter === 'all' || p.source === sourceFilter;

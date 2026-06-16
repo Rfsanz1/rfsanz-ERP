@@ -31,7 +31,7 @@ export default function TrainingPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', category: '', trainer: '', participants: '', start: '', end: '', cost: '', description: '' });
 
-  if (!token) return null;
+
 
   const filtered = items.filter(i =>
     i.title.toLowerCase().includes(search.toLowerCase()) &&

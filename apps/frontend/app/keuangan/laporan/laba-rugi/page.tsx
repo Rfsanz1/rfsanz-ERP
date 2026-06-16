@@ -39,7 +39,7 @@ export default function LabaRugiPage() {
     } catch { alert('Export gagal'); }
   };
 
-  if (!token) return null;
+
 
   const rev = data?.revenues?.total ?? 0;
   const hpp = data?.hpp?.total ?? 0;

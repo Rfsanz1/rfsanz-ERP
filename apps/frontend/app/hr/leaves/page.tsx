@@ -54,7 +54,7 @@ export default function LeavesPage() {
     } catch {} finally { setLoading(false); }
   }
   useEffect(() => { if (token) fetchAll(); }, [token]);
-  if (!token) return null;
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

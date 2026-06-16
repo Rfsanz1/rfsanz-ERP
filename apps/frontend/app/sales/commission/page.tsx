@@ -35,7 +35,7 @@ export default function CommissionPage() {
   const [period, setPeriod] = useState('Juni 2025');
   const [showScheme, setShowScheme] = useState(false);
 
-  if (!token) return null;
+
 
   const totalCommission = SAMPLE.reduce((s, i) => s + i.total, 0);
   const paid = SAMPLE.filter(i => i.status === 'approved').reduce((s, i) => s + i.total, 0);

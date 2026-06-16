@@ -34,7 +34,7 @@ export default function WorkOrdersPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ customer: '', device: '', problem: '', technician: '', est_done: '', est_cost: '', notes: '' });
 
-  if (!token) return null;
+
 
   const filtered = items.filter(i =>
     (i.customer.toLowerCase().includes(search.toLowerCase()) || i.device.toLowerCase().includes(search.toLowerCase())) &&

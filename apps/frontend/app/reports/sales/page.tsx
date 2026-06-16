@@ -17,7 +17,7 @@ const DATA = [
 export default function ReportsSalesPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...REPORTS_CONFIG} navItems={REPORTS_NAV} activeHref="/reports/sales">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

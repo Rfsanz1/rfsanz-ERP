@@ -18,7 +18,7 @@ const PRODUCTS = [
 export default function PosProductsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...POS_CONFIG} navItems={POS_NAV} activeHref="/pos/products">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

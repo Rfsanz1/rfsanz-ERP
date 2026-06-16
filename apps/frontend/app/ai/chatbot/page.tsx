@@ -90,7 +90,7 @@ function AiChatbotPageContent() {
     }, 1200);
   };
 
-  if (!token) return null;
+
 
   return (
     <OdooLayout title="AI Chat Assistant" subtitle="Tanya apapun tentang bisnis Anda">

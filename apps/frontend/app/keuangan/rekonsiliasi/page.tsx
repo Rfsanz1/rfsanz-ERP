@@ -94,7 +94,7 @@ export default function RekonsiliasiPage() {
     } catch {}
   };
 
-  if (!token) return null;
+
 
   return (
     <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/keuangan/rekonsiliasi">

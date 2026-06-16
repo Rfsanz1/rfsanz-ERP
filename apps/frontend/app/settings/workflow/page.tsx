@@ -59,7 +59,7 @@ export default function WorkflowSettingsPage() {
     finally { setSaving(null); }
   };
 
-  if (!token) return null;
+
 
   return (
     <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/settings/workflow">

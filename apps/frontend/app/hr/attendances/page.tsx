@@ -31,7 +31,7 @@ export default function AttendancesPage() {
     } catch {} finally { setLoading(false); }
   };
   useEffect(() => { if (token) load(); }, [search, page, token]);
-  if (!token) return null;
+
 
   return (
     <AppShell {...HR_CONFIG} navItems={HR_NAV} activeHref="/hr/attendances">

@@ -17,7 +17,7 @@ const EXPENSES = [
 export default function FinanceExpensesPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/finance/expenses">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

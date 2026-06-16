@@ -17,7 +17,7 @@ const SESSIONS = [
 export default function PosSessionsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...POS_CONFIG} navItems={POS_NAV} activeHref="/pos/sessions">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

@@ -85,7 +85,7 @@ export default function POSManagementPage() {
     } catch { alert('Void gagal'); }
   };
 
-  if (!token) return null;
+
 
   return (
     <AppShell {...POS_CONFIG} navItems={POS_NAV} activeHref="/pos/management">

@@ -79,7 +79,7 @@ export default function SalesReturnsPage() {
     finally { setCreating(false); }
   };
 
-  if (!token) return null;
+
 
   return (
     <AppShell>

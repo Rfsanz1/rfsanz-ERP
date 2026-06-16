@@ -15,7 +15,7 @@ const DATA = [
 export default function CreditNotesPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...INVOICE_CONFIG} navItems={INVOICE_NAV} activeHref="/invoice/credit-notes">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

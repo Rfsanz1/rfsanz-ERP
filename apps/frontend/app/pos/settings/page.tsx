@@ -9,7 +9,7 @@ import { Save } from 'lucide-react';
 export default function PosSettingsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...POS_CONFIG} navItems={POS_NAV} activeHref="/pos/settings">
       <div className="p-6 space-y-6 max-w-2xl mx-auto">

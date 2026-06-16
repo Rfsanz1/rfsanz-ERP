@@ -113,7 +113,7 @@ export default function UserManagementPage() {
     (roleFilter === '' || u.roleId === roleFilter)
   );
 
-  if (!token) return null;
+
 
   return (
     <AppShell {...SETTINGS_CONFIG} navItems={SETTINGS_NAV} activeHref="/settings/users">

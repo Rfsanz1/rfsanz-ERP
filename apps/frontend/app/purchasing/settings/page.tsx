@@ -9,7 +9,7 @@ import { Save } from 'lucide-react';
 export default function PurchasingSettingsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...PURCHASING_CONFIG} navItems={PURCHASING_NAV} activeHref="/purchasing/settings">
       <div className="p-6 space-y-6 max-w-2xl mx-auto">

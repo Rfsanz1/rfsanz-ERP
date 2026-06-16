@@ -16,7 +16,7 @@ export default function DeliveryAreasPage() {
   useEffect(() => {
     if (token) api.get('/driver-areas').then(r => setAreas(r.data ?? [])).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
-  if (!token) return null;
+
 
   return (
     <AppShell {...DELIVERY_CONFIG} navItems={DELIVERY_NAV} activeHref="/delivery/areas">

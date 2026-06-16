@@ -128,7 +128,7 @@ export default function ReportsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
-  if (!token) return null;
+
 
   const filteredCategories = REPORT_CATEGORIES.map(cat => ({
     ...cat,

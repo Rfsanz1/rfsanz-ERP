@@ -24,7 +24,7 @@ export default function TaxConfigPage() {
   const [form, setForm] = useState({ name: '', type: 'sale', rate: '', account: '', scope: '' });
   const [msg, setMsg] = useState('');
 
-  if (!token) return null;
+
 
   const save = () => {
     if (!form.name) return;

@@ -38,7 +38,7 @@ export default function SalesTeamsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState({ name: '', leader: '' });
 
-  if (!token) return null;
+
 
   return (
     <AppShell {...SALES_CONFIG} navItems={SALES_NAV} activeHref="/sales/teams">

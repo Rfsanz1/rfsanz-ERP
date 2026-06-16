@@ -31,7 +31,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
 export default function FleetRemindersPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
 
   const enriched = REMINDERS.map(r => {
     const days = getDaysUntil(r.expire_date);

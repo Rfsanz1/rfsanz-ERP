@@ -52,7 +52,7 @@ export default function RecruitmentPositionsPage() {
     setForm({ title: '', department: '', location: '', type: 'Full-time', quota: '1', salary_min: '', salary_max: '', requirements: '', description: '' });
   };
 
-  if (!token) return null;
+
 
   const filtered = (positions.length > 0 ? positions : SAMPLE).filter(p =>
     p.title?.toLowerCase().includes(search.toLowerCase()) ||

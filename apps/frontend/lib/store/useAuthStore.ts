@@ -18,6 +18,7 @@ interface AuthState {
   error: string | null;
   loading: boolean;
   isDemo: boolean;
+  initialized: boolean;
   rehydrate: () => void;
   autoLogin: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
@@ -45,6 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   loading: false,
   isDemo: false,
+  initialized: typeof window !== 'undefined' ? !!localStorage.getItem(TOKEN_KEY) : false,
 
   rehydrate: () => {
     if (typeof window === 'undefined') return;
@@ -59,7 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const existing = localStorage.getItem(TOKEN_KEY);
     if (existing) {
-      set({ token: existing, user: STATIC_USER });
+      set({ token: existing, user: STATIC_USER, initialized: true });
       return;
     }
 
@@ -76,7 +78,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const token: string = data.token ?? data.access_token ?? data.accessToken ?? '';
         if (token) {
           setAuthToken(token);
-          set({ token, user: STATIC_USER, loading: false });
+          set({ token, user: STATIC_USER, loading: false, initialized: true });
           return;
         }
       }
@@ -84,7 +86,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Network error, fall through
     }
 
-    set({ loading: false });
+    set({ loading: false, initialized: true });
   },
 
   login: async (email: string, password: string) => {

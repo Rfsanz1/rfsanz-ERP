@@ -16,7 +16,7 @@ const PAYMENTS = [
 export default function InvoicePaymentsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...INVOICE_CONFIG} navItems={INVOICE_NAV} activeHref="/invoice/payments">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

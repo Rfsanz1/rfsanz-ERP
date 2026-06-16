@@ -26,7 +26,7 @@ export default function ApprovalMatrixPage() {
   const [form, setForm] = useState({ name: '', min_amount: '', max_amount: '', approver_1: '', approver_2: '', approver_3: '' });
   const [msg, setMsg] = useState('');
 
-  if (!token) return null;
+
 
   const save = () => {
     if (!form.name || !form.approver_1) return;

@@ -38,7 +38,7 @@ export default function ActivityLogPage() {
   const [actionFilter, setActionFilter] = useState('');
   const [moduleFilter, setModuleFilter] = useState('');
 
-  if (!token) return null;
+
 
   const modules = [...new Set(SAMPLE_LOGS.map(l => l.module))];
   const actions = Object.keys(ACTION_COLORS);

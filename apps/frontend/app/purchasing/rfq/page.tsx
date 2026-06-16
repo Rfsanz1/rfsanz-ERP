@@ -47,7 +47,7 @@ export default function RFQPage() {
     lines: [{ product: '', qty: 1, uom: 'pcs', description: '' }],
   });
 
-  if (!token) return null;
+
 
   const filtered = items.filter(i =>
     i.supplier.toLowerCase().includes(search.toLowerCase()) &&

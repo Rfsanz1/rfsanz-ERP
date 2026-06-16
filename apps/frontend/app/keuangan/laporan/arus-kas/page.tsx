@@ -39,7 +39,7 @@ export default function ArusKasPage() {
     } catch { alert('Export gagal'); }
   };
 
-  if (!token) return null;
+
 
   const operasional = data?.operasional ?? 0;
   const investasi = data?.investasi ?? 0;

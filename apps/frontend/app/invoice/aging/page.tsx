@@ -20,7 +20,7 @@ const SAMPLE = [
 export default function InvoiceAgingPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
 
   const totalOverdue = SAMPLE.reduce((s, i) => s + i.amount, 0);
   const critical = SAMPLE.filter(i => i.days_overdue > 30).reduce((s, i) => s + i.amount, 0);

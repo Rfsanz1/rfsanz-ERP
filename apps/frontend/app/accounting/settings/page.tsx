@@ -22,7 +22,7 @@ const inputStyle: React.CSSProperties = {
 export default function AccountingSettingsPage() {
   const { token } = useAuthStore();
   const router    = useRouter();
-  if (!token) return null;
+
 
   return (
     <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/accounting/settings">

@@ -80,7 +80,7 @@ export default function EFakturPage() {
     } catch { alert('Export gagal'); }
   };
 
-  if (!token) return null;
+
 
   return (
     <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/keuangan/pajak/efaktur">

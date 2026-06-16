@@ -22,7 +22,7 @@ const inputStyle: React.CSSProperties = {
 export default function DeliverySettingsPage() {
   const { token } = useAuthStore();
   const router    = useRouter();
-  if (!token) return null;
+
 
   return (
     <AppShell {...DELIVERY_CONFIG} navItems={DELIVERY_NAV} activeHref="/delivery/settings">

@@ -45,7 +45,7 @@ export default function FleetVehiclesPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ plate: '', brand: '', model: '', year: '', type: '', driver: '', stnk_expire: '', kir_expire: '' });
 
-  if (!token) return null;
+
 
   const filtered = items.filter(i =>
     (i.plate.toLowerCase().includes(search.toLowerCase()) || i.brand.toLowerCase().includes(search.toLowerCase()) || i.driver.toLowerCase().includes(search.toLowerCase())) &&

@@ -28,7 +28,7 @@ export default function PriceComparisonPage() {
   const [suppliers, setSuppliers] = useState(COMPARISON_DATA.suppliers);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
 
-  if (!token) return null;
+
 
   const cheapest = Math.min(...suppliers.map(s => s.price));
   const fastest = Math.min(...suppliers.map(s => s.lead_time));

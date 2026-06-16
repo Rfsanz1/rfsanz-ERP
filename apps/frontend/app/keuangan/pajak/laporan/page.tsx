@@ -33,7 +33,7 @@ export default function LaporanPajakPage() {
 
   useEffect(() => { if (token) { setData(null); fetchData(); } }, [token, tab]);
 
-  if (!token) return null;
+
 
   const items = data?.items ?? [];
   const totalDPP = data?.totalDPP ?? 0;

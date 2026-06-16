@@ -22,7 +22,7 @@ const thStyle: React.CSSProperties = {
 export default function CrmReportsPage() {
   const { token } = useAuthStore();
   const router    = useRouter();
-  if (!token) return null;
+
 
   return (
     <AppShell {...CRM_CONFIG} navItems={CRM_NAV} activeHref="/crm/reports">

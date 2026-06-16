@@ -57,7 +57,7 @@ export default function SettingsPage() {
   };
 
   useEffect(() => { if (token) load(); }, [token]);
-  if (!token) return null;
+
 
   return (
     <div className="space-y-8 max-w-3xl">

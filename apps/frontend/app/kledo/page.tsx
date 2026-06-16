@@ -67,7 +67,7 @@ export default function KledoPage() {
     }
   };
 
-  if (!token) return null;
+
 
   const hasRunning = activeSyncs.size > 0;
 

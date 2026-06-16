@@ -84,7 +84,7 @@ export default function CustomersPage() {
   }, [page, search]);
 
   useEffect(() => { if (token) load(page, search); }, [page, search, token]);
-  if (!token) return null;
+
 
   // ── Autocomplete when typing name in modal ───────────────────────────────
   const searchSuggest = useCallback((q: string) => {

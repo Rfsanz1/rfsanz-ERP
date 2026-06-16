@@ -16,7 +16,7 @@ const VEHICLES = [
 export default function HrFleetPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...HR_CONFIG} navItems={HR_NAV} activeHref="/hr/fleet">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

@@ -15,7 +15,7 @@ export default function NotificationsPage() {
     void loadProfile();
     void loadNotifications();
   }, [token]);
-  if (!token) return null;
+
 
   return (
     <AppShell {...NOTIFICATIONS_CONFIG} navItems={NOTIFICATIONS_NAV} activeHref="/notifications">

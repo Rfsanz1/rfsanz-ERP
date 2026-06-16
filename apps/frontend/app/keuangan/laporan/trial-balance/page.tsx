@@ -39,7 +39,7 @@ export default function TrialBalancePage() {
     } catch { alert('Export gagal'); }
   };
 
-  if (!token) return null;
+
 
   const isBalanced = data ? Math.abs((data.totals?.totalDebit ?? 0) - (data.totals?.totalKredit ?? 0)) < 1 : null;
   const rows = data?.accounts ?? [];

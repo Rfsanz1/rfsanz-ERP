@@ -24,7 +24,7 @@ export default function RecurringInvoicePage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ customer: '', amount: '', interval: 'monthly', start_date: '', end_date: '', description: '' });
 
-  if (!token) return null;
+
 
   const toggleStatus = (id: number) => setItems(it => it.map(i => i.id === id ? { ...i, status: i.status === 'active' ? 'paused' : 'active' } : i));
 

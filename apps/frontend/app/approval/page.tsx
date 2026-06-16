@@ -43,7 +43,7 @@ export default function ApprovalPage() {
     finally { setProcessing(null); }
   };
 
-  if (!token) return null;
+
 
   const poItems      = data?.purchaseOrders ?? [];
   const expItems     = data?.expenses ?? [];

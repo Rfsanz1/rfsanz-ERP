@@ -17,7 +17,7 @@ const MONTHLY = [
 export default function PurchasingReportsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...PURCHASING_CONFIG} navItems={PURCHASING_NAV} activeHref="/purchasing/reports">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

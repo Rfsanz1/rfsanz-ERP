@@ -161,7 +161,7 @@ export default function OpportunitiesPage() {
   const winRate      = items.length > 0 ? Math.round(won / items.length * 100) : 0;
   const activeDeals  = items.filter(i => i.stage !== 'Menang' && i.stage !== 'Kalah').length;
 
-  if (!token) return null;
+
 
   return (
     <AppShell {...CRM_CONFIG} navItems={CRM_NAV} activeHref="/crm/opportunities">

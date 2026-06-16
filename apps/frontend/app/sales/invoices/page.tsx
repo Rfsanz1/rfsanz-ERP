@@ -56,7 +56,7 @@ export default function InvoicesPage() {
   };
 
   useEffect(() => { if (token) load(); }, [search, page, status, token]);
-  if (!token) return null;
+
 
   return (
     <AppShell>

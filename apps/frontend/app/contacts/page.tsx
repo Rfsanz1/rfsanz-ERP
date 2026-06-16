@@ -43,7 +43,7 @@ export default function ContactsPage() {
   };
 
   useEffect(() => { if (token) load(); }, [search, page, typeFilter, token]);
-  if (!token) return null;
+
 
   return (
     <AppShell>

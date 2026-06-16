@@ -23,7 +23,7 @@ const METHOD_STYLE: Record<string, { color: string; bg: string }> = {
 export default function PosOrdersPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...POS_CONFIG} navItems={POS_NAV} activeHref="/pos/orders">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

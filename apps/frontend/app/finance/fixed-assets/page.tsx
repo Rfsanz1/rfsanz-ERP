@@ -51,7 +51,7 @@ export default function FixedAssetsPage() {
   }, [search, category]);
 
   useEffect(() => { if (token) load(); }, [load, token]);
-  if (!token) return null;
+
 
   const totalValue       = assets.reduce((s, a) => s + Number(a.acquisitionValue ?? a.acquisition_value ?? 0), 0);
   const totalDepreciation = assets.reduce((s, a) => s + Number(a.accumulatedDepreciation ?? a.accumulated_depreciation ?? 0), 0);

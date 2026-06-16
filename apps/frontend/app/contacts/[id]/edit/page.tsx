@@ -23,7 +23,7 @@ export default function EditContactPage() {
       .finally(() => setLoading(false));
   }, [token, id]);
 
-  if (!token) return null;
+
 
   return (
     <AppShell>

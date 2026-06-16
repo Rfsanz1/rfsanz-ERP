@@ -47,7 +47,7 @@ export default function EmployeesPage() {
     } catch {} finally { setLoading(false); }
   };
   useEffect(() => { if (token) load(); }, [search, page, token]);
-  if (!token) return null;
+
 
   const fmtRp = (v: number) =>
     Number(v || 0).toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });

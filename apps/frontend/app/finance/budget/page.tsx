@@ -59,7 +59,7 @@ export default function BudgetPage() {
 
   useEffect(() => { if (token) load(); }, [load, token]);
   useEffect(() => { if (selected?.id) loadLines(selected.id); }, [selected, loadLines]);
-  if (!token) return null;
+
 
   const totalBudget = budgets.reduce((s, b) => s + Number(b.totalAmount ?? b.total_budget ?? 0), 0);
   const totalUsed   = budgets.reduce((s, b) => s + Number(b.usedAmount ?? b.used ?? 0), 0);

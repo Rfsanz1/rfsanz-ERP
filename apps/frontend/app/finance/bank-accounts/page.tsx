@@ -35,7 +35,7 @@ export default function BankAccountsPage() {
     } catch {} finally { setLoading(false); }
   };
   useEffect(() => { if (token) load(); }, [token]);
-  if (!token) return null;
+
 
   return (
     <AppShell {...ACCOUNTING_CONFIG} navItems={ACCOUNTING_NAV} activeHref="/finance/bank-accounts">

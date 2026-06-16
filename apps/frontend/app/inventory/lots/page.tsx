@@ -33,7 +33,7 @@ export default function LotsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ product: '', type: 'lot', number: '', qty: '', uom: '', expiry: '', location: '' });
 
-  if (!token) return null;
+
 
   const filtered = items.filter(i =>
     (i.lot?.toLowerCase().includes(search.toLowerCase()) || i.serial?.toLowerCase().includes(search.toLowerCase()) || i.product.toLowerCase().includes(search.toLowerCase())) &&

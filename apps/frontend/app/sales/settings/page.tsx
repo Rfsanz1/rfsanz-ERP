@@ -9,7 +9,7 @@ import { Settings, Save } from 'lucide-react';
 export default function SalesSettingsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
 
   return (
     <AppShell {...SALES_CONFIG} navItems={SALES_NAV} activeHref="/sales/settings">

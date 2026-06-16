@@ -68,7 +68,7 @@ export default function ContactDetailPage() {
     if (t === 'statement') loadStatement();
   };
 
-  if (!token) return null;
+
 
   const TABS: { key: Tab; label: string; icon: any }[] = [
     { key: 'info',         label: 'Info',          icon: User },

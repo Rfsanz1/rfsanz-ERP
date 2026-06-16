@@ -20,7 +20,7 @@ const CATEGORIES = [
 export default function ProductCategoriesPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...INVENTORY_CONFIG} navItems={INVENTORY_NAV} activeHref="/inventory/products/categories">
       <div className="p-6 space-y-6 max-w-5xl mx-auto">

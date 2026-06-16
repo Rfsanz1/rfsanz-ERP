@@ -37,7 +37,7 @@ export default function AgedReceivablePage() {
   }, [asOfDate]);
 
   useEffect(() => { if (token) load(); }, [load, token]);
-  if (!token) return null;
+
 
   const filtered = data.filter(d => !search || (d.customer ?? d.customerName ?? '').toLowerCase().includes(search.toLowerCase()));
 

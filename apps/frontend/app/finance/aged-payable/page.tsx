@@ -37,7 +37,7 @@ export default function AgedPayablePage() {
   }, [asOfDate]);
 
   useEffect(() => { if (token) load(); }, [load, token]);
-  if (!token) return null;
+
 
   const filtered = data.filter(d => !search || (d.supplier ?? d.supplierName ?? '').toLowerCase().includes(search.toLowerCase()));
 

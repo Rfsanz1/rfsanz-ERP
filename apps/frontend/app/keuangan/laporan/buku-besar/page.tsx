@@ -41,7 +41,7 @@ export default function BukuBesarPage() {
     finally { setLoading(false); }
   };
 
-  if (!token) return null;
+
 
   const lines = data?.lines ?? [];
   const totalPages = Math.ceil(lines.length / PER_PAGE);

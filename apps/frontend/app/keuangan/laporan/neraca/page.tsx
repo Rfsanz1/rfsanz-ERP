@@ -37,7 +37,7 @@ export default function NeracaPage() {
     } catch { alert('Export gagal'); }
   };
 
-  if (!token) return null;
+
 
   const Section = ({ title, items, total, color }: any) => (
     <div>

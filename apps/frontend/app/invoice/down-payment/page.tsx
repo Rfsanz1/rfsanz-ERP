@@ -30,7 +30,7 @@ export default function DownPaymentPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ customer: '', so: '', total_order: '', dp_pct: '30', due_date: '', notes: '' });
 
-  if (!token) return null;
+
 
   const filtered = items.filter(i => i.customer.toLowerCase().includes(search.toLowerCase()) || i.so.toLowerCase().includes(search.toLowerCase()));
   const totalDP = items.reduce((s, i) => s + i.dp_amount, 0);

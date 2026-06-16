@@ -48,7 +48,7 @@ export default function ApplicationsPage() {
 
   useEffect(() => { if (token) load(); }, [token]);
 
-  if (!token) return null;
+
 
   const data = applications.length > 0 ? applications : SAMPLE;
   const filtered = data.filter(a =>

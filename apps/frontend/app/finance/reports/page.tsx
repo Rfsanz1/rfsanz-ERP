@@ -45,7 +45,7 @@ export default function FinanceReportsPage() {
     fetchSummary();
   }, [router, token]);
 
-  if (!token) return null;
+
 
   const revenue = summary?.incomeStatement?.revenues?.total ?? 'Rp 1.56 M';
   const expense = summary?.incomeStatement?.operationalExpenses?.total ?? 'Rp 1.00 M';

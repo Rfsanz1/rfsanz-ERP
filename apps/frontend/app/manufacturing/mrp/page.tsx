@@ -31,7 +31,7 @@ export default function MRPPage() {
   const [lastRun, setLastRun] = useState('2025-06-25 08:30');
   const [results, setResults] = useState(MRP_RESULTS);
 
-  if (!token) return null;
+
 
   const runMRP = () => {
     setRunning(true);

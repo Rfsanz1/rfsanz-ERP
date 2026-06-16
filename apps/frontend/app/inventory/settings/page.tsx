@@ -9,7 +9,7 @@ import { Save } from 'lucide-react';
 export default function InventorySettingsPage() {
   const { token } = useAuthStore();
   const router = useRouter();
-  if (!token) return null;
+
   return (
     <AppShell {...INVENTORY_CONFIG} navItems={INVENTORY_NAV} activeHref="/inventory/settings">
       <div className="p-6 space-y-6 max-w-2xl mx-auto">
