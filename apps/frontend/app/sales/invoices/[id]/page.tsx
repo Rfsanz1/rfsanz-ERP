@@ -76,12 +76,43 @@ export default function InvoiceDetailPage() {
   };
 
   const doSendWa = async () => {
+    if (!waPhone.trim()) { setMsg('Isi nomor WA tujuan terlebih dahulu'); return; }
     setActionLoading('wa');
     try {
-      const r = await api.post(`/invoices/${id}/send-whatsapp`, { phone: waPhone || undefined });
-      setMsg(r.data.message ?? 'Terkirim');
-      setShowWa(false);
-    } catch {} finally { setActionLoading(''); }
+      const fonnteConfig = JSON.parse(localStorage.getItem('erp_intg_fonnte') ?? '{}');
+      const fonnteToken = fonnteConfig.token ?? '';
+
+      if (fonnteToken) {
+        const customerName = inv?.customer?.name ?? '';
+        const invoiceNo = inv?.noInvoice ?? '';
+        const grandTotal = Number(inv?.grandTotal ?? 0).toLocaleString('id-ID');
+        const dueFmt = inv?.dueDate ? new Date(inv.dueDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+        const message = `Halo ${customerName}, invoice ${invoiceNo} senilai Rp ${grandTotal} jatuh tempo pada ${dueFmt}. Mohon segera melakukan pembayaran. Terima kasih.`;
+        const wr = await fetch('/api/direct/whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: fonnteToken, target: waPhone, message }),
+        });
+        const wd = await wr.json();
+        if (wr.ok && wd.status !== false) {
+          setMsg('Notifikasi WA berhasil dikirim ✓');
+          setShowWa(false);
+        } else {
+          setMsg(`Gagal kirim WA: ${wd.reason ?? wd.message ?? 'Error tidak diketahui'}`);
+        }
+      } else {
+        try {
+          const r = await api.post(`/invoices/${id}/send-whatsapp`, { phone: waPhone });
+          setMsg(r.data.message ?? 'Terkirim');
+          setShowWa(false);
+        } catch (e: any) {
+          const errMsg = e?.response?.data?.message ?? e?.message ?? 'Error';
+          setMsg(`Gagal kirim WA: ${errMsg}. Token Fonnte belum diatur di Settings → WA Gateway.`);
+        }
+      }
+    } catch (e: any) {
+      setMsg(`Gagal kirim WA: ${e?.message ?? 'Error tidak diketahui'}`);
+    } finally { setActionLoading(''); }
   };
 
   const doReminder = async () => {

@@ -224,18 +224,30 @@ function ConfigModal({
           setSaveMsg({ ok: false, text: 'Token tidak boleh kosong' });
           return;
         }
-        const res = await apiFetch('/api/kledo/config', {
-          method: 'PUT',
-          body: JSON.stringify({ token, baseUrl: values['baseUrl']?.trim() || undefined }),
-        });
-        const data = await safeJson(res);
-        if (res.ok) {
+        const baseUrl = values['baseUrl']?.trim();
+        saveIntgConfig('kledo', { token, ...(baseUrl ? { baseUrl } : {}) });
+
+        let backendOk = false;
+        try {
+          const res = await apiFetch('/api/kledo/config', {
+            method: 'PUT',
+            body: JSON.stringify({ token, baseUrl: baseUrl || undefined }),
+          });
+          const data = await safeJson(res);
+          if (res.ok) {
+            backendOk = true;
+            onKledoSaved();
+            handleTest();
+          } else {
+            setSaveMsg({ ok: true, text: `Token Kledo disimpan (backend: ${data?.message ?? 'tidak terhubung'})` });
+          }
+        } catch {}
+
+        if (backendOk) {
           setSaveMsg({ ok: true, text: 'Token Kledo berhasil disimpan!' });
           setValues({});
-          onKledoSaved();
-          handleTest();
-        } else {
-          setSaveMsg({ ok: false, text: data?.message ?? 'Gagal menyimpan token' });
+        } else if (!saveMsg) {
+          setSaveMsg({ ok: true, text: 'Token Kledo disimpan lokal. Hubungkan backend untuk sync penuh.' });
         }
       } else {
         const toSave: Record<string, string> = {};

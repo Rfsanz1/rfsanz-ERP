@@ -88,6 +88,11 @@ export default function NewInvoicePage() {
   const [kledoError, setKledoError]   = useState('');
   const [error, setError]       = useState('');
 
+  const [waPhone, setWaPhone]   = useState('087828609655');
+  const [sendWa, setSendWa]     = useState(true);
+  const [waStatus, setWaStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
+  const [waError, setWaError]   = useState('');
+
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
   const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
   const fmtRp = (v: number) => v.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
@@ -168,36 +173,85 @@ export default function NewInvoicePage() {
       const refNumber = savedInvoice.nomorInvoice ?? savedInvoice.invoiceNumber ?? savedInvoice.nomor ?? savedInvoice.ref_number ?? undefined;
 
       setKledoStatus('syncing'); setKledoError('');
+      const invoicePayload = {
+        trans_date: tanggal,
+        due_date: dueDate,
+        ref_number: refNumber,
+        memo: notes.trim() || undefined,
+        contact_id: kledoContactId ? Number(kledoContactId) : undefined,
+        contact_name: customerName.trim(),
+        discount: diskonTotal || undefined,
+        include_tax: pajak > 0 ? 1 : 0,
+        items: [
+          ...items.map(it => ({
+            product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
+            name_item: it.nama, qty: it.qty, rate: it.harga,
+            discount: it.diskonItem || undefined, unit: it.unit,
+          })),
+          ...(ongkir > 0 ? [{ name_item: 'Biaya Pengiriman', qty: 1, rate: ongkir }] : []),
+        ],
+      };
+
+      let kledoOk = false;
       try {
-        const kledoRes = await api.post('/kledo/invoices', {
-          trans_date: tanggal,
-          due_date: dueDate,
-          ref_number: refNumber,
-          memo: notes.trim() || undefined,
-          contact_id: kledoContactId ? Number(kledoContactId) : undefined,
-          contact_name: customerName.trim(),
-          discount: diskonTotal || undefined,
-          include_tax: pajak > 0 ? 1 : 0,
-          items: [
-            ...items.map(it => ({
-              product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
-              name_item: it.nama, qty: it.qty, rate: it.harga,
-              discount: it.diskonItem || undefined, unit: it.unit,
-            })),
-            ...(ongkir > 0 ? [{ name_item: 'Biaya Pengiriman', qty: 1, rate: ongkir }] : []),
-          ],
-        });
-        setKledoStatus('ok');
-        router.push(`/sales/invoices/${savedInvoice.id ?? ''}`);
-      } catch (kledoErr: any) {
-        const msg = kledoErr?.response?.data?.message
-          ?? kledoErr?.response?.data?.error
-          ?? kledoErr?.message
-          ?? 'Gagal kirim ke Kledo';
-        setKledoError(msg);
-        setKledoStatus('error');
-        // tetap di halaman agar user bisa lihat error, tapi invoice sudah tersimpan
+        await api.post('/kledo/invoices', invoicePayload);
+        kledoOk = true;
+      } catch {}
+
+      if (!kledoOk) {
+        try {
+          const kledoLocal = JSON.parse(localStorage.getItem('erp_intg_kledo') ?? '{}');
+          if (kledoLocal.token) {
+            const dr = await fetch('/api/direct/kledo-invoice', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: kledoLocal.token, baseUrl: kledoLocal.baseUrl, invoice: invoicePayload }),
+            });
+            const dd = await dr.json();
+            if (dr.ok && dd.success) kledoOk = true;
+            else setKledoError(dd.message ?? 'Gagal kirim ke Kledo');
+          } else {
+            setKledoError('Token Kledo belum diatur. Isi di Settings → API Integration → Kledo.');
+          }
+        } catch (e: any) {
+          setKledoError(e?.message ?? 'Gagal kirim ke Kledo');
+        }
       }
+
+      setKledoStatus(kledoOk ? 'ok' : 'error');
+
+      if (sendWa && waPhone.trim()) {
+        setWaStatus('sending'); setWaError('');
+        try {
+          const fonnteConfig = JSON.parse(localStorage.getItem('erp_intg_fonnte') ?? '{}');
+          const fonnteToken = fonnteConfig.token ?? '';
+          if (!fonnteToken) {
+            setWaError('Token Fonnte belum diatur. Isi di Settings → WA Gateway.');
+            setWaStatus('error');
+          } else {
+            const dueFmt = new Date(dueDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            const amtFmt = `Rp ${grandTotal.toLocaleString('id-ID')}`;
+            const waMsg = `Halo ${customerName}, invoice ${refNumber ?? 'baru'} senilai ${amtFmt} jatuh tempo pada ${dueFmt}. Mohon segera melakukan pembayaran. Terima kasih.`;
+            const wr = await fetch('/api/direct/whatsapp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: fonnteToken, target: waPhone.trim(), message: waMsg }),
+            });
+            const wd = await wr.json();
+            if (wr.ok && wd.status !== false) {
+              setWaStatus('ok');
+            } else {
+              setWaError(wd.reason ?? wd.message ?? 'Gagal kirim WA');
+              setWaStatus('error');
+            }
+          }
+        } catch (e: any) {
+          setWaError(e?.message ?? 'Gagal kirim WA');
+          setWaStatus('error');
+        }
+      }
+
+      router.push(`/sales/invoices/${savedInvoice.id ?? ''}`);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Terjadi kesalahan.');
       setKledoStatus('idle');
@@ -448,6 +502,58 @@ export default function NewInvoicePage() {
                 <span className="text-2xl font-bold" style={{ color: C }}>{fmtRp(grandTotal)}</span>
               </div>
             </div>
+          </Section>
+
+          {/* ── Notifikasi WhatsApp ── */}
+          <Section title="Notifikasi WhatsApp">
+            <div className="flex items-center gap-3 mb-3">
+              <button
+                type="button"
+                onClick={() => setSendWa(v => !v)}
+                className="relative flex-shrink-0 w-10 h-5.5 rounded-full transition-colors"
+                style={{ backgroundColor: sendWa ? '#25D366' : 'var(--border)', padding: 0 }}>
+                <span className="absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform"
+                  style={{ transform: sendWa ? 'translateX(18px)' : 'translateX(0)' }} />
+              </button>
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Kirim notifikasi WA setelah invoice dibuat
+              </span>
+            </div>
+            {sendWa && (
+              <div className="space-y-2">
+                <Field label="Nomor WhatsApp Tujuan">
+                  <input
+                    className={inputCls}
+                    style={inputSt}
+                    placeholder="08xxxxxxxxxx"
+                    value={waPhone}
+                    onChange={e => setWaPhone(e.target.value)}
+                    onFocus={focusBorder}
+                    onBlur={blurBorder}
+                  />
+                </Field>
+                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                  Pastikan token Fonnte sudah diatur di <strong>Settings → WA Gateway</strong>
+                </p>
+                {waStatus === 'sending' && (
+                  <div className="flex items-center gap-2 text-sm" style={{ color: '#25D366' }}>
+                    <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: '#25D36640', borderTopColor: '#25D366' }} />
+                    Mengirim notifikasi WA…
+                  </div>
+                )}
+                {waStatus === 'ok' && (
+                  <div className="flex items-center gap-2 text-sm" style={{ color: '#25D366' }}>
+                    <CheckCircle2 className="h-4 w-4" /> Notifikasi WA berhasil dikirim ✓
+                  </div>
+                )}
+                {waStatus === 'error' && (
+                  <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--danger)' }}>
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{waError || 'Gagal kirim WA'}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </Section>
 
           <div className="flex gap-3 justify-end">

@@ -164,7 +164,22 @@ export default function WaGatewayPage() {
         <button
           onClick={() => {
             setSaving(true);
-            setTimeout(() => { setSaving(false); setMsg('Konfigurasi WA Gateway berhasil disimpan!'); setTimeout(() => setMsg(''), 3000); }, 1000);
+            try {
+              const existing = JSON.parse(window.localStorage.getItem('erp_intg_fonnte') ?? '{}');
+              const toSave = {
+                ...existing,
+                token: settings.fonnte_token.trim(),
+                wa_sender: settings.wa_sender.trim(),
+                ...Object.fromEntries(WA_TEMPLATES.map(t => [t.key, settings[t.key as keyof typeof settings]])),
+              };
+              window.localStorage.setItem('erp_intg_fonnte', JSON.stringify(toSave));
+              setSaving(false);
+              setMsg('Konfigurasi WA Gateway berhasil disimpan!');
+              setTimeout(() => setMsg(''), 4000);
+            } catch {
+              setSaving(false);
+              setMsg('Gagal menyimpan konfigurasi.');
+            }
           }}
           disabled={saving}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition"
