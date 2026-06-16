@@ -38,6 +38,7 @@ externalPort = 80
 
 [userenv.shared]
 NODE_ENV = "development"
+BACKEND_URL = "briskly-underpaid-shucking.ngrok-free.dev"
 
 [deployment]
 deploymentTarget = "vm"

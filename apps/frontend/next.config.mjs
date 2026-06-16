@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
-const BACKEND = process.env.BACKEND_URL || 'http://127.0.0.1:6000';
+const rawBackend = process.env.BACKEND_URL || 'http://127.0.0.1:6000';
+const BACKEND = rawBackend.startsWith('http://') || rawBackend.startsWith('https://')
+  ? rawBackend
+  : `https://${rawBackend}`;
 
 const replitDevDomain = process.env.REPLIT_DEV_DOMAIN;
 const allowedDevOrigins = [
