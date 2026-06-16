@@ -75,20 +75,14 @@ const NAV: NavItem[] = [
   {
     label: 'Pengiriman', icon: Navigation,
     children: [
-      { href: '/driver',            label: 'Dashboard Driver'   },
-      { href: '/driver/deliveries', label: 'Daftar Pengiriman'  },
-      { href: '/delivery/areas',    label: 'Wilayah Pengiriman' },
-      { href: '/fleet/vehicles',    label: 'Armada Kendaraan'   },
-    ],
-  },
-  {
-    label: 'Armada & TMS', icon: Truck,
-    children: [
-      { href: '/fleet/tms',           label: 'Dashboard TMS'    },
-      { href: '/fleet/drivers',       label: 'Manajemen Driver' },
-      { href: '/fleet/shipments',     label: 'Shipment'         },
-      { href: '/fleet/fuel-tracking', label: 'Tracking BBM'     },
-      { href: '/fleet/gps',           label: 'GPS Tracking'     },
+      { href: '/driver',              label: 'Dashboard Driver'   },
+      { href: '/driver/deliveries',   label: 'Daftar Pengiriman'  },
+      { href: '/delivery/areas',      label: 'Wilayah Pengiriman' },
+      { href: '/fleet/vehicles',      label: 'Armada Kendaraan'   },
+      { href: '/fleet/drivers',       label: 'Manajemen Driver'   },
+      { href: '/fleet/shipments',     label: 'Shipment'           },
+      { href: '/fleet/fuel-tracking', label: 'Tracking BBM'       },
+      { href: '/fleet/gps',           label: 'GPS Tracking'       },
     ],
   },
   {
