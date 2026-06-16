@@ -104,6 +104,26 @@ const INTEGRATIONS: Integration[] = [
 type KledoConfig = { tokenSet: boolean; tokenMasked: string; source: string } | null;
 type KledoStatus = { connected: boolean; message: string } | null;
 
+const LS_INTG_PREFIX = 'erp_intg_';
+
+function saveIntgConfig(id: string, vals: Record<string, string>) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(LS_INTG_PREFIX + id, JSON.stringify(vals));
+}
+
+function loadIntgConfig(id: string): Record<string, string> {
+  try {
+    if (typeof window === 'undefined') return {};
+    const raw = window.localStorage.getItem(LS_INTG_PREFIX + id);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function isIntgSaved(id: string): boolean {
+  const cfg = loadIntgConfig(id);
+  return Object.values(cfg).some(v => v?.trim());
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    KARTU INTEGRASI — kompak
 ══════════════════════════════════════════════════════════════════════════ */
@@ -166,7 +186,7 @@ function IntCard({
    MODAL KONFIGURASI
 ══════════════════════════════════════════════════════════════════════════ */
 function ConfigModal({
-  intg, onClose, authToken, kledoConfig, kledoStatus, onKledoSaved,
+  intg, onClose, authToken, kledoConfig, kledoStatus, onKledoSaved, onOtherSaved,
 }: {
   intg: Integration;
   onClose: () => void;
@@ -174,8 +194,10 @@ function ConfigModal({
   kledoConfig: KledoConfig;
   kledoStatus: KledoStatus;
   onKledoSaved: () => void;
+  onOtherSaved: (id: string) => void;
 }) {
-  const [values, setValues] = useState<Record<string, string>>({});
+  const existingSaved = intg.id !== 'kledo' ? loadIntgConfig(intg.id) : {};
+  const [values, setValues] = useState<Record<string, string>>(existingSaved);
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -216,11 +238,19 @@ function ConfigModal({
           setSaveMsg({ ok: false, text: data?.message ?? 'Gagal menyimpan token' });
         }
       } else {
-        await new Promise(r => setTimeout(r, 600));
-        setSaveMsg({ ok: false, text: 'Integrasi ini belum tersedia — segera hadir!' });
+        const toSave: Record<string, string> = {};
+        intg.fields.forEach(f => { if ((values[f.key] ?? '').trim()) toSave[f.key] = values[f.key].trim(); });
+        if (!Object.keys(toSave).length) {
+          setSaveMsg({ ok: false, text: 'Isi minimal satu field sebelum menyimpan.' });
+          return;
+        }
+        await new Promise(r => setTimeout(r, 400));
+        saveIntgConfig(intg.id, toSave);
+        setSaveMsg({ ok: true, text: `Konfigurasi ${intg.name} berhasil disimpan!` });
+        onOtherSaved(intg.id);
       }
     } catch (e: any) {
-      setSaveMsg({ ok: false, text: 'Tidak dapat terhubung ke server. Pastikan backend berjalan.' });
+      setSaveMsg({ ok: false, text: 'Tidak dapat menyimpan konfigurasi.' });
     } finally { setSaving(false); }
   };
 
@@ -390,6 +420,7 @@ export default function ApiIntegrationPage() {
   const [selected, setSelected] = useState<Integration | null>(null);
   const [kledoConfig, setKledoConfig] = useState<KledoConfig>(null);
   const [kledoStatus, setKledoStatus] = useState<KledoStatus>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   const apiFetch = useCallback(
     (path: string, opts?: RequestInit) =>
@@ -407,11 +438,16 @@ export default function ApiIntegrationPage() {
     if (!authToken) { router.push('/dashboard'); return; }
     setMounted(true);
     refreshKledo();
+    const initial = new Set<string>();
+    INTEGRATIONS.forEach(i => { if (i.id !== 'kledo' && isIntgSaved(i.id)) initial.add(i.id); });
+    setSavedIds(initial);
   }, [authReady, authToken]);
 
   if (!authReady || !mounted || !authToken) return null;
 
   const bySection = (s: Integration['section']) => INTEGRATIONS.filter(i => i.section === s);
+
+  const handleOtherSaved = (id: string) => setSavedIds(prev => new Set([...prev, id]));
 
   return (
     <OdooLayout title="API & Integrasi" subtitle="Hubungkan ERP dengan platform lain">
@@ -434,7 +470,8 @@ export default function ApiIntegrationPage() {
           <SectionHead label="Pesan & Notifikasi" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {bySection('messaging').map(intg => (
-              <IntCard key={intg.id} intg={intg} onClick={() => setSelected(intg)} />
+              <IntCard key={intg.id} intg={intg} onClick={() => setSelected(intg)}
+                tokenSaved={savedIds.has(intg.id)} />
             ))}
           </div>
         </section>
@@ -444,7 +481,8 @@ export default function ApiIntegrationPage() {
           <SectionHead label="Marketplace Connect" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {bySection('marketplace').map(intg => (
-              <IntCard key={intg.id} intg={intg} onClick={() => setSelected(intg)} />
+              <IntCard key={intg.id} intg={intg} onClick={() => setSelected(intg)}
+                tokenSaved={savedIds.has(intg.id)} />
             ))}
           </div>
         </section>
@@ -459,6 +497,7 @@ export default function ApiIntegrationPage() {
           kledoConfig={kledoConfig}
           kledoStatus={kledoStatus}
           onKledoSaved={refreshKledo}
+          onOtherSaved={handleOtherSaved}
         />
       )}
     </OdooLayout>

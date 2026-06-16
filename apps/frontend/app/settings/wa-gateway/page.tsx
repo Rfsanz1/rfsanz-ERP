@@ -29,6 +29,16 @@ export default function WaGatewayPage() {
 
   useEffect(() => {
     if (!token) { router.push('/dashboard'); return; }
+    try {
+      const saved = JSON.parse(window.localStorage.getItem('erp_intg_fonnte') ?? '{}');
+      if (saved.token || saved.groupInvoice || saved.groupBuktiTf) {
+        setSettings(s => ({
+          ...s,
+          fonnte_token: saved.token ?? s.fonnte_token,
+          wa_sender: saved.wa_sender ?? s.wa_sender,
+        }));
+      }
+    } catch {}
     setMounted(true);
   }, [token]);
 
