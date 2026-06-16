@@ -359,14 +359,15 @@ export const SERVICE_NAV: NavItem[] = [
 
 export const FLEET_CONFIG = { appName: 'Armada', appColor: '#0277BD', appGradient: 'from-blue-600 to-sky-700', appIcon: Car };
 export const FLEET_NAV: NavItem[] = [
-  { label: 'Kendaraan',         href: '/fleet/vehicles',          icon: Car },
-  { label: 'Dokumen Kendaraan', href: '/fleet/documents',         icon: FileText },
-  { label: 'Reminder STNK/KIR', href: '/fleet/reminders',        icon: Bell },
-  { label: 'Penugasan Driver',  href: '/fleet/assignments',       icon: UserCheck },
+  { label: 'Dashboard TMS',    href: '/fleet/tms',                icon: Truck },
+  { label: 'Manajemen Driver', href: '/fleet/drivers',            icon: UserCheck },
+  { label: 'Shipment',         href: '/fleet/shipments',          icon: Package },
+  { label: 'Kendaraan',        href: '/fleet/vehicles',           icon: Car },
+  { label: 'Dokumen Kendaraan',href: '/fleet/documents',          icon: FileText },
+  { label: 'Reminder STNK/KIR',href: '/fleet/reminders',         icon: Bell },
   { label: 'Tracking BBM',     href: '/fleet/fuel-tracking',      icon: Fuel },
   { label: 'GPS Tracking',     href: '/fleet/gps',                icon: Navigation },
   { label: 'Biaya per KM',     href: '/fleet/cost-per-km',        icon: DollarSign },
-  { label: 'Dashboard TMS',    href: '/fleet/tms',                icon: Truck },
   { label: 'Laporan',          href: '/fleet/reports',            icon: BarChart2 },
   { label: 'Pengaturan',       href: '/fleet/settings',           icon: Settings },
 ];
