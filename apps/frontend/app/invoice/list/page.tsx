@@ -31,7 +31,7 @@ export default function InvoiceListPage() {
       <div className="p-6 space-y-6 max-w-6xl mx-auto">
         <div className="flex items-center justify-between">
           <div><h1 className="text-xl font-bold" style={{ color: '#1E1B4B' }}>Daftar Invoice</h1><p className="text-sm mt-0.5" style={{ color: '#9CA3AF' }}>Semua tagihan pelanggan</p></div>
-          <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: INVOICE_CONFIG.appColor }}><Plus className="h-4 w-4" /> Invoice Baru</button>
+          <button onClick={() => router.push('/sales/invoices/new')} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: INVOICE_CONFIG.appColor }}><Plus className="h-4 w-4" /> Invoice Baru</button>
         </div>
         <div className="bg-white rounded-2xl" style={{ border: '1.5px solid #EDE8F5', boxShadow: '0 1px 4px rgba(47,43,61,.06)' }}>
           <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #EDE8F5' }}>

@@ -41,14 +41,14 @@ const STATIC_USER: AuthUser = {
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  token: typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null,
+  token: null,
   refreshToken: null,
   user: STATIC_USER,
   error: null,
   loading: false,
   isDemo: false,
-  initialized: typeof window !== 'undefined' ? !!localStorage.getItem(TOKEN_KEY) : false,
-  authReady: typeof window !== 'undefined' ? !!localStorage.getItem(TOKEN_KEY) : false,
+  initialized: false,
+  authReady: false,
 
   rehydrate: () => {
     if (typeof window === 'undefined') return;
