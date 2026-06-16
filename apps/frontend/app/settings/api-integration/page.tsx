@@ -384,7 +384,7 @@ function SectionHead({ label }: { label: string }) {
    PAGE
 ══════════════════════════════════════════════════════════════════════════ */
 export default function ApiIntegrationPage() {
-  const { token: authToken } = useAuthStore();
+  const { token: authToken, authReady } = useAuthStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState<Integration | null>(null);
@@ -403,12 +403,13 @@ export default function ApiIntegrationPage() {
   }, [apiFetch]);
 
   useEffect(() => {
+    if (!authReady) return;
     if (!authToken) { router.push('/dashboard'); return; }
     setMounted(true);
     refreshKledo();
-  }, [authToken]);
+  }, [authReady, authToken]);
 
-  if (!mounted || !authToken) return null;
+  if (!authReady || !mounted || !authToken) return null;
 
   const bySection = (s: Integration['section']) => INTEGRATIONS.filter(i => i.section === s);
 

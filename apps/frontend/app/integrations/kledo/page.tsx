@@ -29,7 +29,7 @@ const formatTime = (d: Date) =>
   d.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 export default function KledoPage() {
-  const { token } = useAuthStore();
+  const { token, authReady } = useAuthStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<Tab>('overview');
@@ -118,6 +118,7 @@ export default function KledoPage() {
 
   // Pertama load — auto-sync jika terhubung & belum ada data
   useEffect(() => {
+    if (!authReady) return;
     if (!token) { router.push('/dashboard'); return; }
     setMounted(true);
 
@@ -143,7 +144,7 @@ export default function KledoPage() {
       } catch { /* ignore */ }
       finally { await load(); }
     })();
-  }, [token]);
+  }, [authReady, token]);
 
   // Auto-sync berkala
   useEffect(() => {
@@ -182,7 +183,7 @@ export default function KledoPage() {
     return `${m}m ${sec.toString().padStart(2, '0')}s`;
   };
 
-  if (!mounted || !token) return null;
+  if (!authReady || !mounted || !token) return null;
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'overview', label: 'Overview', icon: BarChart2 },
