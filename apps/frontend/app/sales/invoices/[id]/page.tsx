@@ -31,7 +31,7 @@ export default function InvoiceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [payForm, setPayForm] = useState({ amount: '', method: 'transfer', reference: '', notes: '' });
   const [paying, setPaying] = useState(false);
-  const [waPhone, setWaPhone] = useState('');
+  const [waPhone, setWaPhone] = useState('087828609655');
   const [showWa, setShowWa] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
   const [msg, setMsg] = useState('');
