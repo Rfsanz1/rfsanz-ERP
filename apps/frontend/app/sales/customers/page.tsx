@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Search, RefreshCw, Plus, MapPin, Phone, Link2, User } from 'lucide-react';
@@ -9,36 +9,24 @@ const PURPLE = '#6366F1';
 
 export default function CustomersPage() {
   const router = useRouter();
-  const [rows, setRows]       = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch]   = useState('');
-  const [source, setSource]   = useState<'merged' | 'kledo' | 'local'>('merged');
+  const [rows, setRows]           = useState<any[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState('');
+  const [searchResults, setSearchResults] = useState<any[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [source, setSource]       = useState<'merged' | 'kledo' | 'local'>('merged');
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      /* Ambil lokal + Kledo secara bersamaan */
-      const [localRes, kledoRes] = await Promise.allSettled([
-        api.get('/customers?limit=200'),
-        api.get('/kledo/contacts', { params: { type: 'customer', per_page: 200 } }),
-      ]);
-
-      /* Parse lokal */
+      const localRes = await api.get('/customers?limit=500').catch(() => null);
       const localRaw: any[] = (() => {
-        if (localRes.status !== 'fulfilled') return [];
-        const d = localRes.value.data;
+        if (!localRes) return [];
+        const d = localRes.data;
         return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
       })();
 
-      /* Parse Kledo */
-      const kledoRaw: any[] = (() => {
-        if (kledoRes.status !== 'fulfilled') return [];
-        const d = kledoRes.value.data;
-        const inner = d?.data ?? d;
-        return Array.isArray(inner?.data) ? inner.data : Array.isArray(inner) ? inner : [];
-      })();
-
-      /* Normalise lokal */
       const localList = localRaw.map((c: any) => ({
         id: String(c.id),
         name: c.name ?? '',
@@ -52,28 +40,8 @@ export default function CustomersPage() {
         source: 'local' as const,
       }));
 
-      /* Normalise Kledo */
-      const localKledoIds = new Set(localList.map(c => String(c.kledoId)).filter(Boolean));
-      const localNames    = new Set(localList.map(c => c.name.toLowerCase().trim()));
-
-      const kledoList = kledoRaw
-        .filter((c: any) => !localKledoIds.has(String(c.id)) && !localNames.has((c.name ?? '').toLowerCase().trim()))
-        .map((c: any) => ({
-          id: `kledo-${c.id}`,
-          name: c.name ?? '',
-          phone: c.phone ?? c.mobile_phone ?? '',
-          email: c.email ?? '',
-          city: c.city ?? '',
-          address: c.address ?? '',
-          kledoId: String(c.id),
-          totalTransaction: 0,
-          lastOrderDate: '',
-          source: 'kledo' as const,
-        }));
-
-      const merged = [...localList, ...kledoList];
-      setRows(merged);
-      setSource(kledoList.length > 0 ? 'merged' : 'local');
+      setRows(localList);
+      setSource('local');
     } catch {
       setRows([]); setSource('local');
     } finally { setLoading(false); }
@@ -81,9 +49,54 @@ export default function CustomersPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const filtered = rows.filter(r =>
-    !search || (r.name + (r.phone ?? '') + (r.city ?? '') + (r.email ?? '')).toLowerCase().includes(search.toLowerCase())
-  );
+  /* Debounced search — query kledo-search route when user types */
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!search.trim()) { setSearchResults(null); setSearching(false); return; }
+
+    setSearching(true);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const q = encodeURIComponent(search.trim());
+        const [localFiltered, kledoRes] = await Promise.all([
+          Promise.resolve(
+            rows.filter(r =>
+              (r.name + (r.phone ?? '') + (r.city ?? '') + (r.email ?? ''))
+                .toLowerCase().includes(search.toLowerCase()),
+            ),
+          ),
+          fetch(`/api/direct/kledo-search?type=contacts&q=${q}`).then(r => r.json()).catch(() => ({ success: false, data: [] })),
+        ]);
+
+        const kledoList: any[] = (kledoRes?.success ? kledoRes.data ?? [] : []).map((c: any) => ({
+          id: c.id,
+          name: c.name ?? '',
+          phone: c.phone ?? '',
+          email: c.email ?? '',
+          city: '',
+          address: '',
+          kledoId: String(c.kledoId ?? ''),
+          totalTransaction: 0,
+          lastOrderDate: '',
+          source: 'kledo' as const,
+        }));
+
+        const localNames = new Set(localFiltered.map((r: any) => r.name.toLowerCase().trim()));
+        const dedupedKledo = kledoList.filter(c => !localNames.has(c.name.toLowerCase().trim()));
+        setSearchResults([...localFiltered, ...dedupedKledo]);
+      } catch {
+        setSearchResults(null);
+      } finally { setSearching(false); }
+    }, 400);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const filtered = search.trim()
+    ? (searchResults ?? rows.filter(r =>
+        (r.name + (r.phone ?? '') + (r.city ?? '') + (r.email ?? ''))
+          .toLowerCase().includes(search.toLowerCase()),
+      ))
+    : rows;
 
   const formatRp = (v: number) =>
     v >= 1e9 ? `Rp ${(v / 1e9).toFixed(1)} M` :
