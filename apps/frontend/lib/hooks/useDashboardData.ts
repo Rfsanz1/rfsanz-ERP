@@ -96,7 +96,7 @@ export function useDashboardData() {
         revenueChart: dash?.charts?.revenueChart ?? [],
         topProducts: dash?.charts?.topProducts ?? [],
         lowStock: dash?.alerts?.lowStock ?? [],
-        recentOrders: orders?.data ?? [],
+        recentOrders: Array.isArray(orders?.data?.data) ? orders.data.data : Array.isArray(orders?.data) ? orders.data : [],
         adminStats: {
           totalUsers: admin?.totalUsers ?? 0,
           totalRoles: admin?.totalRoles ?? 0,

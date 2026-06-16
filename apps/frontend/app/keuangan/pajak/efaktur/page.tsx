@@ -33,7 +33,7 @@ export default function EFakturPage() {
     setLoading(true);
     try {
       const res = await api.get('/tax/efaktur/list', { params: { periode } });
-      setList(res.data ?? []);
+      setList(Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []);
     } catch { setList([]); }
     finally { setLoading(false); }
   };
