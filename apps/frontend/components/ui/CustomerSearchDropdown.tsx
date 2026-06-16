@@ -208,12 +208,16 @@ export default function CustomerSearchDropdown({
 
       {open && (
         <div
-          className="absolute left-0 right-0 top-full mt-1 rounded-xl overflow-hidden"
+          className="absolute left-0 right-0 top-full mt-1 rounded-xl"
           style={{
             zIndex: 9999,
             boxShadow: 'var(--shadow-lg)',
             border: '1.5px solid var(--border)',
             background: 'var(--surface)',
+            maxHeight: 232,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            WebkitOverflowScrolling: 'touch' as any,
           }}
         >
           {loadingLocal ? (

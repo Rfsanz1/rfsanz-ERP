@@ -331,31 +331,33 @@ export default function CreateOrderModal({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-4 gap-3">
-                    <div>
-                      <Label>Qty</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="flex flex-col">
+                      <label className="block text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Qty</label>
                       <input type="number" min={1} className={`${inputCls} text-center`} style={inputSt}
                         value={item.qty}
                         onChange={e => updateItem(item.id, 'qty', Number(e.target.value) || 1)}
                         onFocus={focusColor} onBlur={blurColor} />
                     </div>
-                    <div>
-                      <Label>Harga Satuan (Rp)</Label>
+                    <div className="flex flex-col">
+                      <label className="block text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Harga (Rp)</label>
                       <input type="number" min={0} className={`${inputCls} text-right`} style={inputSt}
                         value={item.harga}
                         onChange={e => updateItem(item.id, 'harga', Number(e.target.value) || 0)}
                         onFocus={focusColor} onBlur={blurColor} />
                     </div>
-                    <div>
-                      <Label optional><Tag className="h-3 w-3 inline mr-1" style={{ color: 'var(--text-muted)' }} />Diskon Item (Rp)</Label>
+                    <div className="flex flex-col">
+                      <label className="block text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+                        <Tag className="h-3 w-3 inline mr-0.5" style={{ color: 'var(--text-muted)' }} />Diskon <span className="font-normal text-[11px]" style={{ color: 'var(--text-muted)' }}>(ops)</span>
+                      </label>
                       <input type="number" min={0} className={`${inputCls} text-right`} style={inputSt}
                         value={item.diskonItem || ''} placeholder="0"
                         onChange={e => updateItem(item.id, 'diskonItem', Number(e.target.value) || 0)}
                         onFocus={focusColor} onBlur={blurColor} />
                     </div>
-                    <div>
-                      <Label>Subtotal</Label>
-                      <div className="w-full rounded-xl px-3 py-2.5 text-sm text-right font-bold"
+                    <div className="flex flex-col">
+                      <label className="block text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Subtotal</label>
+                      <div className="w-full rounded-xl px-3 py-2.5 text-sm text-right font-bold flex items-center justify-end"
                         style={{ background: `${COLOR}0D`, color: COLOR, border: `1.5px solid ${COLOR}30` }}>
                         {fmtRp(item.subtotal)}
                       </div>
