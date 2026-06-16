@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Search, User, X, ChevronDown } from 'lucide-react';
+import { Search, User, X, ChevronDown, Loader2 } from 'lucide-react';
 import { api } from '../../lib/api';
 
 export interface CustomerOption {
@@ -32,7 +32,8 @@ export default function CustomerSearchDropdown({
 }: Props) {
   const [suggestions, setSuggestions] = useState<CustomerOption[]>([]);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadingLocal, setLoadingLocal] = useState(false);
+  const [loadingKledo, setLoadingKledo] = useState(false);
   const [noResult, setNoResult] = useState(false);
   const [selected, setSelected] = useState<CustomerOption | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,20 +43,24 @@ export default function CustomerSearchDropdown({
   const doSearch = useCallback(async (q: string) => {
     const seq = ++searchSeqRef.current;
 
-    setLoading(true);
+    setLoadingLocal(true);
+    setLoadingKledo(true);
     setNoResult(false);
     setOpen(true);
+    setSuggestions([]);
+
+    let localList: CustomerOption[] = [];
 
     try {
       const localRes = await api.get('/customers', {
-        params: { limit: 20, active: 'true', ...(q ? { search: q } : {}) },
+        params: { limit: 50, active: 'true', ...(q ? { search: q } : {}) },
       });
 
       if (seq !== searchSeqRef.current) return;
 
       const localRaw: any[] = localRes.data?.data ?? localRes.data ?? [];
 
-      const localList: CustomerOption[] = localRaw
+      localList = localRaw
         .filter((c: any) => {
           if (!q) return true;
           const t = q.toLowerCase();
@@ -73,22 +78,24 @@ export default function CustomerSearchDropdown({
 
       setSuggestions(localList);
       setNoResult(localList.length === 0);
-      setLoading(false);
+    } catch {
+      if (seq !== searchSeqRef.current) return;
+      localList = [];
+      setSuggestions([]);
+    } finally {
+      if (seq === searchSeqRef.current) setLoadingLocal(false);
+    }
 
-      const kledoTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
-      const kledoFetch = fetch(
+    try {
+      const kledoRes = await fetch(
         `/api/direct/kledo-search?type=contacts&q=${encodeURIComponent(q)}`,
-      )
-        .then((r) => r.json())
-        .catch(() => null);
-
-      const kledoResult = await Promise.race([kledoFetch, kledoTimeout]);
+      ).then((r) => r.json());
 
       if (seq !== searchSeqRef.current) return;
 
       const kledoRaw: CustomerOption[] =
-        kledoResult?.success
-          ? (kledoResult.data ?? []).map((c: any) => ({
+        kledoRes?.success
+          ? (kledoRes.data ?? []).map((c: any) => ({
               id: c.id,
               name: c.name ?? '',
               phone: c.phone ?? null,
@@ -102,22 +109,21 @@ export default function CustomerSearchDropdown({
       const dedupedKledo = kledoRaw.filter(
         (c) => !localNames.has(c.name.toLowerCase().trim()),
       );
-      const merged = [...localList, ...dedupedKledo].slice(0, 10);
+      const merged = [...localList, ...dedupedKledo].slice(0, 15);
 
       setSuggestions(merged);
       setNoResult(merged.length === 0);
     } catch {
       if (seq !== searchSeqRef.current) return;
-      setSuggestions([]);
-      setNoResult(true);
-      setLoading(false);
+    } finally {
+      if (seq === searchSeqRef.current) setLoadingKledo(false);
     }
   }, []);
 
   const triggerSearch = useCallback(
     (q: string) => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => doSearch(q), 300);
+      timerRef.current = setTimeout(() => doSearch(q), 350);
     },
     [doSearch],
   );
@@ -139,6 +145,8 @@ export default function CustomerSearchDropdown({
     setSuggestions([]);
     setOpen(false);
     setNoResult(false);
+    setLoadingLocal(false);
+    setLoadingKledo(false);
     onSelect?.(c);
   };
 
@@ -148,6 +156,8 @@ export default function CustomerSearchDropdown({
     setSuggestions([]);
     setOpen(false);
     setNoResult(false);
+    setLoadingLocal(false);
+    setLoadingKledo(false);
   };
 
   useEffect(() => {
@@ -158,6 +168,8 @@ export default function CustomerSearchDropdown({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const isLoading = loadingLocal || loadingKledo;
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -179,18 +191,18 @@ export default function CustomerSearchDropdown({
           onFocus={handleFocus}
         />
         <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {loading && (
+          {isLoading && (
             <div
               className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
               style={{ borderColor: 'var(--border)', borderTopColor: accentColor }}
             />
           )}
-          {selected && !loading && (
+          {selected && !isLoading && (
             <button type="button" onMouseDown={handleClear} className="p-0.5 rounded hover:bg-gray-100">
               <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
             </button>
           )}
-          {!loading && <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />}
+          {!isLoading && <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />}
         </div>
       </div>
 
@@ -204,7 +216,17 @@ export default function CustomerSearchDropdown({
             background: 'var(--surface)',
           }}
         >
-          {suggestions.length > 0 ? (
+          {loadingLocal ? (
+            <div className="px-4 py-4 text-center">
+              <div
+                className="w-4 h-4 border-2 rounded-full animate-spin mx-auto"
+                style={{ borderColor: 'var(--border)', borderTopColor: accentColor }}
+              />
+              <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                Mencari pelanggan...
+              </p>
+            </div>
+          ) : suggestions.length > 0 ? (
             <>
               {suggestions.map((c) => (
                 <button
@@ -253,24 +275,30 @@ export default function CustomerSearchDropdown({
                   </div>
                 </button>
               ))}
-              <div className="px-3 py-2" style={{ borderTop: '1px solid var(--border)' }}>
-                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                  <User className="h-3 w-3 inline mr-1" />
-                  Lokal &amp; Kledo · Ketik nama baru untuk buat pelanggan baru
-                </p>
-              </div>
+              {loadingKledo && (
+                <div
+                  className="flex items-center gap-2 px-3 py-2"
+                  style={{ borderTop: '1px solid var(--border)' }}
+                >
+                  <Loader2
+                    className="h-3 w-3 animate-spin flex-shrink-0"
+                    style={{ color: '#10B981' }}
+                  />
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    Memuat data dari Kledo...
+                  </p>
+                </div>
+              )}
+              {!loadingKledo && (
+                <div className="px-3 py-2" style={{ borderTop: '1px solid var(--border)' }}>
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    <User className="h-3 w-3 inline mr-1" />
+                    Lokal &amp; Kledo · Ketik nama baru untuk buat pelanggan baru
+                  </p>
+                </div>
+              )}
             </>
-          ) : loading ? (
-            <div className="px-4 py-4 text-center">
-              <div
-                className="w-4 h-4 border-2 rounded-full animate-spin mx-auto"
-                style={{ borderColor: 'var(--border)', borderTopColor: accentColor }}
-              />
-              <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                Mencari pelanggan...
-              </p>
-            </div>
-          ) : noResult ? (
+          ) : noResult && !loadingKledo ? (
             <div className="px-4 py-5 text-center">
               <Search className="h-5 w-5 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
               <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
@@ -279,6 +307,21 @@ export default function CustomerSearchDropdown({
               <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 Ketik nama baru → akan dibuat otomatis saat simpan
               </p>
+            </div>
+          ) : noResult && loadingKledo ? (
+            <div className="flex items-center gap-2 px-4 py-3">
+              <Loader2
+                className="h-4 w-4 animate-spin flex-shrink-0"
+                style={{ color: '#10B981' }}
+              />
+              <div>
+                <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  Tidak ditemukan di data lokal
+                </p>
+                <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                  Sedang mencari di Kledo...
+                </p>
+              </div>
             </div>
           ) : null}
         </div>
