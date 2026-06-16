@@ -82,6 +82,16 @@ const NAV: NavItem[] = [
     ],
   },
   {
+    label: 'Armada & TMS', icon: Truck,
+    children: [
+      { href: '/fleet/tms',           label: 'Dashboard TMS'    },
+      { href: '/fleet/drivers',       label: 'Manajemen Driver' },
+      { href: '/fleet/shipments',     label: 'Shipment'         },
+      { href: '/fleet/fuel-tracking', label: 'Tracking BBM'     },
+      { href: '/fleet/gps',           label: 'GPS Tracking'     },
+    ],
+  },
+  {
     label: 'Keuangan', icon: DollarSign, dividerBefore: true,
     children: [
       { href: '/finance/journal',            label: 'Jurnal'             },

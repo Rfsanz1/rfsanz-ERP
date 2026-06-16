@@ -8,6 +8,7 @@ import {
   BarChart2, Settings, Bell, ChevronDown, ChevronRight,
   Truck, DollarSign, UserCheck, Building2,
   BookOpen, CreditCard, Target, Brain, Megaphone, Globe,
+  Car, Navigation,
 } from 'lucide-react';
 
 interface NavChild {
@@ -98,6 +99,17 @@ const navGroups: NavGroup[] = [
       },
       { href: '/pos/orders', label: 'Point of Sale', icon: CreditCard },
       { href: '/gudang', label: 'Gudang', icon: Building2 },
+      {
+        label: 'Armada & TMS', icon: Car,
+        children: [
+          { href: '/fleet/tms',       label: 'Dashboard TMS' },
+          { href: '/fleet/drivers',   label: 'Manajemen Driver' },
+          { href: '/fleet/shipments', label: 'Shipment' },
+          { href: '/fleet/vehicles',  label: 'Kendaraan' },
+          { href: '/fleet/fuel-tracking', label: 'Tracking BBM' },
+          { href: '/fleet/gps',       label: 'GPS Tracking' },
+        ],
+      },
     ],
   },
   {
