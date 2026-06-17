@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       kledoContactId,
       metodePembayaran = 'transfer',
       bankPilihan = null,
+      edcPilihan = null,
       uangMuka = 0,
     } = body;
 
@@ -76,6 +77,7 @@ export async function POST(req: NextRequest) {
         totalHarga: totalHarga ?? 0,
         metodePembayaran,
         bankPilihan: bankPilihan ?? null,
+        edcPilihan: edcPilihan ?? null,
         items: savedItems.length > 0 ? savedItems : items,
       });
 

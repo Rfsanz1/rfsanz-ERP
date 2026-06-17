@@ -37,6 +37,9 @@ const BANK_KEYWORDS: Record<string, string[]> = {
   bri:     ['bri edc', 'edc bri', 'bri'],
   mandiri: ['mandiri'],
   bni:     ['bni'],
+  bri_edc: ['bri edc', 'edc bri', 'bri'],
+  bca_edc: ['bca edc', 'edc bca', 'bca giro', 'giro bca', 'bca'],
+  bni_edc: ['bni'],
 };
 
 /** Cari finance account Kledo berdasarkan nama bank (semua tipe akun) */
@@ -112,6 +115,7 @@ interface KledoOrderInput {
   totalHarga?: number;
   metodePembayaran?: string;
   bankPilihan?: string | null;
+  edcPilihan?: string | null;
   items: { nama: string; qty: number; harga: number; subtotal: number; diskon?: number; kledoProductId?: string | null }[];
 }
 
@@ -182,15 +186,28 @@ export async function pushOrderToKledo(
     const invoiceId: number = data.data.id;
     const kledoRef: string  = data.data.ref_number ?? null;
 
-    /* ── Auto tandai LUNAS jika Transfer Bank + bank dipilih ── */
+    /* ── Auto tandai LUNAS jika Transfer Bank + bank dipilih, atau Debit EDC ── */
     let kledoPaid      = false;
     let kledoPaidError: string | undefined;
 
     const isTransfer = order.metodePembayaran === 'transfer';
+    const isDebit    = order.metodePembayaran === 'debit';
     const bankKey    = order.bankPilihan?.toLowerCase() ?? '';
+    const edcKey     = order.edcPilihan?.toLowerCase() ?? '';
 
-    if (isTransfer && bankKey) {
-      const bankAccountId = await getBankAccountId(cfg.baseUrl, cfg.token, bankKey);
+    const EDC_MEMO: Record<string, string> = {
+      bri_edc: 'BRI EDC',
+      bca_edc: 'BCA EDC',
+      bni_edc: 'BNI',
+    };
+
+    const activeKey  = isTransfer ? bankKey : isDebit ? edcKey : '';
+    const activeMemo = isDebit && edcKey
+      ? EDC_MEMO[edcKey] ?? edcKey.toUpperCase()
+      : activeKey.toUpperCase();
+
+    if (activeKey) {
+      const bankAccountId = await getBankAccountId(cfg.baseUrl, cfg.token, activeKey);
       if (bankAccountId) {
         const totalAmount = order.totalHarga ?? order.items.reduce((s, it) => s + (it.subtotal ?? 0), 0);
         const paid = await markKledoInvoicePaid(
@@ -200,12 +217,12 @@ export async function pushOrderToKledo(
           bankAccountId,
           totalAmount,
           order.tanggal,
-          `Pembayaran ${bankKey.toUpperCase()} — ${order.soNumber ?? ''}`.trim(),
+          `Pembayaran ${activeMemo} — ${order.soNumber ?? ''}`.trim(),
         );
         kledoPaid      = paid.ok;
         kledoPaidError = paid.error;
       } else {
-        kledoPaidError = `Akun ${bankKey.toUpperCase()} tidak ditemukan di Kledo`;
+        kledoPaidError = `Akun ${activeMemo} tidak ditemukan di Kledo`;
       }
     }
 
