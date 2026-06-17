@@ -82,19 +82,28 @@ export default function OrderDetailPage() {
     if (!order) return;
     setKledoSyncing(true); setKledoMsg('');
     try {
+      const kledoItems = (order.orderItems ?? order.items ?? []).map((it: any) => {
+        const qty   = Number(it.qty ?? it.quantity ?? 1);
+        const price = Number(it.harga ?? it.unitPrice ?? it.price ?? 0);
+        return {
+          product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
+          name_item: it.nama ?? it.productName,
+          qty,
+          price,
+          amount: qty * price,
+          discount_percent: it.diskon ? Number(it.diskon) : undefined,
+        };
+      });
       await api.post('/kledo/invoices', {
         trans_date: order.tanggal ?? order.createdAt?.slice(0, 10),
         due_date: order.jatuhTempo ?? undefined,
         ref_number: order.noReferensi ?? order.soNumber ?? undefined,
         memo: order.catatan ?? order.notes ?? undefined,
+        contact_id: order.kledoContactId ? Number(order.kledoContactId) : undefined,
         contact_name: order.namaCustomer ?? order.customerName,
-        discount: order.diskonTotal ?? undefined,
-        items: (order.items ?? []).map((it: any) => ({
-          product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
-          name_item: it.nama ?? it.productName,
-          qty: it.qty ?? it.quantity ?? 1,
-          rate: it.harga ?? it.unitPrice ?? it.price ?? 0,
-        })),
+        include_tax: 0,
+        discount: order.diskonTotal || undefined,
+        items: kledoItems,
       });
       setKledoMsg('ok');
     } catch { setKledoMsg('error'); }
