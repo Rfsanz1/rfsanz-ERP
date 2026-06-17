@@ -87,6 +87,8 @@ export default function CreateOrderModal({
   const [copiedBank, setCopiedBank]           = useState<string | null>(null);
   const [bankPilihan, setBankPilihan]         = useState<string | null>(null);
   const [edcPilihan, setEdcPilihan]           = useState<string | null>(null);
+  const [unitBisnis, setUnitBisnis]           = useState<'elektronik' | 'bahan_bangunan' | ''>('');
+  const [metodeDp, setMetodeDp]               = useState<'transfer' | 'debit' | 'cash' | ''>('');
   const [uangMuka, setUangMuka]               = useState(0);
 
   const [items, setItems]                     = useState<OrderItem[]>([emptyItem()]);
@@ -181,6 +183,8 @@ export default function CreateOrderModal({
       metodePembayaran,
       bankPilihan: metodePembayaran === 'transfer' ? (bankPilihan ?? undefined) : undefined,
       edcPilihan: metodePembayaran === 'debit' ? (edcPilihan ?? undefined) : undefined,
+      unitBisnis: unitBisnis || undefined,
+      metodeDp: metodePembayaran === 'dp' ? (metodeDp || undefined) : undefined,
       uangMuka: uangMuka || undefined,
       items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId, unit }) => ({
         nama, qty, harga, subtotal,
@@ -496,7 +500,14 @@ export default function CreateOrderModal({
                               <button
                                 key={opt.value}
                                 type="button"
-                                onClick={() => { setMetodePembayaran(opt.value); setMetodeOpen(false); if (opt.value !== 'transfer') setBankPilihan(null); if (opt.value !== 'debit') setEdcPilihan(null); }}
+                                onClick={() => {
+                          setMetodePembayaran(opt.value);
+                          setMetodeOpen(false);
+                          if (opt.value !== 'transfer') setBankPilihan(null);
+                          if (opt.value !== 'debit') setEdcPilihan(null);
+                          if (opt.value !== 'dp') setMetodeDp('');
+                          if (opt.value !== 'cash' && !(opt.value === 'dp')) setUnitBisnis('');
+                        }}
                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left"
                                 style={{
                                   background: isActive ? `${COLOR}12` : 'transparent',
@@ -638,6 +649,89 @@ export default function CreateOrderModal({
                     {edcPilihan && (
                       <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
                         <CheckCircle2 className="h-3 w-3" /> Pembayaran via <strong>{EDC_OPTIONS.find(e => e.key === edcPilihan)?.label}</strong>
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Sub-metode DP — tampil saat Uang Muka dipilih */}
+              {metodePembayaran === 'dp' && (() => {
+                const DP_OPTIONS = [
+                  { key: 'transfer', label: 'Transfer',  icon: Smartphone },
+                  { key: 'debit',    label: 'Debit EDC', icon: CreditCard },
+                  { key: 'cash',     label: 'Cash',      icon: Banknote   },
+                ];
+                return (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5" style={{ color: COLOR }}>
+                      DP Dibayar Via
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {DP_OPTIONS.map(opt => {
+                        const OptIcon = opt.icon;
+                        const isSelected = metodeDp === opt.key;
+                        return (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => {
+                              setMetodeDp(opt.key as any);
+                              if (opt.key !== 'cash') setUnitBisnis('');
+                            }}
+                            className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-center transition-all active:scale-95"
+                            style={{
+                              border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`,
+                              background: isSelected ? `${COLOR}15` : 'var(--surface)',
+                            }}
+                          >
+                            <OptIcon className="h-4 w-4 flex-shrink-0" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }} />
+                            <span className="text-[12px] font-bold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{opt.label}</span>
+                            {isSelected && <span className="w-1.5 h-1.5 rounded-full" style={{ background: COLOR }} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Unit Bisnis — tampil saat Cash atau DP+Cash */}
+              {(metodePembayaran === 'cash' || (metodePembayaran === 'dp' && metodeDp === 'cash')) && (() => {
+                const UNIT_OPTIONS = [
+                  { key: 'elektronik',    label: 'Unit Elektronik',      sub: '→ KAS ELEKTRONIK', color: '#6366F1' },
+                  { key: 'bahan_bangunan', label: 'Unit Bahan Bangunan', sub: '→ KAS SULAWESI',   color: '#0891B2' },
+                ];
+                return (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5" style={{ color: COLOR }}>
+                      Unit Bisnis
+                      <span className="font-normal normal-case text-[10px]" style={{ color: 'var(--text-muted)' }}>— menentukan akun kas di Kledo</span>
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {UNIT_OPTIONS.map(u => {
+                        const isSelected = unitBisnis === u.key;
+                        return (
+                          <button
+                            key={u.key}
+                            type="button"
+                            onClick={() => setUnitBisnis(isSelected ? '' : u.key as any)}
+                            className="flex flex-col items-start gap-1 py-3 px-3.5 rounded-xl transition-all active:scale-95"
+                            style={{
+                              border: `2px solid ${isSelected ? u.color : 'var(--border)'}`,
+                              background: isSelected ? `${u.color}12` : 'var(--surface)',
+                            }}
+                          >
+                            <span className="text-[12px] font-bold leading-tight" style={{ color: isSelected ? u.color : 'var(--text-secondary)' }}>{u.label}</span>
+                            <span className="text-[10px] font-medium" style={{ color: isSelected ? u.color : 'var(--text-muted)' }}>{u.sub}</span>
+                            {isSelected && <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: u.color }} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {unitBisnis && (
+                      <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
+                        <CheckCircle2 className="h-3 w-3" /> Invoice Kledo otomatis lunas via <strong>{unitBisnis === 'elektronik' ? 'KAS ELEKTRONIK' : 'KAS SULAWESI'}</strong>
                       </p>
                     )}
                   </div>

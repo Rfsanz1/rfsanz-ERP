@@ -33,13 +33,15 @@ export async function getDefaultFinanceAccount(baseUrl: string, token: string): 
 
 /** Keyword mapping: bankKey → kata kunci pencarian di nama akun Kledo */
 const BANK_KEYWORDS: Record<string, string[]> = {
-  bca:     ['bca giro', 'giro bca', 'bca'],
-  bri:     ['bri edc', 'edc bri', 'bri'],
-  mandiri: ['mandiri'],
-  bni:     ['bni'],
-  bri_edc: ['bri edc', 'edc bri', 'bri'],
-  bca_edc: ['bca edc', 'edc bca', 'bca giro', 'giro bca', 'bca'],
-  bni_edc: ['bni'],
+  bca:          ['bca giro', 'giro bca', 'bca'],
+  bri:          ['bri edc', 'edc bri', 'bri'],
+  mandiri:      ['mandiri'],
+  bni:          ['bni'],
+  bri_edc:      ['bri edc', 'edc bri', 'bri'],
+  bca_edc:      ['bca edc', 'edc bca', 'bca giro', 'giro bca', 'bca'],
+  bni_edc:      ['bni'],
+  elektronik:   ['kas elektronik', 'elektronik'],
+  bahan_bangunan: ['kas sulawesi', 'sulawesi'],
 };
 
 /** Cari finance account Kledo berdasarkan nama bank (semua tipe akun) */
@@ -116,6 +118,8 @@ interface KledoOrderInput {
   metodePembayaran?: string;
   bankPilihan?: string | null;
   edcPilihan?: string | null;
+  unitBisnis?: string | null;
+  metodeDp?: string | null;
   items: { nama: string; qty: number; harga: number; subtotal: number; diskon?: number; kledoProductId?: string | null }[];
 }
 
@@ -192,19 +196,40 @@ export async function pushOrderToKledo(
 
     const isTransfer = order.metodePembayaran === 'transfer';
     const isDebit    = order.metodePembayaran === 'debit';
+    const isCash     = order.metodePembayaran === 'cash';
+    const isDp       = order.metodePembayaran === 'dp';
     const bankKey    = order.bankPilihan?.toLowerCase() ?? '';
     const edcKey     = order.edcPilihan?.toLowerCase() ?? '';
+    const unitKey    = order.unitBisnis?.toLowerCase() ?? '';
 
     const EDC_MEMO: Record<string, string> = {
       bri_edc: 'BRI EDC',
       bca_edc: 'BCA EDC',
       bni_edc: 'BNI',
     };
+    const UNIT_MEMO: Record<string, string> = {
+      elektronik:    'KAS ELEKTRONIK',
+      bahan_bangunan: 'KAS SULAWESI',
+    };
 
-    const activeKey  = isTransfer ? bankKey : isDebit ? edcKey : '';
-    const activeMemo = isDebit && edcKey
-      ? EDC_MEMO[edcKey] ?? edcKey.toUpperCase()
-      : activeKey.toUpperCase();
+    /* Tentukan akun & memo berdasarkan metode pembayaran */
+    let activeKey  = '';
+    let activeMemo = '';
+
+    if (isTransfer && bankKey) {
+      activeKey  = bankKey;
+      activeMemo = bankKey.toUpperCase();
+    } else if (isDebit && edcKey) {
+      activeKey  = edcKey;
+      activeMemo = EDC_MEMO[edcKey] ?? edcKey.toUpperCase();
+    } else if (isCash && unitKey) {
+      activeKey  = unitKey;
+      activeMemo = UNIT_MEMO[unitKey] ?? unitKey.toUpperCase();
+    } else if (isDp && order.metodeDp === 'cash' && unitKey) {
+      /* DP dibayar cash → tandai ke KAS sesuai unit (hanya sebagian / uang muka) */
+      activeKey  = unitKey;
+      activeMemo = UNIT_MEMO[unitKey] ?? unitKey.toUpperCase();
+    }
 
     if (activeKey) {
       const bankAccountId = await getBankAccountId(cfg.baseUrl, cfg.token, activeKey);

@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
       metodePembayaran = 'transfer',
       bankPilihan = null,
       edcPilihan = null,
+      unitBisnis = null,
+      metodeDp = null,
       uangMuka = 0,
     } = body;
 
@@ -78,6 +80,8 @@ export async function POST(req: NextRequest) {
         metodePembayaran,
         bankPilihan: bankPilihan ?? null,
         edcPilihan: edcPilihan ?? null,
+        unitBisnis: unitBisnis ?? null,
+        metodeDp: metodeDp ?? null,
         items: savedItems.length > 0 ? savedItems : items,
       });
 
