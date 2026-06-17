@@ -372,7 +372,7 @@ export function MaterioSidebar({ collapsed, mobileOpen, onMobileClose }: Sidebar
         <div style={{
           position: 'fixed', top: 0, left: 0, bottom: 0,
           width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
-          transition: 'width 0.25s ease', zIndex: 100, overflow: 'hidden',
+          transition: 'width 0.25s ease', zIndex: 300, overflow: 'hidden',
         }}>
           <SidebarContent onMobileClose={() => {}} />
         </div>
