@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Plus, X, Trash2, Package,
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
-  CreditCard, Banknote, Smartphone, Wallet, ChevronDown,
+  CreditCard, Banknote, Smartphone, Wallet, ChevronDown, Copy, Check,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { api } from '../../lib/api';
@@ -84,6 +84,7 @@ export default function CreateOrderModal({
   const [metodePembayaran, setMetodePembayaran] = useState('transfer');
   const [metodeOpen, setMetodeOpen]           = useState(false);
   const metodeRef                             = useRef<HTMLDivElement>(null);
+  const [copiedBank, setCopiedBank]           = useState<string | null>(null);
   const [uangMuka, setUangMuka]               = useState(0);
 
   const [items, setItems]                     = useState<OrderItem[]>([emptyItem()]);
@@ -143,6 +144,13 @@ export default function CreateOrderModal({
         return updated;
       }),
     );
+  };
+
+  const copyRekening = (bank: string, no: string) => {
+    const clean = no.replace(/\s/g, '');
+    navigator.clipboard.writeText(clean).catch(() => {});
+    setCopiedBank(bank);
+    setTimeout(() => setCopiedBank(null), 2000);
   };
 
   const addItem    = () => setItems(prev => [...prev, emptyItem()]);
@@ -519,14 +527,32 @@ export default function CreateOrderModal({
                     { bank: 'MANDIRI', no: '136 000 4780612',    nama: 'Dian Purnama' },
                     { bank: 'BCA',     no: '155 91 99999',       nama: 'Indarto Wibowo' },
                     { bank: 'BNI',     no: '0822 705 836',       nama: 'Indarto Wibowo' },
-                  ].map(r => (
-                    <div key={r.bank} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
-                      style={{ background: 'var(--surface)' }}>
-                      <span className="text-[11px] font-bold w-16 flex-shrink-0" style={{ color: COLOR }}>{r.bank}</span>
-                      <span className="text-[13px] font-semibold flex-1" style={{ color: 'var(--text-primary)', letterSpacing: '.03em' }}>{r.no}</span>
-                      <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{r.nama}</span>
-                    </div>
-                  ))}
+                  ].map(r => {
+                    const isCopied = copiedBank === r.bank;
+                    return (
+                      <button
+                        key={r.bank}
+                        type="button"
+                        onClick={() => copyRekening(r.bank, r.no)}
+                        className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all active:scale-[.98]"
+                        style={{
+                          background: isCopied ? `${COLOR}18` : 'var(--surface)',
+                          border: `1.5px solid ${isCopied ? COLOR : 'transparent'}`,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span className="text-[11px] font-bold w-14 flex-shrink-0 text-left" style={{ color: COLOR }}>{r.bank}</span>
+                        <span className="text-[13px] font-semibold flex-1 text-left" style={{ color: 'var(--text-primary)', letterSpacing: '.03em' }}>{r.no}</span>
+                        <span className="text-[11px] flex-shrink-0 hidden sm:block" style={{ color: 'var(--text-muted)' }}>{r.nama}</span>
+                        <span className="flex-shrink-0 ml-auto pl-2">
+                          {isCopied
+                            ? <Check className="h-3.5 w-3.5" style={{ color: COLOR }} />
+                            : <Copy className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
+                          }
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
