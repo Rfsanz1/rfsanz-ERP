@@ -326,8 +326,8 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
           );
         })}
 
-        {/* Bottom padding */}
-        <div style={{ height: 8, flexShrink: 0 }} />
+        {/* Bottom padding — clears mobile bottom nav bar (≈65px) */}
+        <div style={{ height: 72, flexShrink: 0 }} />
       </div>
 
     </div>
