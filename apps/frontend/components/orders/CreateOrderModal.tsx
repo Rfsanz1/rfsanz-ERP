@@ -161,12 +161,22 @@ export default function CreateOrderModal({
           discount: diskonTotal || undefined,
           include_tax: pajak > 0 ? 1 : 0,
           items: [
-            ...items.map(it => ({
-              product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
-              name_item: it.nama, qty: it.qty, rate: it.harga,
-              discount: it.diskonItem || undefined, unit: it.unit,
-            })),
-            ...(ongkir > 0 ? [{ name_item: 'Biaya Pengiriman', qty: 1, rate: ongkir }] : []),
+            ...items.map(it => {
+              const qty   = Number(it.qty ?? 1);
+              const price = Number(it.harga ?? 0);
+              return {
+                product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
+                name_item: it.nama,
+                qty,
+                price,
+                amount: qty * price,
+                discount_percent: it.diskonItem ? Number(it.diskonItem) : undefined,
+                unit: it.unit,
+              };
+            }),
+            ...(ongkir > 0 ? [{
+              name_item: 'Biaya Pengiriman', qty: 1, price: ongkir, amount: ongkir,
+            }] : []),
           ],
         });
         setKledoStatus('ok');

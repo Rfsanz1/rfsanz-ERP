@@ -47,19 +47,24 @@ export async function POST(req: NextRequest) {
     const { token: kledoToken, baseUrl } = kledoCfg;
     const defaultAccountId = await getKledoFinanceAccount(baseUrl, kledoToken);
 
-    const kledoItems = (invoice.items ?? []).map((it: any) => ({
-      finance_account_id: it.finance_account_id ?? defaultAccountId,
-      name: it.name_item ?? it.name ?? '',
-      qty: it.qty ?? 1,
-      rate: it.rate ?? it.harga ?? 0,
-      discount: it.discount ?? 0,
-      unit: it.unit ?? undefined,
-    }));
+    const kledoItems = (invoice.items ?? []).map((it: any) => {
+      const qty   = Number(it.qty ?? 1);
+      const price = Number(it.price ?? it.rate ?? it.harga ?? 0);
+      return {
+        finance_account_id: it.finance_account_id ?? defaultAccountId,
+        name: it.name_item ?? it.name ?? '',
+        qty,
+        price,
+        amount: qty * price,
+        discount_percent: Number(it.discount ?? 0),
+        unit_id: it.unit_id ?? undefined,
+      };
+    });
 
     const kledoPayload: Record<string, any> = {
       trans_date: invoice.trans_date,
       due_date: invoice.due_date,
-      include_tax: invoice.include_tax ?? 0,
+      include_tax: (invoice.include_tax === true || invoice.include_tax === 1) ? 1 : 0,
       items: kledoItems,
     };
     if (invoice.ref_number) kledoPayload.ref_number = invoice.ref_number;
