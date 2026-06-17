@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Plus, X, Trash2, Package,
@@ -82,12 +82,25 @@ export default function CreateOrderModal({
   const [ongkir, setOngkir]                   = useState(0);
 
   const [metodePembayaran, setMetodePembayaran] = useState('transfer');
+  const [metodeOpen, setMetodeOpen]           = useState(false);
+  const metodeRef                             = useRef<HTMLDivElement>(null);
   const [uangMuka, setUangMuka]               = useState(0);
 
   const [items, setItems]                     = useState<OrderItem[]>([emptyItem()]);
   const [saving, setSaving]                   = useState(false);
   const [kledoStatus, setKledoStatus]         = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle');
   const [error, setError]                     = useState('');
+
+  useEffect(() => {
+    if (!metodeOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (metodeRef.current && !metodeRef.current.contains(e.target as Node)) {
+        setMetodeOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [metodeOpen]);
 
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
   const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
@@ -424,39 +437,74 @@ export default function CreateOrderModal({
             <div className="rounded-2xl p-5 space-y-4"
               style={{ background: 'var(--surface-sunken)', border: '1.5px solid var(--border)' }}>
 
-              {/* Metode Pembayaran */}
-              <div>
+              {/* Metode Pembayaran — custom dropdown */}
+              <div ref={metodeRef} className="relative">
                 <Label>Metode Pembayaran</Label>
-                <div className="relative">
-                  {(() => {
-                    const selected = METODE_OPTIONS.find(o => o.value === metodePembayaran);
-                    const Icon = selected?.icon ?? Smartphone;
-                    return (
-                      <>
-                        <div className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center" style={{ color: COLOR }}>
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <select
-                          value={metodePembayaran}
-                          onChange={e => setMetodePembayaran(e.target.value)}
-                          className="w-full rounded-xl pl-9 pr-9 py-2.5 text-sm font-semibold appearance-none outline-none transition-colors cursor-pointer"
+                {(() => {
+                  const selected = METODE_OPTIONS.find(o => o.value === metodePembayaran)!;
+                  const Icon = selected.icon;
+                  return (
+                    <>
+                      {/* Trigger button */}
+                      <button
+                        type="button"
+                        onClick={() => setMetodeOpen(v => !v)}
+                        className="w-full flex items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all"
+                        style={{
+                          border: `1.5px solid ${metodeOpen ? COLOR : 'var(--border)'}`,
+                          background: 'var(--surface)',
+                          color: 'var(--text-primary)',
+                          outline: 'none',
+                        }}
+                      >
+                        <span className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 flex-shrink-0" style={{ color: COLOR }} />
+                          {selected.label}
+                        </span>
+                        <ChevronDown
+                          className="h-4 w-4 flex-shrink-0 transition-transform duration-200"
+                          style={{ color: 'var(--text-muted)', transform: metodeOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                        />
+                      </button>
+
+                      {/* Dropdown list */}
+                      {metodeOpen && (
+                        <div
+                          className="absolute left-0 right-0 mt-1 rounded-xl overflow-hidden z-50"
                           style={{
-                            border: `1.5px solid ${COLOR}`,
+                            border: '1.5px solid var(--border)',
                             background: 'var(--surface)',
-                            color: 'var(--text-primary)',
+                            boxShadow: '0 8px 24px rgba(0,0,0,.18)',
                           }}
                         >
-                          {METODE_OPTIONS.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center" style={{ color: 'var(--text-muted)' }}>
-                          <ChevronDown className="h-4 w-4" />
+                          {METODE_OPTIONS.map((opt, i) => {
+                            const OptIcon = opt.icon;
+                            const isActive = metodePembayaran === opt.value;
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => { setMetodePembayaran(opt.value); setMetodeOpen(false); }}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left"
+                                style={{
+                                  background: isActive ? `${COLOR}12` : 'transparent',
+                                  color: isActive ? COLOR : 'var(--text-primary)',
+                                  borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                                }}
+                              >
+                                <OptIcon className="h-4 w-4 flex-shrink-0" style={{ color: isActive ? COLOR : 'var(--text-muted)' }} />
+                                <span className="flex-1">{opt.label}</span>
+                                {isActive && (
+                                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLOR }} />
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
-                      </>
-                    );
-                  })()}
-                </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Info Rekening Bank — tampil saat Transfer dipilih */}
