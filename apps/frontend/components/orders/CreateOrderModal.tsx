@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Plus, X, Trash2, Package,
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
@@ -182,10 +183,10 @@ export default function CreateOrderModal({
     }
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,.5)', backdropFilter: 'blur(4px)' }}
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,.55)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
     >
       <div
         className="rounded-2xl w-full flex flex-col"
@@ -458,4 +459,7 @@ export default function CreateOrderModal({
       </div>
     </div>
   );
+
+  if (typeof window === 'undefined') return null;
+  return createPortal(modalContent, document.body);
 }
