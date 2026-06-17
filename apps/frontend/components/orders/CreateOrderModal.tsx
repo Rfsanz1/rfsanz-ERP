@@ -86,6 +86,7 @@ export default function CreateOrderModal({
   const metodeRef                             = useRef<HTMLDivElement>(null);
   const [copiedBank, setCopiedBank]           = useState<string | null>(null);
   const [bankPilihan, setBankPilihan]         = useState<string | null>(null);
+  const [edcPilihan, setEdcPilihan]           = useState<string | null>(null);
   const [uangMuka, setUangMuka]               = useState(0);
 
   const [items, setItems]                     = useState<OrderItem[]>([emptyItem()]);
@@ -179,6 +180,7 @@ export default function CreateOrderModal({
       kledoContactId: kledoContactId || undefined,
       metodePembayaran,
       bankPilihan: metodePembayaran === 'transfer' ? (bankPilihan ?? undefined) : undefined,
+      edcPilihan: metodePembayaran === 'debit' ? (edcPilihan ?? undefined) : undefined,
       uangMuka: uangMuka || undefined,
       items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId, unit }) => ({
         nama, qty, harga, subtotal,
@@ -494,7 +496,7 @@ export default function CreateOrderModal({
                               <button
                                 key={opt.value}
                                 type="button"
-                                onClick={() => { setMetodePembayaran(opt.value); setMetodeOpen(false); if (opt.value !== 'transfer') setBankPilihan(null); }}
+                                onClick={() => { setMetodePembayaran(opt.value); setMetodeOpen(false); if (opt.value !== 'transfer') setBankPilihan(null); if (opt.value !== 'debit') setEdcPilihan(null); }}
                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left"
                                 style={{
                                   background: isActive ? `${COLOR}12` : 'transparent',
@@ -595,6 +597,49 @@ export default function CreateOrderModal({
                         );
                       })}
                     </div>
+                  </div>
+                );
+              })()}
+
+              {/* Pilihan EDC — tampil saat Debit dipilih */}
+              {metodePembayaran === 'debit' && (() => {
+                const EDC_OPTIONS = [
+                  { key: 'bri_edc',  label: 'BRI EDC',  bank: 'BRI' },
+                  { key: 'bca_edc',  label: 'BCA EDC',  bank: 'BCA' },
+                  { key: 'bni_edc',  label: 'BNI EDC',  bank: 'BNI' },
+                ];
+                return (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5" style={{ color: COLOR }}>
+                      Mesin EDC yang Digunakan
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {EDC_OPTIONS.map(edc => {
+                        const isSelected = edcPilihan === edc.key;
+                        return (
+                          <button
+                            key={edc.key}
+                            type="button"
+                            onClick={() => setEdcPilihan(isSelected ? null : edc.key)}
+                            className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-center transition-all active:scale-95"
+                            style={{
+                              border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`,
+                              background: isSelected ? `${COLOR}15` : 'var(--surface)',
+                            }}
+                          >
+                            <CreditCard className="h-4 w-4 flex-shrink-0" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }} />
+                            <span className="text-[12px] font-bold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{edc.bank}</span>
+                            <span className="text-[10px] font-medium leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>EDC</span>
+                            {isSelected && <span className="w-1.5 h-1.5 rounded-full" style={{ background: COLOR }} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {edcPilihan && (
+                      <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
+                        <CheckCircle2 className="h-3 w-3" /> Pembayaran via <strong>{EDC_OPTIONS.find(e => e.key === edcPilihan)?.label}</strong>
+                      </p>
+                    )}
                   </div>
                 );
               })()}
