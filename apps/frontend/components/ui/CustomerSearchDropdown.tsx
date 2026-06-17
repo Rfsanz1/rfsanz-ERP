@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Search, User, X, ChevronDown, Loader2 } from 'lucide-react';
+import { Search, User, X, ChevronDown, Loader2, RefreshCw } from 'lucide-react';
 import { api } from '../../lib/api';
 
 export interface CustomerOption {
@@ -34,6 +34,14 @@ const KLEDO_TTL = 10 * 60 * 1000; // 10 min
 // Track in-flight warm request so only one fires globally
 let _warmPromise: Promise<void> | null = null;
 
+async function refreshKledoCache(): Promise<void> {
+  _kledoContacts = [];
+  _kledoCacheTs = 0;
+  _warmPromise = null;
+  try { await fetch('/api/direct/kledo-search', { method: 'DELETE' }); } catch {}
+  return warmKledo();
+}
+
 function textMatch(s: string, q: string) {
   return s.toLowerCase().includes(q.toLowerCase());
 }
@@ -42,15 +50,15 @@ function filterAndMerge(q: string): CustomerOption[] {
   const t = q.trim();
   const local = t
     ? _localContacts.filter(c => textMatch(c.name, t) || textMatch(c.phone ?? '', t))
-    : _localContacts.slice(0, 8);
+    : _localContacts.slice(0, 20);
   const localNames = new Set(local.map(c => c.name.toLowerCase().trim()));
   const kledo = t
     ? _kledoContacts.filter(c =>
         !localNames.has(c.name.toLowerCase().trim()) &&
         (textMatch(c.name, t) || textMatch(c.phone ?? '', t)),
       )
-    : _kledoContacts.filter(c => !localNames.has(c.name.toLowerCase().trim())).slice(0, 8);
-  return [...local, ...kledo].slice(0, 20);
+    : _kledoContacts.filter(c => !localNames.has(c.name.toLowerCase().trim())).slice(0, 20);
+  return [...local, ...kledo].slice(0, 40);
 }
 
 async function warmKledo() {
@@ -104,6 +112,7 @@ export default function CustomerSearchDropdown({
   const [suggestions, setSuggestions] = useState<CustomerOption[]>([]);
   const [open, setOpen] = useState(false);
   const [warming, setWarming] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selected, setSelected] = useState<CustomerOption | null>(null);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
 
@@ -211,8 +220,16 @@ export default function CustomerSearchDropdown({
     setOpen(false);
   };
 
+  const handleRefresh = useCallback(async () => {
+    if (refreshing || warming) return;
+    setRefreshing(true);
+    await refreshKledoCache();
+    runSearch(value);
+    setRefreshing(false);
+  }, [refreshing, warming, value, runSearch]);
+
   const kledoReady = _kledoCacheTs > 0;
-  const noResult = !warming && suggestions.length === 0 && open;
+  const noResult = !warming && !refreshing && suggestions.length === 0 && open;
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -340,16 +357,33 @@ export default function CustomerSearchDropdown({
               ))}
 
               <div
-                className="px-3 py-2 flex items-center gap-1.5"
+                className="px-3 py-2 flex items-center justify-between gap-1.5"
                 style={{ borderTop: '1px solid var(--border)' }}
               >
-                {warming
-                  ? <><Loader2 className="h-3 w-3 animate-spin" style={{ color: '#10B981' }} /><p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Kledo masih memuat...</p></>
-                  : <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                {(warming || refreshing)
+                  ? <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" style={{ color: '#10B981' }} /><span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Memuat dari Kledo...</span></span>
+                  : <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                       <User className="h-3 w-3 inline mr-1" />
                       {kledoReady ? `${_kledoContacts.length} kontak Kledo` : 'Lokal'} · Ketik nama baru → buat otomatis
-                    </p>
+                    </span>
                 }
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  disabled={refreshing || warming}
+                  title="Refresh kontak Kledo"
+                  className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                  style={{
+                    background: 'rgba(16,185,129,.1)',
+                    color: '#059669',
+                    border: 'none',
+                    cursor: refreshing || warming ? 'not-allowed' : 'pointer',
+                    opacity: refreshing || warming ? 0.5 : 1,
+                  }}
+                >
+                  <RefreshCw className={`h-2.5 w-2.5 ${refreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
               </div>
             </>
           )}

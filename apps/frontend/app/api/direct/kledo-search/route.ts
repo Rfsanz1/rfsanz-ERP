@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
 
   // contacts
   if (now - contactsCache.ts > CACHE_TTL || contactsCache.data.length === 0) {
-    const raw = await fetchKledoPages(token, 'finance/contacts', 10, 500);
+    const raw = await fetchKledoPages(token, 'finance/contacts', 20, 500);
     contactsCache.data = raw.map((c: any) => ({
       id: `kledo-${c.id}`,
       kledoId: c.id,
