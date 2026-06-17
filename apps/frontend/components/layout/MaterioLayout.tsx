@@ -51,13 +51,12 @@ export function MaterioLayout({ children }: MaterioLayoutProps) {
             p: { xs: 1.5, sm: 2.5, md: 3 },
             overflowY: 'auto',
             paddingTop: { xs: 1.5, sm: 2.5, md: 3 },
-            paddingBottom: {
-              xs: 'calc(env(safe-area-inset-bottom) + 80px)',
-              lg: '24px',
-            },
+            paddingBottom: { xs: 1.5, sm: 2.5, md: 3 },
           }}
         >
           {children}
+          {/* Spacer to always clear the fixed bottom nav on mobile */}
+          <div style={{ height: 80 }} />
         </Box>
       </Box>
 
