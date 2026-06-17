@@ -37,10 +37,31 @@ const BANGUNAN_KW = [
   'lem keramik', 'genteng', 'talang', 'list plafon',
 ];
 
+/* ── Dynamic keywords cache (loaded from settings DB) ── */
+let _customElektroKw: string[] = [];
+let _customBangunanKw: string[] = [];
+let _kwFetched = false;
+
+async function loadCustomKeywords() {
+  if (_kwFetched) return;
+  try {
+    const r = await fetch('/api/settings/keywords');
+    if (r.ok) {
+      const d = await r.json();
+      const rows: { keyword: string; kategori: string }[] = d.data ?? [];
+      _customElektroKw  = rows.filter(x => x.kategori === 'elektronik').map(x => x.keyword.toLowerCase());
+      _customBangunanKw = rows.filter(x => x.kategori === 'bahan_bangunan').map(x => x.keyword.toLowerCase());
+    }
+  } catch { /* non-fatal — use hardcoded only */ }
+  _kwFetched = true;
+}
+
 function detectKategori(nama: string): 'elektronik' | 'bahan_bangunan' | null {
   const n = ` ${nama.toLowerCase()} `;
-  for (const kw of ELEKTRO_KW)   if (n.includes(kw)) return 'elektronik';
-  for (const kw of BANGUNAN_KW)  if (n.includes(kw)) return 'bahan_bangunan';
+  const allElektro  = [...ELEKTRO_KW,  ..._customElektroKw];
+  const allBangunan = [...BANGUNAN_KW, ..._customBangunanKw];
+  for (const kw of allElektro)  if (n.includes(kw)) return 'elektronik';
+  for (const kw of allBangunan) if (n.includes(kw)) return 'bahan_bangunan';
   return null;
 }
 
@@ -158,6 +179,9 @@ export default function CreateOrderModal({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [metodeOpen]);
+
+  /* Load custom keywords from DB once when modal mounts */
+  useEffect(() => { loadCustomKeywords(); }, []);
 
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
   const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
