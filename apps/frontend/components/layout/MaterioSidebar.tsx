@@ -320,8 +320,9 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
           );
         })}
 
-        {/* Bottom padding */}
-        <div style={{ height: 24 }} />
+        {/* Bottom padding — extra space on mobile to clear the bottom nav bar */}
+        <div className="h-6 lg:h-6" style={{ minHeight: 24 }} />
+        <div className="lg:hidden" style={{ height: 64 }} />
       </div>
     </div>
   );
