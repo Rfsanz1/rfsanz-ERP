@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Plus, X, Trash2, Package,
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
+  CreditCard, Banknote, Smartphone, Wallet,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { api } from '../../lib/api';
@@ -51,6 +52,14 @@ function Label({ children, optional }: { children: React.ReactNode; optional?: b
   );
 }
 
+const METODE_OPTIONS = [
+  { value: 'transfer',  label: 'Transfer Bank', icon: Smartphone },
+  { value: 'debit',    label: 'Debit / Kartu',  icon: CreditCard },
+  { value: 'cash',     label: 'Cash / Tunai',   icon: Banknote },
+  { value: 'cod',      label: 'COD',            icon: Truck },
+  { value: 'dp',       label: 'Uang Muka (DP)', icon: Wallet },
+];
+
 export default function CreateOrderModal({
   onClose,
   onSuccess,
@@ -72,6 +81,9 @@ export default function CreateOrderModal({
   const [pajak, setPajak]                     = useState(0);
   const [ongkir, setOngkir]                   = useState(0);
 
+  const [metodePembayaran, setMetodePembayaran] = useState('transfer');
+  const [uangMuka, setUangMuka]               = useState(0);
+
   const [items, setItems]                     = useState<OrderItem[]>([emptyItem()]);
   const [saving, setSaving]                   = useState(false);
   const [kledoStatus, setKledoStatus]         = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle');
@@ -79,6 +91,7 @@ export default function CreateOrderModal({
 
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
   const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
+  const sisaBayar     = Math.max(0, grandTotal - uangMuka);
 
   const handleCustomerSelect = (c: CustomerOption) => {
     setNamaCustomer(c.name);
@@ -127,6 +140,7 @@ export default function CreateOrderModal({
     if (items.some(it => !it.nama.trim())) { setError('Semua produk harus diisi.'); return; }
     setError('');
     setSaving(true);
+    setKledoStatus('syncing');
 
     const payload = {
       namaCustomer: namaCustomer.trim(),
@@ -140,53 +154,29 @@ export default function CreateOrderModal({
       ongkir: ongkir || undefined,
       totalHarga: grandTotal,
       status: 'pending',
-      items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId }) => ({
+      kledoContactId: kledoContactId || undefined,
+      metodePembayaran,
+      uangMuka: uangMuka || undefined,
+      items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId, unit }) => ({
         nama, qty, harga, subtotal,
         diskon: diskonItem || undefined,
+        unit,
         ...(productId ? { productId } : {}),
         ...(kledoProductId ? { kledoProductId } : {}),
       })),
     };
 
     try {
-      await api.post('/sales/orders', payload);
-
-      setKledoStatus('syncing');
-      try {
-        await api.post('/kledo/invoices', {
-          trans_date: tanggal,
-          memo: catatan.trim() || undefined,
-          contact_id: kledoContactId ? Number(kledoContactId) : undefined,
-          contact_name: namaCustomer.trim(),
-          discount: diskonTotal || undefined,
-          include_tax: pajak > 0 ? 1 : 0,
-          items: [
-            ...items.map(it => {
-              const qty   = Number(it.qty ?? 1);
-              const price = Number(it.harga ?? 0);
-              return {
-                product_id: it.kledoProductId ? Number(it.kledoProductId) : undefined,
-                name_item: it.nama,
-                qty,
-                price,
-                amount: qty * price,
-                discount_percent: it.diskonItem ? Number(it.diskonItem) : undefined,
-                unit: it.unit,
-              };
-            }),
-            ...(ongkir > 0 ? [{
-              name_item: 'Biaya Pengiriman', qty: 1, price: ongkir, amount: ongkir,
-            }] : []),
-          ],
-        });
+      const res = await api.post('/sales/orders', payload);
+      const kledoResult = (res.data as any)?.kledo;
+      if (kledoResult?.ok) {
         setKledoStatus('ok');
-      } catch {
+      } else {
         setKledoStatus('error');
       }
-
       onSuccess();
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'Gagal menyimpan order.');
+      setError(e?.response?.data?.message ?? e?.response?.data?.error ?? 'Gagal menyimpan order.');
       setKledoStatus('idle');
     } finally {
       setSaving(false);
@@ -211,7 +201,7 @@ export default function CreateOrderModal({
             <div>
               <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Buat Order Baru</h2>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Data otomatis tersinkron ke Kledo
+                Tersimpan otomatis ke ERP + Kledo
                 {kledoStatus === 'syncing' && ' · Mengirim ke Kledo…'}
                 {kledoStatus === 'ok' && ' ✓ Tersinkron ke Kledo'}
                 {kledoStatus === 'error' && ' · Kledo tidak terjangkau'}
@@ -425,6 +415,68 @@ export default function CreateOrderModal({
                 </div>
               </div>
             </div>
+          </section>
+
+          {/* SEKSI 5: Detail Pembayaran */}
+          <section className="space-y-4">
+            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Detail Pembayaran</p>
+
+            <div className="rounded-2xl p-5 space-y-4"
+              style={{ background: 'var(--surface-sunken)', border: '1.5px solid var(--border)' }}>
+
+              {/* Metode Pembayaran */}
+              <div>
+                <Label>Metode Pembayaran</Label>
+                <div className="grid grid-cols-5 gap-2">
+                  {METODE_OPTIONS.map(opt => {
+                    const Icon = opt.icon;
+                    const active = metodePembayaran === opt.value;
+                    return (
+                      <button key={opt.value}
+                        type="button"
+                        onClick={() => setMetodePembayaran(opt.value)}
+                        className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-center transition-all"
+                        style={{
+                          border: `2px solid ${active ? COLOR : 'var(--border)'}`,
+                          background: active ? `${COLOR}12` : 'var(--surface)',
+                          color: active ? COLOR : 'var(--text-muted)',
+                          cursor: 'pointer',
+                        }}>
+                        <Icon className="h-4 w-4" />
+                        <span className="text-[10px] font-semibold leading-tight">{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Uang Muka / DP — tampil saat metode bukan cash penuh */}
+              <div>
+                <Label optional>Uang Muka / DP (Rp)</Label>
+                <input type="number" min={0} max={grandTotal}
+                  className={`${inputCls} text-right`} style={inputSt}
+                  placeholder="0 jika bayar penuh"
+                  value={uangMuka || ''}
+                  onChange={e => setUangMuka(Math.min(grandTotal, Number(e.target.value) || 0))}
+                  onFocus={focusColor} onBlur={blurColor} />
+              </div>
+
+              {/* Sisa Bayar */}
+              {uangMuka > 0 && (
+                <div className="rounded-xl px-4 py-3 flex justify-between items-center"
+                  style={{ background: 'rgba(245,158,11,.08)', border: '1.5px solid rgba(245,158,11,.25)' }}>
+                  <span className="text-sm font-semibold" style={{ color: '#92400E' }}>Sisa Bayar</span>
+                  <span className="text-lg font-bold" style={{ color: '#F59E0B' }}>{fmtRp(sisaBayar)}</span>
+                </div>
+              )}
+
+              {metodePembayaran === 'cod' && (
+                <div className="rounded-xl px-4 py-3 flex items-center gap-2 text-sm"
+                  style={{ background: 'rgba(16,185,129,.08)', border: '1.5px solid rgba(16,185,129,.25)', color: '#065F46' }}>
+                  <Truck className="h-4 w-4" /> Bayar saat barang tiba di lokasi pelanggan.
+                </div>
+              )}
+            </div>
 
             {kledoStatus !== 'idle' && (
               <div className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm"
@@ -436,9 +488,9 @@ export default function CreateOrderModal({
                 {kledoStatus === 'syncing' && <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin flex-shrink-0" style={{ borderColor: `${COLOR}40`, borderTopColor: COLOR }} />}
                 {kledoStatus === 'ok' && <CheckCircle2 className="h-4 w-4 flex-shrink-0" />}
                 {kledoStatus === 'error' && <AlertCircle className="h-4 w-4 flex-shrink-0" />}
-                {kledoStatus === 'syncing' && 'Mengirim invoice ke Kledo…'}
+                {kledoStatus === 'syncing' && 'Menyimpan & mengirim ke Kledo…'}
                 {kledoStatus === 'ok' && 'Invoice berhasil dikirim ke Kledo'}
-                {kledoStatus === 'error' && 'Kledo tidak terjangkau — order tetap tersimpan di ERP'}
+                {kledoStatus === 'error' && 'Order tersimpan — Kledo tidak terjangkau, sync manual nanti'}
               </div>
             )}
 

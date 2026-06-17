@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, generateSoNumber } from '@/lib/localDb';
+import { pushOrderToKledo } from '@/lib/kledoSync';
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,6 +9,9 @@ export async function POST(req: NextRequest) {
       namaCustomer, noHp, alamat, catatan, salesName,
       tanggal, diskonTotal, pajak, ongkir, totalHarga,
       status = 'pending', items = [], customerId,
+      kledoContactId,
+      metodePembayaran = 'transfer',
+      uangMuka = 0,
     } = body;
 
     if (!namaCustomer) {
@@ -20,18 +24,21 @@ export async function POST(req: NextRequest) {
     const orderRes = await db.query(
       `INSERT INTO local_orders
         (nama_customer, no_hp, alamat, catatan, sales_name, tanggal,
-         diskon_total, pajak, ongkir, total_harga, status, customer_id, so_number)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         diskon_total, pajak, ongkir, total_harga, status, customer_id, so_number,
+         metode_pembayaran, uang_muka, kledo_contact_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
        RETURNING *`,
       [
         namaCustomer, noHp ?? null, alamat ?? null, catatan ?? null,
         salesName ?? null, tanggal ?? new Date().toISOString().slice(0, 10),
         diskonTotal ?? 0, pajak ?? 0, ongkir ?? 0,
         totalHarga ?? 0, status, customerId ?? null, soNumber,
+        metodePembayaran, uangMuka ?? 0, kledoContactId ?? null,
       ],
     );
     const order = orderRes.rows[0];
 
+    const savedItems: any[] = [];
     if (Array.isArray(items) && items.length > 0) {
       for (const it of items) {
         await db.query(
@@ -45,11 +52,49 @@ export async function POST(req: NextRequest) {
             it.kledoProductId ?? null, it.unit ?? null,
           ],
         );
+        savedItems.push(it);
       }
     }
 
+    /* ── Auto-sync ke Kledo ── */
+    const authHeader = req.headers.get('authorization') ?? '';
+    let kledoOk = false;
+    let kledoInvoiceId: number | null = null;
+    let kledoError: string | undefined;
+
+    try {
+      const result = await pushOrderToKledo(authHeader, {
+        soNumber,
+        tanggal: tanggal ?? new Date().toISOString().slice(0, 10),
+        catatan: catatan ?? undefined,
+        contactId: kledoContactId ? Number(kledoContactId) : null,
+        contactName: namaCustomer,
+        diskonTotal: diskonTotal ?? 0,
+        pajak: pajak ?? 0,
+        ongkir: ongkir ?? 0,
+        items: savedItems.length > 0 ? savedItems : items,
+      });
+
+      kledoOk = result.ok;
+      kledoInvoiceId = result.kledoInvoiceId;
+      kledoError = result.error;
+
+      if (kledoOk && kledoInvoiceId) {
+        await db.query(
+          `UPDATE local_orders SET kledo_invoice_id=$1, kledo_synced=true, updated_at=NOW() WHERE id=$2`,
+          [String(kledoInvoiceId), order.id],
+        );
+      }
+    } catch (e: any) {
+      kledoError = e.message;
+    }
+
     const fullOrder = await getOrderById(db, order.id);
-    return NextResponse.json({ data: fullOrder, error: null });
+    return NextResponse.json({
+      data: fullOrder,
+      error: null,
+      kledo: { ok: kledoOk, invoiceId: kledoInvoiceId, error: kledoError },
+    });
   } catch (e: any) {
     console.error('[POST /api/sales/orders]', e);
     return NextResponse.json({ data: null, error: e.message }, { status: 500 });
@@ -130,28 +175,31 @@ async function getOrderById(db: any, id: number) {
   return res.rows[0] ? normalizeOrder(res.rows[0]) : null;
 }
 
-function normalizeOrder(r: any) {
+export function normalizeOrder(r: any) {
   return {
-    id:           r.id,
-    soNumber:     r.so_number,
-    namaCustomer: r.nama_customer,
-    noHp:         r.no_hp,
-    alamat:       r.alamat,
-    catatan:      r.catatan,
-    salesName:    r.sales_name,
-    tanggal:      r.tanggal,
-    diskonTotal:  Number(r.diskon_total ?? 0),
-    pajak:        Number(r.pajak ?? 0),
-    ongkir:       Number(r.ongkir ?? 0),
-    totalHarga:   Number(r.total_harga ?? 0),
-    status:       r.status,
+    id:              r.id,
+    soNumber:        r.so_number,
+    namaCustomer:    r.nama_customer,
+    noHp:            r.no_hp,
+    alamat:          r.alamat,
+    catatan:         r.catatan,
+    salesName:       r.sales_name,
+    tanggal:         r.tanggal,
+    diskonTotal:     Number(r.diskon_total  ?? 0),
+    pajak:           Number(r.pajak         ?? 0),
+    ongkir:          Number(r.ongkir        ?? 0),
+    totalHarga:      Number(r.total_harga   ?? 0),
+    uangMuka:        Number(r.uang_muka     ?? 0),
+    metodePembayaran: r.metode_pembayaran ?? 'transfer',
+    status:          r.status,
     statusPengiriman: r.status_pengiriman,
-    customerId:   r.customer_id,
-    kledoInvoiceId: r.kledo_invoice_id,
-    kledoSynced:  r.kledo_synced,
-    createdAt:    r.created_at,
-    updatedAt:    r.updated_at,
-    orderItems:   r.orderItems ?? [],
+    customerId:      r.customer_id,
+    kledoContactId:  r.kledo_contact_id,
+    kledoInvoiceId:  r.kledo_invoice_id,
+    kledoSynced:     r.kledo_synced,
+    createdAt:       r.created_at,
+    updatedAt:       r.updated_at,
+    orderItems:      r.orderItems ?? [],
     source: 'local',
   };
 }
