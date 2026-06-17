@@ -1,19 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { promises as fs } from 'fs';
+import path from 'path';
 
-const rawBackend = process.env.BACKEND_URL || '';
-const BACKEND = rawBackend && !rawBackend.startsWith('http://') && !rawBackend.startsWith('https://')
-  ? `https://${rawBackend}`
-  : rawBackend;
+const CONFIG_PATH = path.join(process.cwd(), 'backend.config.json');
 
-async function proxy(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const path = (await params).path.join('/');
-  const url = `${BACKEND}/api/${path}${req.nextUrl.search}`;
+async function getBackendUrl(): Promise<string> {
+  try {
+    const raw = await fs.readFile(CONFIG_PATH, 'utf-8');
+    const cfg = JSON.parse(raw);
+    if (cfg?.backendUrl) return cfg.backendUrl.replace(/\/$/, '');
+  } catch {}
+
+  const rawEnv = process.env.BACKEND_URL || '';
+  if (!rawEnv) return '';
+  if (rawEnv.startsWith('http://') || rawEnv.startsWith('https://')) {
+    return rawEnv.replace(/\/$/, '');
+  }
+  return `https://${rawEnv}`.replace(/\/$/, '');
+}
+
+async function proxy(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  const { path: segments } = await context.params;
+  const backend = await getBackendUrl();
+
+  if (!backend) {
+    return NextResponse.json(
+      { statusCode: 503, message: 'Backend belum dikonfigurasi. Buka Pengaturan → Koneksi Server.' },
+      { status: 503 },
+    );
+  }
+
+  const url = `${backend}/api/${segments.join('/')}${req.nextUrl.search}`;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': '1',
   };
-
   const auth = req.headers.get('authorization');
   if (auth) headers['authorization'] = auth;
 
@@ -29,7 +51,6 @@ async function proxy(req: NextRequest, { params }: { params: { path: string[] } 
       body: body || undefined,
       cache: 'no-store',
     });
-
     const data = await res.text();
     return new NextResponse(data, {
       status: res.status,
@@ -38,7 +59,7 @@ async function proxy(req: NextRequest, { params }: { params: { path: string[] } 
   } catch (err) {
     console.error('[proxy] failed to reach backend:', url, err);
     return NextResponse.json(
-      { statusCode: 503, message: 'Backend tidak tersedia. Set BACKEND_URL ke URL backend yang sudah di-deploy.' },
+      { statusCode: 503, message: `Tidak dapat terhubung ke backend: ${backend}` },
       { status: 503 },
     );
   }

@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Wifi, WifiOff, Save, RotateCcw, CheckCircle2, XCircle, Server, Smartphone } from 'lucide-react';
+import {
+  Wifi, Save, RotateCcw, CheckCircle2, XCircle,
+  Server, Smartphone, RefreshCw, Trash2, Globe,
+} from 'lucide-react';
 import { DEFAULT_SERVER_URL, saveServerUrl, loadServerUrl, isNativePlatform } from '../../../lib/api-config';
-import { api } from '../../../lib/api';
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -20,173 +22,386 @@ const inputStyle: React.CSSProperties = {
 
 type TestResult = { ok: boolean; latency?: number; message: string } | null;
 
+interface BackendConfig {
+  envUrl: string;
+  configUrl: string;
+  effectiveUrl: string;
+  source: 'config' | 'env';
+}
+
 export default function ConnectionPage() {
-  const [url, setUrl]           = useState('');
-  const [saved, setSaved]       = useState<string | null>(null);
-  const [testing, setTesting]   = useState(false);
-  const [saving, setSaving]     = useState(false);
-  const [result, setResult]     = useState<TestResult>(null);
   const [isNative, setIsNative] = useState(false);
 
+  /* ── Web config state ─────────────────────────── */
+  const [webConfig, setWebConfig]       = useState<BackendConfig | null>(null);
+  const [webUrl, setWebUrl]             = useState('');
+  const [webSaving, setWebSaving]       = useState(false);
+  const [webTesting, setWebTesting]     = useState(false);
+  const [webResult, setWebResult]       = useState<TestResult>(null);
+  const [webLoading, setWebLoading]     = useState(true);
+
+  /* ── Native config state ──────────────────────── */
+  const [nativeUrl, setNativeUrl]       = useState('');
+  const [nativeSaved, setNativeSaved]   = useState<string | null>(null);
+  const [nativeTesting, setNativeTesting] = useState(false);
+  const [nativeSaving, setNativeSaving] = useState(false);
+  const [nativeResult, setNativeResult] = useState<TestResult>(null);
+
   useEffect(() => {
-    setIsNative(isNativePlatform());
-    loadServerUrl().then(v => {
-      const val = v || DEFAULT_SERVER_URL;
-      setUrl(val);
-      setSaved(val);
-    });
+    const native = isNativePlatform();
+    setIsNative(native);
+
+    /* Always load web config (for browser) */
+    fetch('/api/admin/backend-url')
+      .then(r => r.json())
+      .then((cfg: BackendConfig) => {
+        setWebConfig(cfg);
+        setWebUrl(cfg.configUrl || cfg.envUrl || '');
+      })
+      .catch(() => {})
+      .finally(() => setWebLoading(false));
+
+    /* Load native config too */
+    if (native) {
+      loadServerUrl().then(v => {
+        const val = v || DEFAULT_SERVER_URL;
+        setNativeUrl(val);
+        setNativeSaved(val);
+      });
+    }
   }, []);
 
-  const handleTest = async () => {
-    setTesting(true);
-    setResult(null);
-    const target = url.replace(/\/$/, '');
-    const start  = Date.now();
+  /* ── Web handlers ─────────────────────────────── */
+  const handleWebTest = async () => {
+    setWebTesting(true);
+    setWebResult(null);
+    const target = (webUrl || webConfig?.effectiveUrl || '').replace(/\/$/, '');
+    if (!target) {
+      setWebResult({ ok: false, message: 'Masukkan URL backend terlebih dahulu.' });
+      setWebTesting(false);
+      return;
+    }
+    const start = Date.now();
     try {
-      const res = await api.get(
-        isNative ? `${target}/api/health` : '/api/health',
-        { timeout: 5000 }
-      );
+      const res = await fetch(`${target}/api/health`, {
+        signal: AbortSignal.timeout(6000),
+        headers: { 'ngrok-skip-browser-warning': '1' },
+      });
       const latency = Date.now() - start;
-      if (res.status === 200) {
-        setResult({ ok: true, latency, message: `Berhasil! Server merespons dalam ${latency}ms` });
+      setWebResult(res.ok
+        ? { ok: true, latency, message: `Berhasil! Server merespons dalam ${latency}ms` }
+        : { ok: false, message: `Server merespons dengan status ${res.status}` });
+    } catch (e: any) {
+      setWebResult({ ok: false, message: e?.message ?? 'Tidak dapat terhubung ke server' });
+    } finally {
+      setWebTesting(false);
+    }
+  };
+
+  const handleWebSave = async () => {
+    setWebSaving(true);
+    setWebResult(null);
+    try {
+      const res = await fetch('/api/admin/backend-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backendUrl: webUrl }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setWebResult({ ok: true, message: 'URL berhasil disimpan! Proxy langsung menggunakan URL baru.' });
+        const refreshed = await fetch('/api/admin/backend-url').then(r => r.json());
+        setWebConfig(refreshed);
       } else {
-        setResult({ ok: false, message: `Server merespons dengan status ${res.status}` });
+        setWebResult({ ok: false, message: data.message ?? 'Gagal menyimpan.' });
       }
     } catch (e: any) {
-      setResult({ ok: false, message: e?.message ?? 'Tidak dapat terhubung ke server' });
+      setWebResult({ ok: false, message: e?.message ?? 'Gagal menyimpan.' });
     } finally {
-      setTesting(false);
+      setWebSaving(false);
     }
   };
 
-  const handleSave = async () => {
-    setSaving(true);
+  const handleWebReset = async () => {
+    setWebResult(null);
+    await fetch('/api/admin/backend-url', { method: 'DELETE' });
+    const refreshed = await fetch('/api/admin/backend-url').then(r => r.json());
+    setWebConfig(refreshed);
+    setWebUrl(refreshed.envUrl || '');
+    setWebResult({ ok: true, message: 'Dikembalikan ke default dari environment variable.' });
+  };
+
+  /* ── Native handlers ──────────────────────────── */
+  const handleNativeTest = async () => {
+    setNativeTesting(true);
+    setNativeResult(null);
+    const target = nativeUrl.replace(/\/$/, '');
+    const start = Date.now();
     try {
-      await saveServerUrl(url);
-      setSaved(url);
-      setResult({ ok: true, message: 'URL berhasil disimpan! Restart app untuk menerapkan perubahan.' });
+      const res = await fetch(`${target}/api/health`, { signal: AbortSignal.timeout(5000) });
+      const latency = Date.now() - start;
+      setNativeResult(res.ok
+        ? { ok: true, latency, message: `Berhasil! Server merespons dalam ${latency}ms` }
+        : { ok: false, message: `Server merespons dengan status ${res.status}` });
     } catch (e: any) {
-      setResult({ ok: false, message: 'Gagal menyimpan URL.' });
+      setNativeResult({ ok: false, message: e?.message ?? 'Tidak dapat terhubung ke server' });
     } finally {
-      setSaving(false);
+      setNativeTesting(false);
     }
   };
 
-  const handleReset = async () => {
-    setUrl(DEFAULT_SERVER_URL);
-    setResult(null);
-    await saveServerUrl(DEFAULT_SERVER_URL);
-    setSaved(DEFAULT_SERVER_URL);
+  const handleNativeSave = async () => {
+    setNativeSaving(true);
+    try {
+      await saveServerUrl(nativeUrl);
+      setNativeSaved(nativeUrl);
+      setNativeResult({ ok: true, message: 'URL berhasil disimpan! Restart app untuk menerapkan perubahan.' });
+    } catch {
+      setNativeResult({ ok: false, message: 'Gagal menyimpan URL.' });
+    } finally {
+      setNativeSaving(false);
+    }
   };
 
-  const isDirty = url !== saved;
+  const nativeIsDirty = nativeUrl !== nativeSaved;
+
+  const webIsDirty = !!webConfig && webUrl !== (webConfig.configUrl || webConfig.envUrl || '');
+
+  /* ── Render helpers ───────────────────────────── */
+  const ResultBox = ({ result }: { result: TestResult }) =>
+    result ? (
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', gap: 10,
+        marginTop: 14, padding: '12px 14px', borderRadius: 12,
+        background: result.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+        border: `1px solid ${result.ok ? '#10B98130' : '#EF444430'}`,
+      }}>
+        {result.ok
+          ? <CheckCircle2 size={16} style={{ color: '#10B981', flexShrink: 0, marginTop: 1 }} />
+          : <XCircle size={16} style={{ color: '#EF4444', flexShrink: 0, marginTop: 1 }} />}
+        <div>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: result.ok ? '#10B981' : '#EF4444' }}>
+            {result.ok ? 'Berhasil' : 'Gagal'}
+          </p>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>{result.message}</p>
+        </div>
+      </div>
+    ) : null;
 
   return (
-    <div style={{ maxWidth: 640 }}>
-      {/* Header */}
+    <div style={{ maxWidth: 660 }}>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
           Koneksi Server
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          Atur alamat server ERP yang akan digunakan oleh aplikasi mobile.
+          Atur URL backend NestJS yang digunakan oleh ERP ini.
         </p>
       </div>
 
-      {/* Platform badge */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: isNative ? 'rgba(99,102,241,0.08)' : 'rgba(16,185,129,0.08)', border: `1px solid ${isNative ? '#6366F120' : '#10B98120'}`, marginBottom: 24 }}>
-        {isNative ? <Smartphone size={16} style={{ color: '#6366F1' }} /> : <Server size={16} style={{ color: '#10B981' }} />}
-        <div>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: isNative ? '#6366F1' : '#10B981' }}>
-            {isNative ? 'Mode Native (Android/iOS)' : 'Mode Browser Web'}
-          </p>
-          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>
-            {isNative
-              ? 'Pengaturan URL akan disimpan ke penyimpanan lokal device.'
-              : 'Di browser web, API diakses melalui proxy Next.js (/api). URL di sini hanya untuk referensi.'}
-          </p>
+      {/* ═══════════════════════════════════════════════════
+          SECTION 1 — Web Browser Config (always shown)
+      ════════════════════════════════════════════════════ */}
+      <div style={{
+        background: 'var(--surface)', borderRadius: 16,
+        border: '1px solid var(--border)', overflow: 'hidden',
+        boxShadow: 'var(--shadow-sm)', marginBottom: 24,
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '16px 20px', borderBottom: '1px solid var(--border)',
+          background: 'rgba(99,102,241,0.04)',
+        }}>
+          <Globe size={16} style={{ color: '#6366F1' }} />
+          <div>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1E1B4B' }}>Konfigurasi Web Browser</p>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
+              Berlaku langsung — tidak perlu restart server
+            </p>
+          </div>
+          {!webLoading && webConfig && (
+            <span style={{
+              marginLeft: 'auto', fontSize: 10, fontWeight: 700,
+              padding: '3px 8px', borderRadius: 20,
+              background: webConfig.source === 'config' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
+              color: webConfig.source === 'config' ? '#10B981' : '#D97706',
+            }}>
+              {webConfig.source === 'config' ? '● Kustom' : '● Default (env)'}
+            </span>
+          )}
         </div>
-      </div>
 
-      {/* Config card */}
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+        {/* Effective URL display */}
+        {!webLoading && webConfig?.effectiveUrl && (
+          <div style={{ padding: '10px 20px', background: 'var(--surface-sunken)', borderBottom: '1px solid var(--border)' }}>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
+              URL aktif saat ini:{' '}
+              <code style={{ fontSize: 11, color: '#6366F1', background: 'rgba(99,102,241,0.08)', padding: '1px 6px', borderRadius: 4 }}>
+                {webConfig.effectiveUrl}
+              </code>
+            </p>
+          </div>
+        )}
 
-        <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
-          <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+        {/* Input */}
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+          <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
             URL Backend Server
           </p>
-
           <input
-            value={url}
-            onChange={e => { setUrl(e.target.value); setResult(null); }}
-            placeholder={`Contoh: ${DEFAULT_SERVER_URL}`}
+            value={webUrl}
+            onChange={e => { setWebUrl(e.target.value); setWebResult(null); }}
+            placeholder="Contoh: https://api.yourdomain.com atau http://192.168.1.100:8000"
             style={inputStyle}
             spellCheck={false}
             autoCapitalize="none"
             autoCorrect="off"
           />
-
-          <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>
-            Masukkan IP server CasaOS + port NestJS. Contoh:{' '}
-            <code style={{ background: 'var(--surface-sunken)', padding: '1px 5px', borderRadius: 4 }}>http://192.168.1.100:8000</code>
+          <p style={{ margin: '7px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>
+            Masukkan URL backend yang sudah di-deploy. Jika pakai ngrok, paste URL ngrok-nya.
           </p>
         </div>
 
         {/* Buttons */}
-        <div style={{ padding: '14px 20px', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', background: 'var(--surface-sunken)' }}>
+        <div style={{ padding: '12px 20px', display: 'flex', gap: 8, flexWrap: 'wrap', background: 'var(--surface-sunken)' }}>
           <button
-            onClick={handleTest}
-            disabled={testing || !url.trim()}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, cursor: testing ? 'wait' : 'pointer', opacity: !url.trim() ? 0.5 : 1 }}
+            onClick={handleWebTest}
+            disabled={webTesting || !webUrl.trim()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px', borderRadius: 10,
+              border: '1.5px solid var(--border)', background: 'var(--surface)',
+              color: 'var(--text-primary)', fontSize: 13, fontWeight: 600,
+              cursor: webTesting || !webUrl.trim() ? 'not-allowed' : 'pointer',
+              opacity: !webUrl.trim() ? 0.5 : 1,
+            }}
           >
-            {testing ? <RotateCcw size={13} style={{ animation: 'spin .7s linear infinite' }} /> : <Wifi size={13} />}
-            {testing ? 'Mengetes…' : 'Test Koneksi'}
+            {webTesting
+              ? <RefreshCw size={13} style={{ animation: 'spin .7s linear infinite' }} />
+              : <Wifi size={13} />}
+            {webTesting ? 'Mengetes…' : 'Test Koneksi'}
           </button>
 
           <button
-            onClick={handleSave}
-            disabled={saving || !isDirty || !url.trim()}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, border: 'none', background: isDirty && url.trim() ? '#6366F1' : '#94A3B8', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving || !isDirty ? 'not-allowed' : 'pointer' }}
+            onClick={handleWebSave}
+            disabled={webSaving || !webUrl.trim()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px', borderRadius: 10,
+              border: 'none',
+              background: webUrl.trim() ? '#6366F1' : '#94A3B8',
+              color: '#fff', fontSize: 13, fontWeight: 600,
+              cursor: webSaving || !webUrl.trim() ? 'not-allowed' : 'pointer',
+            }}
           >
             <Save size={13} />
-            {saving ? 'Menyimpan…' : 'Simpan'}
+            {webSaving ? 'Menyimpan…' : 'Simpan'}
           </button>
 
-          <button
-            onClick={handleReset}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}
-          >
-            <RotateCcw size={12} />
-            Reset Default
-          </button>
+          {webConfig?.source === 'config' && (
+            <button
+              onClick={handleWebReset}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '8px 12px', borderRadius: 10,
+                border: '1.5px solid #EF444430', background: 'transparent',
+                color: '#EF4444', fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              <Trash2 size={12} />
+              Reset ke Default
+            </button>
+          )}
         </div>
+
+        {/* Result */}
+        {webResult && (
+          <div style={{ padding: '0 20px 16px' }}>
+            <ResultBox result={webResult} />
+          </div>
+        )}
       </div>
 
-      {/* Test result */}
-      {result && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 16, padding: '14px 16px', borderRadius: 12, background: result.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${result.ok ? '#10B98130' : '#EF444430'}` }}>
-          {result.ok
-            ? <CheckCircle2 size={17} style={{ color: '#10B981', flexShrink: 0, marginTop: 1 }} />
-            : <XCircle     size={17} style={{ color: '#EF4444', flexShrink: 0, marginTop: 1 }} />}
-          <div>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: result.ok ? '#10B981' : '#EF4444' }}>
-              {result.ok ? 'Koneksi Berhasil' : 'Koneksi Gagal'}
-            </p>
-            <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>{result.message}</p>
+      {/* ═══════════════════════════════════════════════════
+          SECTION 2 — Native Mobile Config
+      ════════════════════════════════════════════════════ */}
+      {isNative && (
+        <div style={{
+          background: 'var(--surface)', borderRadius: 16,
+          border: '1px solid var(--border)', overflow: 'hidden',
+          boxShadow: 'var(--shadow-sm)', marginBottom: 24,
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '16px 20px', borderBottom: '1px solid var(--border)',
+            background: 'rgba(99,102,241,0.04)',
+          }}>
+            <Smartphone size={16} style={{ color: '#6366F1' }} />
+            <div>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1E1B4B' }}>Konfigurasi Mobile (Native)</p>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
+                Disimpan ke penyimpanan lokal device
+              </p>
+            </div>
           </div>
+
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+            <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+              URL Backend Server (Mobile)
+            </p>
+            <input
+              value={nativeUrl}
+              onChange={e => { setNativeUrl(e.target.value); setNativeResult(null); }}
+              placeholder={`Contoh: ${DEFAULT_SERVER_URL}`}
+              style={inputStyle}
+              spellCheck={false}
+              autoCapitalize="none"
+              autoCorrect="off"
+            />
+          </div>
+
+          <div style={{ padding: '12px 20px', display: 'flex', gap: 8, flexWrap: 'wrap', background: 'var(--surface-sunken)' }}>
+            <button
+              onClick={handleNativeTest}
+              disabled={nativeTesting || !nativeUrl.trim()}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              {nativeTesting ? <RefreshCw size={13} style={{ animation: 'spin .7s linear infinite' }} /> : <Wifi size={13} />}
+              {nativeTesting ? 'Mengetes…' : 'Test Koneksi'}
+            </button>
+            <button
+              onClick={handleNativeSave}
+              disabled={nativeSaving || !nativeIsDirty || !nativeUrl.trim()}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: nativeIsDirty ? '#6366F1' : '#94A3B8', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              <Save size={13} />
+              {nativeSaving ? 'Menyimpan…' : 'Simpan'}
+            </button>
+            <button
+              onClick={async () => { setNativeUrl(DEFAULT_SERVER_URL); setNativeResult(null); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}
+            >
+              <RotateCcw size={12} /> Reset
+            </button>
+          </div>
+
+          {nativeResult && (
+            <div style={{ padding: '0 20px 16px' }}>
+              <ResultBox result={nativeResult} />
+            </div>
+          )}
         </div>
       )}
 
-      {/* Info box */}
-      <div style={{ marginTop: 24, padding: '16px 18px', borderRadius: 12, background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}>
-        <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>💡 Cara setup di jaringan lokal (CasaOS)</p>
-        <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--text-muted)', lineHeight: '1.8' }}>
-          <li>Pastikan HP dan server berada di jaringan WiFi yang sama.</li>
-          <li>Cek IP server CasaOS dari terminal: <code>ip addr | grep inet</code></li>
-          <li>Masukkan IP tersebut dengan port <strong>8000</strong> ke field di atas.</li>
-          <li>Tekan <strong>Test Koneksi</strong> untuk verifikasi.</li>
-          <li>Jika berhasil, tekan <strong>Simpan</strong> lalu restart app.</li>
+      {/* ── Info box ────────────────────────────────── */}
+      <div style={{ padding: '16px 18px', borderRadius: 12, background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}>
+        <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>💡 Cara setup backend</p>
+        <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--text-muted)', lineHeight: '1.9' }}>
+          <li>Deploy backend NestJS ke server atau gunakan ngrok untuk expose localhost.</li>
+          <li>Masukkan URL backend ke field di atas. Contoh: <code style={{ background: 'var(--surface)', padding: '1px 5px', borderRadius: 4 }}>https://abc123.ngrok-free.app</code></li>
+          <li>Tekan <strong>Test Koneksi</strong> untuk memverifikasi koneksi.</li>
+          <li>Tekan <strong>Simpan</strong> — proxy langsung menggunakan URL baru tanpa restart.</li>
         </ol>
       </div>
 
