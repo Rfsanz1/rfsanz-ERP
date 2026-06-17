@@ -1,0 +1,83 @@
+{
+  "name": "gentong-mas-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json; cp -r src/docs dist/docs 2>/dev/null || true",
+    "start": "node dist/main.js",
+    "start:dev": "tsx watch src/main.ts",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings=0",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "node --loader ts-node/esm prisma/seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/axios": "^4.0.1",
+    "@nestjs/common": "^11.1.26",
+    "@nestjs/config": "^3.3.0",
+    "@nestjs/core": "^11.1.26",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.1.26",
+    "@nestjs/platform-socket.io": "^11.1.26",
+    "@nestjs/schedule": "^3.0.4",
+    "@nestjs/swagger": "^11.4.4",
+    "@nestjs/websockets": "^11.1.26",
+    "@prisma/client": "^5.22.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.1.0",
+    "axios": "^1.17.0",
+    "bcrypt": "^5.1.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "reflect-metadata": "^0.1.14",
+    "rxjs": "^7.8.2",
+    "socket.io": "^4.8.3",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^9.0.1"
+  },
+  "optionalDependencies": {
+    "exceljs": "^4.3.0",
+    "pdfkit": "^0.13.0"
+  },
+  "prisma": {
+    "seed": "node --loader ts-node/esm prisma/seed.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "@scarf/scarf",
+      "bcrypt",
+      "esbuild",
+      "prisma"
+    ]
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.1.0",
+    "@nestjs/testing": "^11.1.0",
+    "@types/bcrypt": "^5.0.0",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.14.0",
+    "@types/passport-jwt": "^4.0.0",
+    "@types/pdfkit": "^0.13.0",
+    "@types/uuid": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/parser": "^7.11.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "^3.8.3",
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "~5.9.3"
+  }
+}

@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: rfsanz-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-rfsanz}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-rfsanz_secret}
+      POSTGRES_DB: ${DB_NAME:-rfsanz_erp}
+    volumes:
+      - rfsanz_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-rfsanz} -d ${DB_NAME:-rfsanz_erp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rfsanz-backend
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:6000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-rfsanz}:${DB_PASSWORD:-rfsanz_secret}@db:5432/${DB_NAME:-rfsanz_erp}
+      PORT: "6000"
+      NODE_ENV: ${NODE_ENV:-production}
+      JWT_SECRET: ${JWT_SECRET:-rfsanz-jwt-secret-change-me-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-rfsanz-refresh-secret-change-me-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@rfsanz.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@rfsanz123}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrator}
+      COMPANY_NAME: ${COMPANY_NAME:-RFSANZ}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-1000}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  rfsanz_postgres:

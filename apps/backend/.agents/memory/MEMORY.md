@@ -1,0 +1,2 @@
+- [tsx-esbuild-inject-fix](tsx-esbuild-inject-fix.md) — tsx/esbuild does NOT emit `design:paramtypes` for new files; all NestJS DI constructor params must use explicit `@Inject(Token)`.
+- [api-v1-module-architecture](api-v1-module-architecture.md) — ApiV1Module structure, auth bypass pattern, and TMS model conventions.

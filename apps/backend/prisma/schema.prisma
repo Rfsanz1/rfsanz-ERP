@@ -1,0 +1,3206 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// AUTH & USERS
+model User {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  name        String
+  email       String
+  password    String
+  avatar      String?
+  isActive    Boolean   @default(true)
+  isOwner     Boolean   @default(false)
+  invitedAt   DateTime?
+  inviteToken String?   @unique
+  inviteExpAt DateTime?
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  roleId             String?
+  role               Role?                @relation(fields: [roleId], references: [id])
+  AuditLog           AuditLog[]
+  Order              Order[]
+  SupplierRating     SupplierRating[]
+  PasswordResetToken PasswordResetToken[]
+
+  @@unique([tenantId, email])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  users       User[]
+
+  @@unique([tenantId, name])
+}
+
+model Tenant {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  email       String?
+  phone       String?
+  address     String?
+  logo        String?
+  plan        String    @default("trial")
+  trialEndsAt DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users                 User[]
+  roles                 Role[]
+  AuditLog              AuditLog[]
+  AppSetting            AppSetting[]
+  DriverArea            DriverArea[]
+  Warehouse             Warehouse[]
+  ProductCategory       ProductCategory[]
+  ProductUnit           ProductUnit[]
+  Product               Product[]
+  StockMovement         StockMovement[]
+  StockValuation        StockValuation[]
+  StockLot              StockLot[]
+  ProductWarehouseStock ProductWarehouseStock[]
+  ProductVariant        ProductVariant[]
+  ProductBundle         ProductBundle[]
+  ProductTierPrice      ProductTierPrice[]
+  UnitConversion        UnitConversion[]
+  LandedCost            LandedCost[]
+  LandedCostItem        LandedCostItem[]
+  StockOpname           StockOpname[]
+  StockOpnameItem       StockOpnameItem[]
+  Customer              Customer[]
+  Supplier              Supplier[]
+  Order                 Order[]
+  OrderItem             OrderItem[]
+  Sale                  Sale[]
+  SaleItem              SaleItem[]
+  PurchaseOrder         PurchaseOrder[]
+  PurchaseOrderItem     PurchaseOrderItem[]
+  GoodsReceipt          GoodsReceipt[]
+  GoodsReceiptItem      GoodsReceiptItem[]
+  ChartOfAccount        ChartOfAccount[]
+  JournalEntry          JournalEntry[]
+  JournalEntryLine      JournalEntryLine[]
+  BankAccount           BankAccount[]
+  BankTransaction       BankTransaction[]
+  CashTransaction       CashTransaction[]
+  Employee              Employee[]
+  Payroll               Payroll[]
+  Attendance            Attendance[]
+  KledoSyncLog          KledoSyncLog[]
+  ShopeeOrder           ShopeeOrder[]
+  Notification          Notification[]
+  PosUser               PosUser[]
+  PosCashierSession     PosCashierSession[]
+  PosCategory           PosCategory[]
+  PosProduct            PosProduct[]
+  PosSale               PosSale[]
+  PosSaleItem           PosSaleItem[]
+  LoyaltyConfig         LoyaltyConfig[]
+  CustomerLoyalty       CustomerLoyalty[]
+  Lead                  Lead[]
+  SalesTeam             SalesTeam[]
+  CrmActivity           CrmActivity[]
+  LostReason            LostReason[]
+  Project               Project[]
+  Task                  Task[]
+  Milestone             Milestone[]
+  Timesheet             Timesheet[]
+  HelpdeskTeam          HelpdeskTeam[]
+  HelpdeskTicket        HelpdeskTicket[]
+  BillOfMaterial        BillOfMaterial[]
+  BomComponent          BomComponent[]
+  WorkCenter            WorkCenter[]
+  ManufacturingOrder    ManufacturingOrder[]
+  WorkOrder             WorkOrder[]
+  LeaveType             LeaveType[]
+  LeaveAllocation       LeaveAllocation[]
+  LeaveRequest          LeaveRequest[]
+  JobPosition           JobPosition[]
+  JobApplication        JobApplication[]
+  QualityControlPoint   QualityControlPoint[]
+  QualityCheck          QualityCheck[]
+  QualityAlert          QualityAlert[]
+  Equipment             Equipment[]
+  MaintenanceRequest    MaintenanceRequest[]
+  Vehicle               Vehicle[]
+  VehicleService        VehicleService[]
+  RequestForQuotation   RequestForQuotation[]
+  RfqItem               RfqItem[]
+  VendorPricelist       VendorPricelist[]
+  VendorBill            VendorBill[]
+  VendorBillPayment     VendorBillPayment[]
+  VendorBillItem        VendorBillItem[]
+  PurchaseReturn        PurchaseReturn[]
+  PurchaseReturnItem    PurchaseReturnItem[]
+  SupplierRating        SupplierRating[]
+  ReorderingRule        ReorderingRule[]
+  LotSerial             LotSerial[]
+  ScrapOrder            ScrapOrder[]
+  Quotation             Quotation[]
+  QuotationItem         QuotationItem[]
+  Pricelist             Pricelist[]
+  PricelistItem         PricelistItem[]
+  Commission            Commission[]
+  Tax                   Tax[]
+  TaxLine               TaxLine[]
+  EFaktur               EFaktur[]
+  Account               Account[]
+  JournalRecurring      JournalRecurring[]
+  JournalRecurringLine  JournalRecurringLine[]
+  Journal               Journal[]
+  JournalLine           JournalLine[]
+  FiscalYear            FiscalYear[]
+  FiscalPeriod          FiscalPeriod[]
+  PayrollComponent      PayrollComponent[]
+  PayrollPeriod         PayrollPeriod[]
+  PayrollSlip           PayrollSlip[]
+  PayrollSlipLine       PayrollSlipLine[]
+  BPJSConfig            BPJSConfig[]
+  AssetCategory         AssetCategory[]
+  FixedAsset            FixedAsset[]
+  AssetDepreciation     AssetDepreciation[]
+  Budget                Budget[]
+  BudgetLine            BudgetLine[]
+  Company               Company[]
+  Branch                Branch[]
+  PasswordResetToken    PasswordResetToken[]
+  Invoice               Invoice[]
+  InvoiceItem           InvoiceItem[]
+  InvoicePayment        InvoicePayment[]
+  CreditNote            CreditNote[]
+  SalesReturn           SalesReturn[]
+  SalesReturnItem       SalesReturnItem[]
+  StockTransfer         StockTransfer[]
+  StockTransferItem     StockTransferItem[]
+  StockAdjustment       StockAdjustment[]
+  StockAdjustmentItem   StockAdjustmentItem[]
+  EmployeeContract      EmployeeContract[]
+  WorkShift             WorkShift[]
+  EmployeeMutasi        EmployeeMutasi[]
+  BankReconciliation    BankReconciliation[]
+  SmtpSetting           SmtpSetting[]
+  DocumentNumberConfig  DocumentNumberConfig[]
+  CompanyProfile        CompanyProfile[]
+  Currency              Currency[]
+  InvoiceTemplate       InvoiceTemplate[]
+  WorkflowConfig        WorkflowConfig[]
+  DefaultAccounts       DefaultAccounts[]
+  NotificationConfig    NotificationConfig[]
+  SalesQuotation        SalesQuotation[]
+  SalesQuotationItem    SalesQuotationItem[]
+  ReorderRule           ReorderRule[]
+  Contact               Contact[]
+  Expense               Expense[]
+  InvoiceRecurring      InvoiceRecurring[]
+  PaymentLink           PaymentLink[]
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  module      String
+  action      String
+  label       String
+  description String?
+
+  rolePerms RolePermission[]
+
+  @@unique([module, action])
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  allowed      Boolean    @default(false)
+
+  @@unique([roleId, permissionId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  resource  String
+  metadata  Json?
+  tableName String?
+  recordId  String?
+  oldData   Json?
+  newData   Json?
+  ipAddress String?
+  userAgent String?
+  branchId  String?
+  createdAt DateTime @default(now())
+}
+
+// MASTER DATA
+model AppSetting {
+  id        Int      @id @default(autoincrement())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  key       String   @unique
+  value     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DriverArea {
+  id        Int      @id @default(autoincrement())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  areas     Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Warehouse {
+  id              String                  @id @default(uuid())
+  tenantId        String
+  tenant          Tenant                  @relation(fields: [tenantId], references: [id])
+  code            String                  @unique
+  name            String
+  address         String?
+  active          Boolean                 @default(true)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  products        Product[]
+  stockMovements  StockMovement[]
+  purchaseOrders  PurchaseOrder[]
+  warehouseStocks ProductWarehouseStock[]
+}
+
+model ProductCategory {
+  id        String            @id @default(uuid())
+  tenantId  String
+  tenant    Tenant            @relation(fields: [tenantId], references: [id])
+  code      String            @unique
+  name      String
+  parentId  String?
+  parent    ProductCategory?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  ProductCategory[] @relation("CategoryTree")
+  products  Product[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model ProductUnit {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  name      String    @unique
+  symbol    String
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// ==================== INVENTORY COSTING ENUMS ====================
+enum CostingMethod {
+  FIFO
+  AVERAGE
+  STANDARD
+}
+
+enum LandedCostSplitMethod {
+  BY_QTY
+  BY_VALUE
+  BY_WEIGHT
+}
+
+// PRODUCT & INVENTORY
+model Product {
+  id                   String                  @id @default(uuid())
+  tenantId             String
+  tenant               Tenant                  @relation(fields: [tenantId], references: [id])
+  sku                  String                  @unique
+  name                 String
+  brand                String?
+  categoryId           String?
+  category             ProductCategory?        @relation(fields: [categoryId], references: [id])
+  unitId               String?
+  unit                 ProductUnit?            @relation(fields: [unitId], references: [id])
+  warehouseId          String?
+  warehouse            Warehouse?              @relation(fields: [warehouseId], references: [id])
+  hargaBeli            Decimal                 @default(0) @db.Decimal(15, 2)
+  hargaJual            Decimal                 @default(0) @db.Decimal(15, 2)
+  hargaKledo           Decimal                 @default(0) @db.Decimal(15, 2)
+  stok                 Int                     @default(0)
+  stokMinimum          Int                     @default(0)
+  costingMethod        CostingMethod           @default(AVERAGE)
+  standardCost         Decimal                 @default(0) @db.Decimal(15, 4)
+  currentAvgCost       Decimal                 @default(0) @db.Decimal(15, 4)
+  kledoProductId       String?
+  isSpmBrand           Boolean                 @default(false)
+  active               Boolean                 @default(true)
+  description          String?
+  imageUrl             String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  orderItems           OrderItem[]
+  saleItems            SaleItem[]
+  stockMovements       StockMovement[]
+  stockOpnameItems     StockOpnameItem[]
+  purchaseOrderItems   PurchaseOrderItem[]
+  goodsReceiptItems    GoodsReceiptItem[]
+  posProducts          PosProduct[]
+  stockValuations      StockValuation[]
+  stockLots            StockLot[]
+  landedCostItems      LandedCostItem[]
+  rfqItems             RfqItem[]
+  vendorBillItems      VendorBillItem[]
+  purchaseReturnItems  PurchaseReturnItem[]
+  stockTransferItems   StockTransferItem[]
+  stockAdjustmentItems StockAdjustmentItem[]
+  salesQuotationItems  SalesQuotationItem[]
+  reorderRules         ReorderRule[]
+  warehouseStocks      ProductWarehouseStock[]
+  variants             ProductVariant[]
+  tierPrices           ProductTierPrice[]
+  bundleParents        ProductBundle[]         @relation("BundleParent")
+  bundleComponents     ProductBundle[]         @relation("BundleComponent")
+}
+
+model StockMovement {
+  id          String     @id @default(uuid())
+  tenantId    String
+  tenant      Tenant     @relation(fields: [tenantId], references: [id])
+  productId   String
+  product     Product    @relation(fields: [productId], references: [id])
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  type        String
+  qty         Int
+  note        String?
+  referenceId String?
+  createdAt   DateTime   @default(now())
+}
+
+model StockValuation {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  date         DateTime
+  qty          Decimal  @db.Decimal(15, 4)
+  unitCost     Decimal  @db.Decimal(15, 4)
+  totalValue   Decimal  @db.Decimal(15, 2)
+  movementType String
+  referenceId  String?
+  createdAt    DateTime @default(now())
+}
+
+model StockLot {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  nomorLot    String
+  expiryDate  DateTime?
+  qtyAwal     Decimal   @db.Decimal(15, 4)
+  qtySisa     Decimal   @db.Decimal(15, 4)
+  unitCost    Decimal   @db.Decimal(15, 4)
+  referenceId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([productId, nomorLot])
+}
+
+model ProductWarehouseStock {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  qty         Decimal   @default(0) @db.Decimal(15, 4)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([productId, warehouseId])
+}
+
+model ProductVariant {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  sku        String   @unique
+  name       String
+  attributes Json
+  price      Decimal? @db.Decimal(15, 2)
+  stock      Decimal  @default(0) @db.Decimal(15, 4)
+  barcode    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model ProductBundle {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  productId   String
+  product     Product  @relation("BundleParent", fields: [productId], references: [id])
+  componentId String
+  component   Product  @relation("BundleComponent", fields: [componentId], references: [id])
+  qty         Decimal  @db.Decimal(15, 4)
+  createdAt   DateTime @default(now())
+}
+
+model ProductTierPrice {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  minQty    Decimal  @db.Decimal(15, 4)
+  maxQty    Decimal? @db.Decimal(15, 4)
+  price     Decimal  @db.Decimal(15, 2)
+  currency  String   @default("IDR")
+  createdAt DateTime @default(now())
+}
+
+model UnitConversion {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  fromUnit  String
+  toUnit    String
+  factor    Decimal  @db.Decimal(15, 8)
+  createdAt DateTime @default(now())
+}
+
+model LandedCost {
+  id          String                @id @default(uuid())
+  tenantId    String
+  tenant      Tenant                @relation(fields: [tenantId], references: [id])
+  purchaseId  String
+  deskripsi   String
+  amount      Decimal               @db.Decimal(15, 2)
+  splitMethod LandedCostSplitMethod
+  status      String                @default("draft")
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  items       LandedCostItem[]
+}
+
+model LandedCostItem {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  landedCostId String
+  landedCost   LandedCost @relation(fields: [landedCostId], references: [id])
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id])
+  qty          Decimal    @db.Decimal(15, 4)
+  alokasiBiaya Decimal    @db.Decimal(15, 2)
+  createdAt    DateTime   @default(now())
+}
+
+model StockOpname {
+  id          String            @id @default(uuid())
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id])
+  date        DateTime
+  warehouseId String?
+  status      String            @default("draft")
+  note        String?
+  items       StockOpnameItem[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model StockOpnameItem {
+  id            String      @id @default(uuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id])
+  stockOpnameId String
+  stockOpname   StockOpname @relation(fields: [stockOpnameId], references: [id])
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+  stokSistem    Int
+  stokFisik     Int
+  selisih       Int
+  note          String?
+}
+
+// CUSTOMERS & SUPPLIERS
+model Customer {
+  id              String           @id @default(uuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  name            String
+  email           String?
+  phone           String?
+  address         String?
+  city            String?
+  province        String?
+  npwp            String?
+  kledoId         String?          @unique
+  creditLimit     Decimal          @default(0) @db.Decimal(15, 2)
+  creditUsed      Decimal          @default(0) @db.Decimal(15, 2)
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  orders          Order[]
+  sales           Sale[]
+  invoices        Invoice[]
+  salesReturns    SalesReturn[]
+  salesQuotations SalesQuotation[]
+}
+
+model Supplier {
+  id              String                @id @default(uuid())
+  tenantId        String
+  tenant          Tenant                @relation(fields: [tenantId], references: [id])
+  code            String                @unique
+  name            String
+  email           String?
+  phone           String?
+  address         String?
+  city            String?
+  npwp            String?
+  bankName        String?
+  bankAccount     String?
+  active          Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  purchaseOrders  PurchaseOrder[]
+  rfqs            RequestForQuotation[]
+  pricelist       VendorPricelist[]
+  vendorBills     VendorBill[]
+  purchaseReturns PurchaseReturn[]
+  ratings         SupplierRating[]
+}
+
+// SALES & ORDERS
+model Order {
+  id               Int         @id @default(autoincrement())
+  tenantId         String
+  tenant           Tenant      @relation(fields: [tenantId], references: [id])
+  namaCustomer     String
+  noHp             String?
+  alamat           String?
+  catatan          String?
+  salesName        String?
+  userId           String?
+  user             User?       @relation(fields: [userId], references: [id])
+  customerId       String?
+  customer         Customer?   @relation(fields: [customerId], references: [id])
+  totalHarga       Decimal     @default(0) @db.Decimal(15, 2)
+  status           String      @default("pending")
+  statusPengiriman String?
+  driverName       String?
+  fotoPengiriman   String?
+  lokasiToken      String?
+  lokasiLat        String?
+  lokasiLng        String?
+  lokasiUpdatedAt  DateTime?
+  kledoInvoiceId   String?     @unique
+  kledoSynced      Boolean     @default(false)
+  items            Json        @default("[]")
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  orderItems       OrderItem[]
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  nama      String
+  qty       Int
+  harga     Decimal  @db.Decimal(15, 2)
+  subtotal  Decimal  @db.Decimal(15, 2)
+}
+
+model Sale {
+  id         String     @id @default(uuid())
+  tenantId   String
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  noFaktur   String     @unique
+  customerId String?
+  customer   Customer?  @relation(fields: [customerId], references: [id])
+  salesName  String?
+  tanggal    DateTime
+  totalHarga Decimal    @default(0) @db.Decimal(15, 2)
+  diskon     Decimal    @default(0) @db.Decimal(15, 2)
+  pajak      Decimal    @default(0) @db.Decimal(15, 2)
+  grandTotal Decimal    @default(0) @db.Decimal(15, 2)
+  status     String     @default("draft")
+  kledoId    String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  items      SaleItem[]
+}
+
+model SaleItem {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  nama      String
+  qty       Int
+  harga     Decimal  @db.Decimal(15, 2)
+  subtotal  Decimal  @db.Decimal(15, 2)
+}
+
+// PURCHASING
+model PurchaseOrder {
+  id              String              @id @default(uuid())
+  tenantId        String
+  tenant          Tenant              @relation(fields: [tenantId], references: [id])
+  noPo            String              @unique
+  supplierId      String
+  supplier        Supplier            @relation(fields: [supplierId], references: [id])
+  warehouseId     String?
+  warehouse       Warehouse?          @relation(fields: [warehouseId], references: [id])
+  tanggal         DateTime
+  tanggalKirim    DateTime?
+  totalHarga      Decimal             @default(0) @db.Decimal(15, 2)
+  status          String              @default("draft")
+  note            String?
+  approvedBy      String?
+  approvedAt      DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  items           PurchaseOrderItem[]
+  goodsReceipts   GoodsReceipt[]
+  vendorBills     VendorBill[]
+  purchaseReturns PurchaseReturn[]
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id])
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  productId       String?
+  product         Product?      @relation(fields: [productId], references: [id])
+  nama            String
+  qty             Int
+  hargaBeli       Decimal       @db.Decimal(15, 2)
+  subtotal        Decimal       @db.Decimal(15, 2)
+  qtyReceived     Int           @default(0)
+}
+
+model GoodsReceipt {
+  id              String             @id @default(uuid())
+  tenantId        String
+  tenant          Tenant             @relation(fields: [tenantId], references: [id])
+  noGr            String             @unique
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder      @relation(fields: [purchaseOrderId], references: [id])
+  tanggal         DateTime
+  status          String             @default("draft")
+  note            String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  items           GoodsReceiptItem[]
+  vendorBills     VendorBill[]
+  purchaseReturns PurchaseReturn[]
+}
+
+model GoodsReceiptItem {
+  id             String       @id @default(uuid())
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id])
+  goodsReceiptId String
+  goodsReceipt   GoodsReceipt @relation(fields: [goodsReceiptId], references: [id])
+  productId      String?
+  product        Product?     @relation(fields: [productId], references: [id])
+  nama           String
+  qtyOrdered     Int
+  qtyReceived    Int
+  unitCost       Decimal      @default(0) @db.Decimal(15, 2)
+  lotNumber      String?
+  expiryDate     DateTime?
+  note           String?
+}
+
+// FINANCE & ACCOUNTING
+model ChartOfAccount {
+  id               String             @id @default(uuid())
+  tenantId         String
+  tenant           Tenant             @relation(fields: [tenantId], references: [id])
+  code             String             @unique
+  name             String
+  type             String
+  parentId         String?
+  parent           ChartOfAccount?    @relation("CoaTree", fields: [parentId], references: [id])
+  children         ChartOfAccount[]   @relation("CoaTree")
+  active           Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  journalLines     JournalEntryLine[]
+  bankTransactions BankTransaction[]
+  cashTransactions CashTransaction[]
+}
+
+model JournalEntry {
+  id          String             @id @default(uuid())
+  tenantId    String
+  tenant      Tenant             @relation(fields: [tenantId], references: [id])
+  noJurnal    String             @unique
+  tanggal     DateTime
+  keterangan  String?
+  referenceId String?
+  type        String
+  total       Decimal            @default(0) @db.Decimal(15, 2)
+  status      String             @default("draft")
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  lines       JournalEntryLine[]
+}
+
+model JournalEntryLine {
+  id             String         @id @default(uuid())
+  tenantId       String
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
+  journalEntryId String
+  journalEntry   JournalEntry   @relation(fields: [journalEntryId], references: [id])
+  coaId          String
+  coa            ChartOfAccount @relation(fields: [coaId], references: [id])
+  debit          Decimal        @default(0) @db.Decimal(15, 2)
+  kredit         Decimal        @default(0) @db.Decimal(15, 2)
+  keterangan     String?
+}
+
+model BankAccount {
+  id              String               @id @default(uuid())
+  tenantId        String
+  tenant          Tenant               @relation(fields: [tenantId], references: [id])
+  bankName        String
+  accountNo       String
+  accountName     String
+  balance         Decimal              @default(0) @db.Decimal(15, 2)
+  active          Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  transactions    BankTransaction[]
+  reconciliations BankReconciliation[]
+  expensePayments Expense[]
+}
+
+model BankTransaction {
+  id            String          @id @default(uuid())
+  tenantId      String
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  bankAccountId String
+  bankAccount   BankAccount     @relation(fields: [bankAccountId], references: [id])
+  coaId         String?
+  coa           ChartOfAccount? @relation(fields: [coaId], references: [id])
+  tanggal       DateTime
+  type          String
+  amount        Decimal         @db.Decimal(15, 2)
+  keterangan    String?
+  referenceId   String?
+  createdAt     DateTime        @default(now())
+}
+
+model CashTransaction {
+  id          String          @id @default(uuid())
+  tenantId    String
+  tenant      Tenant          @relation(fields: [tenantId], references: [id])
+  coaId       String?
+  coa         ChartOfAccount? @relation(fields: [coaId], references: [id])
+  tanggal     DateTime
+  type        String
+  amount      Decimal         @db.Decimal(15, 2)
+  keterangan  String?
+  referenceId String?
+  createdAt   DateTime        @default(now())
+}
+
+// HR & PAYROLL
+model Employee {
+  id               String             @id @default(uuid())
+  tenantId         String
+  tenant           Tenant             @relation(fields: [tenantId], references: [id])
+  nik              String             @unique
+  name             String
+  email            String?
+  phone            String?
+  address          String?
+  departemen       String?
+  jabatan          String?
+  tanggalMasuk     DateTime?
+  gapok            Decimal            @default(0) @db.Decimal(15, 2)
+  ptkpStatus       String             @default("TK/0")
+  status           String             @default("aktif")
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  payrolls         Payroll[]
+  attendances      Attendance[]
+  leaveAllocations LeaveAllocation[]
+  leaveRequests    LeaveRequest[]
+  payrollSlips     PayrollSlip[]
+  bpjsConfig       BPJSConfig?
+  contracts        EmployeeContract[]
+  mutasi           EmployeeMutasi[]
+}
+
+model Payroll {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  periode    String
+  gapok      Decimal  @default(0) @db.Decimal(15, 2)
+  tunjangan  Decimal  @default(0) @db.Decimal(15, 2)
+  potongan   Decimal  @default(0) @db.Decimal(15, 2)
+  netto      Decimal  @default(0) @db.Decimal(15, 2)
+  status     String   @default("draft")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Attendance {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  tanggal    DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     String    @default("hadir")
+  note       String?
+  createdAt  DateTime  @default(now())
+}
+
+// INTEGRATIONS
+model KledoSyncLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  type      String
+  status    String
+  message   String?
+  payload   Json?
+  response  Json?
+  createdAt DateTime @default(now())
+}
+
+model ShopeeOrder {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  shopeeOrderId String   @unique
+  buyerName     String?
+  phone         String?
+  address       String?
+  items         Json     @default("[]")
+  totalHarga    Decimal  @default(0) @db.Decimal(15, 2)
+  status        String   @default("pending")
+  rawData       Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// NOTIFICATIONS
+model Notification {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  recipient String
+  title     String
+  message   String
+  status    String    @default("pending")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+// POS
+model PosUser {
+  id        String              @id @default(uuid())
+  tenantId  String
+  tenant    Tenant              @relation(fields: [tenantId], references: [id])
+  username  String              @unique
+  password  String
+  name      String
+  role      String              @default("kasir")
+  active    Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  sessions  PosCashierSession[]
+  sales     PosSale[]
+}
+
+model PosCashierSession {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  posUserId  String
+  posUser    PosUser   @relation(fields: [posUserId], references: [id])
+  openedAt   DateTime  @default(now())
+  closedAt   DateTime?
+  modalAwal  Decimal   @default(0) @db.Decimal(15, 2)
+  modalAkhir Decimal?  @db.Decimal(15, 2)
+  status     String    @default("open")
+  sales      PosSale[]
+}
+
+model PosCategory {
+  id        String       @id @default(uuid())
+  tenantId  String
+  tenant    Tenant       @relation(fields: [tenantId], references: [id])
+  name      String
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  products  PosProduct[]
+}
+
+model PosProduct {
+  id         String        @id @default(uuid())
+  tenantId   String
+  tenant     Tenant        @relation(fields: [tenantId], references: [id])
+  productId  String?
+  product    Product?      @relation(fields: [productId], references: [id])
+  categoryId String?
+  category   PosCategory?  @relation(fields: [categoryId], references: [id])
+  name       String
+  barcode    String?       @unique
+  hargaJual  Decimal       @db.Decimal(15, 2)
+  stok       Int           @default(0)
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  saleItems  PosSaleItem[]
+}
+
+model PosSale {
+  id                  String             @id @default(uuid())
+  tenantId            String
+  tenant              Tenant             @relation(fields: [tenantId], references: [id])
+  noStruk             String             @unique
+  sessionId           String?
+  session             PosCashierSession? @relation(fields: [sessionId], references: [id])
+  posUserId           String?
+  posUser             PosUser?           @relation(fields: [posUserId], references: [id])
+  customerId          String?
+  tanggal             DateTime           @default(now())
+  totalHarga          Decimal            @default(0) @db.Decimal(15, 2)
+  diskon              Decimal            @default(0) @db.Decimal(15, 2)
+  pajak               Decimal            @default(0) @db.Decimal(15, 2)
+  grandTotal          Decimal            @default(0) @db.Decimal(15, 2)
+  bayar               Decimal            @default(0) @db.Decimal(15, 2)
+  kembalian           Decimal            @default(0) @db.Decimal(15, 2)
+  metodeBayar         String             @default("tunai")
+  splitPayments       Json?
+  loyaltyPointsEarned Float?             @default(0)
+  loyaltyPointsUsed   Float?             @default(0)
+  discountType        String?
+  discountValue       Float?             @default(0)
+  holdReference       String?
+  returnReference     String?
+  status              String             @default("selesai")
+  createdAt           DateTime           @default(now())
+  items               PosSaleItem[]
+}
+
+model PosSaleItem {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  saleId       String
+  sale         PosSale    @relation(fields: [saleId], references: [id])
+  posProductId String
+  posProduct   PosProduct @relation(fields: [posProductId], references: [id])
+  nama         String
+  qty          Int
+  harga        Decimal    @db.Decimal(15, 2)
+  subtotal     Decimal    @db.Decimal(15, 2)
+}
+
+model LoyaltyConfig {
+  id              String  @id @default(cuid())
+  tenantId        String
+  tenant          Tenant  @relation(fields: [tenantId], references: [id])
+  pointsPerAmount Float   @default(100000)
+  redeemRate      Float   @default(100)
+  minRedeemPoints Float   @default(100)
+  isActive        Boolean @default(true)
+}
+
+model CustomerLoyalty {
+  id            String @id @default(cuid())
+  tenantId      String
+  tenant        Tenant @relation(fields: [tenantId], references: [id])
+  customerId    String @unique
+  points        Float  @default(0)
+  totalEarned   Float  @default(0)
+  totalRedeemed Float  @default(0)
+}
+
+// ==================== CRM ====================
+model Lead {
+  id              String        @id @default(uuid())
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id])
+  name            String
+  type            String        @default("lead")
+  stage           String        @default("new")
+  priority        Int           @default(0)
+  probability     Decimal       @default(0) @db.Decimal(5, 2)
+  expectedRevenue Decimal       @default(0) @db.Decimal(15, 2)
+  customerId      String?
+  salespersonId   String?
+  teamId          String?
+  team            SalesTeam?    @relation(fields: [teamId], references: [id])
+  phone           String?
+  email           String?
+  company         String?
+  source          String?
+  deadlineDate    DateTime?
+  closingDate     DateTime?
+  lostReason      String?
+  notes           String?
+  activities      CrmActivity[]
+  tags            String[]
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model SalesTeam {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  leaderId  String?
+  active    Boolean  @default(true)
+  leads     Lead[]
+  createdAt DateTime @default(now())
+}
+
+model CrmActivity {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  leadId     String
+  lead       Lead      @relation(fields: [leadId], references: [id])
+  type       String
+  title      String
+  dueDate    DateTime
+  doneDate   DateTime?
+  assignedTo String?
+  notes      String?
+  status     String    @default("planned")
+  createdAt  DateTime  @default(now())
+}
+
+model LostReason {
+  id       String  @id @default(uuid())
+  tenantId String
+  tenant   Tenant  @relation(fields: [tenantId], references: [id])
+  name     String  @unique
+  active   Boolean @default(true)
+}
+
+// ==================== PROJECT ====================
+model Project {
+  id          String      @id @default(uuid())
+  tenantId    String
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  name        String
+  code        String?     @unique
+  description String?
+  managerId   String?
+  customerId  String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      String      @default("in_progress")
+  budget      Decimal     @default(0) @db.Decimal(15, 2)
+  tasks       Task[]
+  milestones  Milestone[]
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Task {
+  id             String      @id @default(uuid())
+  tenantId       String
+  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+  projectId      String
+  project        Project     @relation(fields: [projectId], references: [id])
+  parentId       String?
+  parent         Task?       @relation("SubTasks", fields: [parentId], references: [id])
+  subtasks       Task[]      @relation("SubTasks")
+  milestoneId    String?
+  milestone      Milestone?  @relation(fields: [milestoneId], references: [id])
+  assignedTo     String?
+  title          String
+  description    String?
+  stage          String      @default("todo")
+  priority       Int         @default(0)
+  deadline       DateTime?
+  plannedHours   Decimal     @default(0) @db.Decimal(8, 2)
+  effectiveHours Decimal     @default(0) @db.Decimal(8, 2)
+  timesheets     Timesheet[]
+  tags           String[]
+  active         Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Milestone {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id])
+  name      String
+  deadline  DateTime?
+  isDone    Boolean   @default(false)
+  tasks     Task[]
+  createdAt DateTime  @default(now())
+}
+
+model Timesheet {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id])
+  employeeId  String?
+  date        DateTime
+  hours       Decimal  @db.Decimal(8, 2)
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+// ==================== HELPDESK ====================
+model HelpdeskTeam {
+  id          String           @id @default(uuid())
+  tenantId    String
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+  name        String
+  description String?
+  email       String?
+  slaHours    Int              @default(24)
+  tickets     HelpdeskTicket[]
+  active      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+}
+
+model HelpdeskTicket {
+  id            String        @id @default(uuid())
+  tenantId      String
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  noTicket      String        @unique
+  teamId        String?
+  team          HelpdeskTeam? @relation(fields: [teamId], references: [id])
+  customerId    String?
+  assignedTo    String?
+  subject       String
+  description   String?
+  priority      Int           @default(0)
+  stage         String        @default("new")
+  slaDeadline   DateTime?
+  closedAt      DateTime?
+  rating        Int?
+  ratingComment String?
+  tags          String[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+// ==================== MANUFACTURING ====================
+model BillOfMaterial {
+  id                  String               @id @default(uuid())
+  tenantId            String
+  tenant              Tenant               @relation(fields: [tenantId], references: [id])
+  productId           String
+  reference           String?
+  qty                 Decimal              @default(1) @db.Decimal(15, 2)
+  type                String               @default("manufacture")
+  components          BomComponent[]
+  active              Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  manufacturingOrders ManufacturingOrder[]
+}
+
+model BomComponent {
+  id        String         @id @default(uuid())
+  tenantId  String
+  tenant    Tenant         @relation(fields: [tenantId], references: [id])
+  bomId     String
+  bom       BillOfMaterial @relation(fields: [bomId], references: [id])
+  productId String
+  qty       Decimal        @db.Decimal(15, 2)
+  uom       String         @default("pcs")
+}
+
+model WorkCenter {
+  id         String      @id @default(uuid())
+  tenantId   String
+  tenant     Tenant      @relation(fields: [tenantId], references: [id])
+  name       String
+  code       String      @unique
+  capacity   Decimal     @default(1) @db.Decimal(8, 2)
+  timeEff    Decimal     @default(100) @db.Decimal(5, 2)
+  active     Boolean     @default(true)
+  workOrders WorkOrder[]
+  createdAt  DateTime    @default(now())
+}
+
+model ManufacturingOrder {
+  id            String          @id @default(uuid())
+  tenantId      String
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  noMo          String          @unique
+  productId     String
+  bomId         String?
+  bom           BillOfMaterial? @relation(fields: [bomId], references: [id])
+  qty           Decimal         @db.Decimal(15, 2)
+  qtyProduced   Decimal         @default(0) @db.Decimal(15, 2)
+  scheduledDate DateTime
+  status        String          @default("draft")
+  workOrders    WorkOrder[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model WorkOrder {
+  id           String             @id @default(uuid())
+  tenantId     String
+  tenant       Tenant             @relation(fields: [tenantId], references: [id])
+  moId         String
+  mo           ManufacturingOrder @relation(fields: [moId], references: [id])
+  workCenterId String
+  workCenter   WorkCenter         @relation(fields: [workCenterId], references: [id])
+  name         String
+  duration     Decimal            @db.Decimal(8, 2)
+  status       String             @default("pending")
+  startedAt    DateTime?
+  finishedAt   DateTime?
+}
+
+// ==================== HR: LEAVE ====================
+model LeaveType {
+  id               String            @id @default(uuid())
+  tenantId         String
+  tenant           Tenant            @relation(fields: [tenantId], references: [id])
+  name             String            @unique
+  requiresApproval Boolean           @default(true)
+  maxDays          Int?
+  active           Boolean           @default(true)
+  allocations      LeaveAllocation[]
+  requests         LeaveRequest[]
+}
+
+model LeaveAllocation {
+  id           String    @id @default(uuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id])
+  leaveTypeId  String
+  leaveType    LeaveType @relation(fields: [leaveTypeId], references: [id])
+  numberOfDays Decimal   @db.Decimal(5, 1)
+  year         Int
+  status       String    @default("confirmed")
+  createdAt    DateTime  @default(now())
+}
+
+model LeaveRequest {
+  id           String    @id @default(uuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id])
+  leaveTypeId  String
+  leaveType    LeaveType @relation(fields: [leaveTypeId], references: [id])
+  dateFrom     DateTime
+  dateTo       DateTime
+  numberOfDays Decimal   @db.Decimal(5, 1)
+  reason       String?
+  status       String    @default("draft")
+  approvedBy   String?
+  approvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ==================== RECRUITMENT ====================
+model JobPosition {
+  id                String           @id @default(uuid())
+  tenantId          String
+  tenant            Tenant           @relation(fields: [tenantId], references: [id])
+  name              String
+  departmentId      String?
+  expectedEmployees Int              @default(1)
+  status            String           @default("open")
+  applications      JobApplication[]
+  createdAt         DateTime         @default(now())
+}
+
+model JobApplication {
+  id            String      @id @default(uuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id])
+  jobId         String
+  job           JobPosition @relation(fields: [jobId], references: [id])
+  applicantName String
+  email         String?
+  phone         String?
+  stage         String      @default("new")
+  priority      Int         @default(0)
+  cv            String?
+  notes         String?
+  interviewDate DateTime?
+  offerDate     DateTime?
+  refuseReason  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+// ==================== QUALITY ====================
+model QualityControlPoint {
+  id        String         @id @default(uuid())
+  tenantId  String
+  tenant    Tenant         @relation(fields: [tenantId], references: [id])
+  name      String
+  productId String?
+  operation String
+  checkType String
+  active    Boolean        @default(true)
+  checks    QualityCheck[]
+  createdAt DateTime       @default(now())
+}
+
+model QualityCheck {
+  id            String              @id @default(uuid())
+  tenantId      String
+  tenant        Tenant              @relation(fields: [tenantId], references: [id])
+  qcpId         String
+  qcp           QualityControlPoint @relation(fields: [qcpId], references: [id])
+  status        String              @default("todo")
+  measuredValue Decimal?            @db.Decimal(10, 2)
+  notes         String?
+  picturePath   String?
+  doneAt        DateTime?
+  doneBy        String?
+  createdAt     DateTime            @default(now())
+}
+
+model QualityAlert {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  title      String
+  productId  String?
+  stage      String   @default("new")
+  priority   Int      @default(0)
+  rootCause  String?
+  corrective String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ==================== MAINTENANCE ====================
+model Equipment {
+  id              String               @id @default(uuid())
+  tenantId        String
+  tenant          Tenant               @relation(fields: [tenantId], references: [id])
+  name            String
+  category        String?
+  serialNo        String?
+  location        String?
+  technicianId    String?
+  purchaseDate    DateTime?
+  warrantyDate    DateTime?
+  nextMaintenance DateTime?
+  active          Boolean              @default(true)
+  requests        MaintenanceRequest[]
+  createdAt       DateTime             @default(now())
+}
+
+model MaintenanceRequest {
+  id            String    @id @default(uuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  noMr          String    @unique
+  equipmentId   String
+  equipment     Equipment @relation(fields: [equipmentId], references: [id])
+  name          String
+  type          String    @default("corrective")
+  priority      Int       @default(0)
+  requestDate   DateTime  @default(now())
+  scheduledDate DateTime?
+  closedDate    DateTime?
+  technicianId  String?
+  status        String    @default("new")
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ==================== FLEET ====================
+model Vehicle {
+  id              String           @id @default(uuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  licensePlate    String           @unique
+  brand           String
+  model           String
+  year            Int?
+  fuelType        String           @default("bensin")
+  driverId        String?
+  currentOdometer Decimal          @default(0) @db.Decimal(10, 2)
+  active          Boolean          @default(true)
+  services        VehicleService[]
+  createdAt       DateTime         @default(now())
+}
+
+model VehicleService {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  vehicleId   String
+  vehicle     Vehicle   @relation(fields: [vehicleId], references: [id])
+  type        String
+  vendor      String?
+  date        DateTime
+  odometer    Decimal?  @db.Decimal(10, 2)
+  cost        Decimal   @default(0) @db.Decimal(15, 2)
+  notes       String?
+  nextService DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+// ==================== PURCHASING EXTENSIONS ====================
+model RequestForQuotation {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  noRfq      String    @unique
+  supplierId String
+  supplier   Supplier  @relation(fields: [supplierId], references: [id])
+  deadline   DateTime?
+  status     String    @default("draft")
+  items      RfqItem[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model RfqItem {
+  id        String              @id @default(uuid())
+  tenantId  String
+  tenant    Tenant              @relation(fields: [tenantId], references: [id])
+  rfqId     String
+  rfq       RequestForQuotation @relation(fields: [rfqId], references: [id])
+  productId String?
+  product   Product?            @relation(fields: [productId], references: [id])
+  nama      String
+  qty       Int
+  hargaBeli Decimal             @db.Decimal(15, 2)
+  subtotal  Decimal             @db.Decimal(15, 2)
+}
+
+model VendorPricelist {
+  id           String    @id @default(uuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  supplierId   String
+  supplier     Supplier  @relation(fields: [supplierId], references: [id])
+  productId    String
+  harga        Decimal   @db.Decimal(15, 2)
+  minQty       Int       @default(1)
+  leadTimeDays Int       @default(0)
+  validFrom    DateTime?
+  validTo      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model VendorBill {
+  id              String              @id @default(uuid())
+  tenantId        String
+  tenant          Tenant              @relation(fields: [tenantId], references: [id])
+  noBill          String              @unique
+  supplierId      String
+  supplier        Supplier            @relation(fields: [supplierId], references: [id])
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
+  goodsReceiptId  String?
+  goodsReceipt    GoodsReceipt?       @relation(fields: [goodsReceiptId], references: [id])
+  totalAmount     Decimal             @default(0) @db.Decimal(15, 2)
+  paidAmount      Decimal             @default(0) @db.Decimal(15, 2)
+  status          String              @default("draft")
+  dueDate         DateTime?
+  note            String?
+  items           VendorBillItem[]
+  payments        VendorBillPayment[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+}
+
+model VendorBillPayment {
+  id           String     @id @default(cuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  vendorBillId String
+  vendorBill   VendorBill @relation(fields: [vendorBillId], references: [id], onDelete: Cascade)
+  amount       Decimal    @db.Decimal(15, 2)
+  method       String     @default("transfer")
+  referensi    String?
+  tanggal      DateTime   @default(now())
+  notes        String?
+  createdAt    DateTime   @default(now())
+}
+
+model VendorBillItem {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  vendorBillId String
+  vendorBill   VendorBill @relation(fields: [vendorBillId], references: [id])
+  productId    String?
+  product      Product?   @relation(fields: [productId], references: [id])
+  nama         String
+  qty          Int
+  unitPrice    Decimal    @db.Decimal(15, 2)
+  subtotal     Decimal    @db.Decimal(15, 2)
+  landedCost   Decimal    @default(0) @db.Decimal(15, 2)
+}
+
+model PurchaseReturn {
+  id              String               @id @default(uuid())
+  tenantId        String
+  tenant          Tenant               @relation(fields: [tenantId], references: [id])
+  noReturn        String               @unique
+  supplierId      String
+  supplier        Supplier             @relation(fields: [supplierId], references: [id])
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder?       @relation(fields: [purchaseOrderId], references: [id])
+  goodsReceiptId  String?
+  goodsReceipt    GoodsReceipt?        @relation(fields: [goodsReceiptId], references: [id])
+  status          String               @default("draft")
+  note            String?
+  totalAmount     Decimal              @default(0) @db.Decimal(15, 2)
+  items           PurchaseReturnItem[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
+
+model PurchaseReturnItem {
+  id               String         @id @default(uuid())
+  tenantId         String
+  tenant           Tenant         @relation(fields: [tenantId], references: [id])
+  purchaseReturnId String
+  purchaseReturn   PurchaseReturn @relation(fields: [purchaseReturnId], references: [id])
+  productId        String?
+  product          Product?       @relation(fields: [productId], references: [id])
+  nama             String
+  qty              Int
+  unitPrice        Decimal        @db.Decimal(15, 2)
+  subtotal         Decimal        @db.Decimal(15, 2)
+}
+
+model SupplierRating {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  rating     Int
+  comment    String?
+  reviewerId String?
+  reviewer   User?    @relation(fields: [reviewerId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model ReorderingRule {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  productId   String
+  warehouseId String?
+  minQty      Int      @default(0)
+  maxQty      Int      @default(0)
+  qtyMultiple Int      @default(1)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ==================== INVENTORY EXTENSIONS ====================
+model LotSerial {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  productId  String
+  name       String
+  type       String    @default("lot")
+  qty        Decimal   @default(0) @db.Decimal(15, 2)
+  expiryDate DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model ScrapOrder {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  noScrap   String   @unique
+  productId String
+  lotId     String?
+  qty       Int
+  reason    String?
+  status    String   @default("draft")
+  scrapDate DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+// ==================== SALES EXTENSIONS ====================
+model Quotation {
+  id            String          @id @default(uuid())
+  tenantId      String
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  noQuotation   String          @unique
+  customerId    String?
+  salespersonId String?
+  validityDate  DateTime?
+  status        String          @default("draft")
+  subtotal      Decimal         @default(0) @db.Decimal(15, 2)
+  tax           Decimal         @default(0) @db.Decimal(15, 2)
+  total         Decimal         @default(0) @db.Decimal(15, 2)
+  notes         String?
+  items         QuotationItem[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model QuotationItem {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id])
+  productId   String?
+  description String
+  qty         Decimal   @db.Decimal(15, 2)
+  unitPrice   Decimal   @db.Decimal(15, 2)
+  discount    Decimal   @default(0) @db.Decimal(5, 2)
+  tax         Decimal   @default(0) @db.Decimal(15, 2)
+  subtotal    Decimal   @db.Decimal(15, 2)
+}
+
+model Pricelist {
+  id        String          @id @default(uuid())
+  tenantId  String
+  tenant    Tenant          @relation(fields: [tenantId], references: [id])
+  name      String
+  currency  String          @default("IDR")
+  items     PricelistItem[]
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+}
+
+model PricelistItem {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  pricelistId String
+  pricelist   Pricelist @relation(fields: [pricelistId], references: [id])
+  productId   String?
+  minQty      Int       @default(1)
+  price       Decimal   @db.Decimal(15, 2)
+  discount    Decimal   @default(0) @db.Decimal(5, 2)
+}
+
+model Commission {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  salespersonId String
+  quotationId   String?
+  amount        Decimal  @db.Decimal(15, 2)
+  percentage    Decimal  @db.Decimal(5, 2)
+  status        String   @default("pending")
+  periode       String
+  createdAt     DateTime @default(now())
+}
+
+// ==================== TAX ENGINE ====================
+
+enum TaxType {
+  PPN
+  PPH21
+  PPH23
+  PPH25
+  PPH4A2
+}
+
+enum TaxLineType {
+  COLLECTED
+  PAID
+}
+
+enum EFakturStatus {
+  DRAFT
+  UPLOADED
+  APPROVED
+}
+
+model Tax {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  kode      String    @unique
+  nama      String
+  tipe      TaxType
+  rate      Decimal   @db.Decimal(5, 2)
+  isActive  Boolean   @default(true)
+  accountId String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  taxLines  TaxLine[]
+  efakturs  EFaktur[]
+  expenses  Expense[]
+}
+
+model TaxLine {
+  id            String      @id @default(uuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id])
+  referenceId   String
+  referenceType String
+  taxId         String
+  tax           Tax         @relation(fields: [taxId], references: [id])
+  baseAmount    Decimal     @db.Decimal(15, 2)
+  taxAmount     Decimal     @db.Decimal(15, 2)
+  tipe          TaxLineType
+  createdAt     DateTime    @default(now())
+}
+
+model EFaktur {
+  id          String        @id @default(uuid())
+  tenantId    String
+  tenant      Tenant        @relation(fields: [tenantId], references: [id])
+  nomorFaktur String        @unique
+  tanggal     DateTime
+  taxId       String?
+  tax         Tax?          @relation(fields: [taxId], references: [id])
+  referenceId String?
+  npwpPembeli String?
+  namaPembeli String?
+  nilaiDPP    Decimal       @db.Decimal(15, 2)
+  nilaiPPN    Decimal       @db.Decimal(15, 2)
+  status      EFakturStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+// ==================== DOUBLE-ENTRY ACCOUNTING ====================
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum JournalStatus {
+  DRAFT
+  POSTED
+  CANCELLED
+}
+
+enum FiscalStatus {
+  OPEN
+  CLOSED
+}
+
+model Account {
+  id             String                 @id @default(uuid())
+  tenantId       String
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id])
+  code           String                 @unique
+  name           String
+  type           AccountType
+  parentId       String?
+  parent         Account?               @relation("AccountTree", fields: [parentId], references: [id])
+  children       Account[]              @relation("AccountTree")
+  description    String?
+  isActive       Boolean                @default(true)
+  openingBalance Decimal                @default(0) @db.Decimal(15, 2)
+  normalBalance  String                 @default("DEBIT")
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  journalLines   JournalLine[]
+  recurringLines JournalRecurringLine[] @relation("AccountJournalRecurringLines")
+  expenses       Expense[]
+}
+
+model JournalRecurring {
+  id          String                 @id @default(uuid())
+  tenantId    String
+  tenant      Tenant                 @relation(fields: [tenantId], references: [id])
+  name        String
+  description String?
+  frequency   String
+  interval    Int                    @default(1)
+  startDate   DateTime               @default(now())
+  nextRunAt   DateTime
+  endDate     DateTime?
+  status      String                 @default("ACTIVE")
+  journalId   String?
+  journal     Journal?               @relation("JournalRecurringJournal", fields: [journalId], references: [id])
+  createdById String?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  lines       JournalRecurringLine[]
+}
+
+model JournalRecurringLine {
+  id                 String           @id @default(uuid())
+  tenantId           String
+  tenant             Tenant           @relation(fields: [tenantId], references: [id])
+  journalRecurringId String
+  journalRecurring   JournalRecurring @relation(fields: [journalRecurringId], references: [id], onDelete: Cascade)
+  accountId          String
+  account            Account          @relation(fields: [accountId], references: [id], name: "AccountJournalRecurringLines")
+  debit              Decimal          @default(0) @db.Decimal(15, 2)
+  kredit             Decimal          @default(0) @db.Decimal(15, 2)
+  deskripsi          String?
+}
+
+model Journal {
+  id                String             @id @default(uuid())
+  tenantId          String
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  nomor             String             @unique
+  tanggal           DateTime
+  referensi         String?
+  deskripsi         String?
+  status            JournalStatus      @default(DRAFT)
+  createdById       String?
+  reversalOf        String?
+  recurringJournals JournalRecurring[] @relation("JournalRecurringJournal")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  lines             JournalLine[]
+}
+
+model JournalLine {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  journalId String
+  journal   Journal  @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id])
+  debit     Decimal  @default(0) @db.Decimal(15, 2)
+  kredit    Decimal  @default(0) @db.Decimal(15, 2)
+  deskripsi String?
+  createdAt DateTime @default(now())
+}
+
+model FiscalYear {
+  id        String         @id @default(uuid())
+  tenantId  String
+  tenant    Tenant         @relation(fields: [tenantId], references: [id])
+  nama      String
+  startDate DateTime
+  endDate   DateTime
+  status    FiscalStatus   @default(OPEN)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  periods   FiscalPeriod[]
+}
+
+model FiscalPeriod {
+  id           String       @id @default(uuid())
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  fiscalYearId String
+  fiscalYear   FiscalYear   @relation(fields: [fiscalYearId], references: [id])
+  bulan        Int
+  tahun        Int
+  startDate    DateTime
+  endDate      DateTime
+  status       FiscalStatus @default(OPEN)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+// ==================== PAYROLL TERINTEGRASI ====================
+
+enum PayrollComponentType {
+  BASIC
+  ALLOWANCE
+  DEDUCTION
+  OVERTIME
+}
+
+enum PayrollPeriodStatus {
+  DRAFT
+  CALCULATED
+  APPROVED
+  PAID
+}
+
+enum SlipStatus {
+  DRAFT
+  APPROVED
+  PAID
+}
+
+model PayrollComponent {
+  id        String               @id @default(uuid())
+  tenantId  String
+  tenant    Tenant               @relation(fields: [tenantId], references: [id])
+  nama      String
+  tipe      PayrollComponentType
+  formula   String               @default("")
+  isActive  Boolean              @default(true)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  lines     PayrollSlipLine[]
+}
+
+model PayrollPeriod {
+  id        String              @id @default(uuid())
+  tenantId  String
+  tenant    Tenant              @relation(fields: [tenantId], references: [id])
+  bulan     Int
+  tahun     Int
+  status    PayrollPeriodStatus @default(DRAFT)
+  note      String?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  slips     PayrollSlip[]
+
+  @@unique([bulan, tahun])
+}
+
+model PayrollSlip {
+  id              String            @id @default(uuid())
+  tenantId        String
+  tenant          Tenant            @relation(fields: [tenantId], references: [id])
+  employeeId      String
+  employee        Employee          @relation(fields: [employeeId], references: [id])
+  periodId        String
+  period          PayrollPeriod     @relation(fields: [periodId], references: [id])
+  gajiPokok       Decimal           @default(0) @db.Decimal(15, 2)
+  totalTunjangan  Decimal           @default(0) @db.Decimal(15, 2)
+  totalPotongan   Decimal           @default(0) @db.Decimal(15, 2)
+  bpjsKesEmployee Decimal           @default(0) @db.Decimal(15, 2)
+  bpjsKesEmployer Decimal           @default(0) @db.Decimal(15, 2)
+  bpjsTKEmployee  Decimal           @default(0) @db.Decimal(15, 2)
+  bpjsTKEmployer  Decimal           @default(0) @db.Decimal(15, 2)
+  totalPPh21      Decimal           @default(0) @db.Decimal(15, 2)
+  netSalary       Decimal           @default(0) @db.Decimal(15, 2)
+  status          SlipStatus        @default(DRAFT)
+  journalId       String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  lines           PayrollSlipLine[]
+
+  @@unique([employeeId, periodId])
+}
+
+model PayrollSlipLine {
+  id          String            @id @default(uuid())
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id])
+  slipId      String
+  slip        PayrollSlip       @relation(fields: [slipId], references: [id], onDelete: Cascade)
+  componentId String?
+  component   PayrollComponent? @relation(fields: [componentId], references: [id])
+  amount      Decimal           @db.Decimal(15, 2)
+  deskripsi   String
+  createdAt   DateTime          @default(now())
+}
+
+model BPJSConfig {
+  id                String   @id @default(uuid())
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  employeeId        String   @unique
+  employee          Employee @relation(fields: [employeeId], references: [id])
+  bpjsKesEmployee   Decimal  @default(1) @db.Decimal(5, 2)
+  bpjsKesEmployer   Decimal  @default(4) @db.Decimal(5, 2)
+  bpjsTKJHTEmployee Decimal  @default(2) @db.Decimal(5, 2)
+  bpjsTKJHTEmployer Decimal  @default(3.7) @db.Decimal(5, 2)
+  bpjsTKJKK         Decimal  @default(0.24) @db.Decimal(5, 2)
+  bpjsTKJKM         Decimal  @default(0.3) @db.Decimal(5, 2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// ==================== FIXED ASSET MANAGEMENT ====================
+
+enum DepreciasiMethod {
+  STRAIGHT_LINE
+  DECLINING_BALANCE
+}
+
+enum AssetStatus {
+  ACTIVE
+  DISPOSED
+  SOLD
+  UNDER_MAINTENANCE
+}
+
+model AssetCategory {
+  id                    String       @id @default(cuid())
+  tenantId              String
+  tenant                Tenant       @relation(fields: [tenantId], references: [id])
+  name                  String
+  depreciationAccountId String? // akun Beban Penyusutan
+  accDepAccountId       String? // akun Akumulasi Penyusutan
+  defaultUsefulLife     Int          @default(60) // bulan
+  defaultMethod         String       @default("straight_line")
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  assets                FixedAsset[]
+}
+
+model FixedAsset {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  // Primary fields (new schema)
+  code       String?        @unique
+  name       String?
+  categoryId String?
+  category   AssetCategory? @relation(fields: [categoryId], references: [id])
+
+  // Acquisition
+  acquisitionDate  DateTime?
+  acquisitionValue Decimal?  @db.Decimal(15, 2)
+
+  // Depreciation
+  usefulLifeMonths   Int? // umur manfaat dalam bulan
+  depreciationMethod DepreciasiMethod @default(STRAIGHT_LINE)
+  residualValue      Decimal          @default(0) @db.Decimal(15, 2)
+  currentBookValue   Decimal?         @db.Decimal(15, 2) // nilai buku saat ini (calculated)
+
+  // Details
+  location       String?
+  serialNumber   String?
+  warrantyExpiry DateTime?
+  vendor         String? // contactId atau nama vendor
+  attachment     String? // URL foto/dokumen
+  status         AssetStatus @default(ACTIVE)
+  warehouseId    String?
+
+  // Accounting
+  accountAssetId      String?
+  accountDepreciasiId String?
+  accountAkumDepId    String?
+  branchId            String?
+
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Legacy fields (backward compatibility)
+  kode             String?           @unique
+  nama             String?
+  kategori         String?
+  tanggalPerolehan DateTime?
+  nilaiPerolehan   Decimal?          @db.Decimal(15, 2)
+  nilaiResidu      Decimal?          @db.Decimal(15, 2)
+  umurEkonomi      Int?
+  metodeDepresiasi DepreciasiMethod? @default(STRAIGHT_LINE)
+
+  depreciations AssetDepreciation[]
+}
+
+model AssetDepreciation {
+  id              String     @id @default(uuid())
+  tenantId        String
+  tenant          Tenant     @relation(fields: [tenantId], references: [id])
+  assetId         String
+  asset           FixedAsset @relation(fields: [assetId], references: [id])
+  bulan           Int
+  tahun           Int
+  bebanDepresiasi Decimal    @db.Decimal(15, 2)
+  akumDepresiasi  Decimal    @db.Decimal(15, 2)
+  nilaiBuku       Decimal    @db.Decimal(15, 2)
+  journalId       String?
+  createdAt       DateTime   @default(now())
+
+  @@unique([assetId, bulan, tahun])
+}
+
+// ==================== BUDGET ====================
+
+enum BudgetStatus {
+  DRAFT
+  APPROVED
+}
+
+model Budget {
+  id           String       @id @default(uuid())
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  nama         String
+  fiscalYearId String?
+  departemenId String?
+  status       BudgetStatus @default(DRAFT)
+  note         String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  lines        BudgetLine[]
+}
+
+model BudgetLine {
+  id        String  @id @default(uuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  budgetId  String
+  budget    Budget  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  accountId String
+  bulan     Int
+  amount    Decimal @db.Decimal(15, 2)
+}
+
+// ==================== COMPANY & BRANCH ====================
+
+model Company {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  nama            String
+  npwp            String?
+  alamat          String?
+  logo            String?
+  defaultCurrency String   @default("IDR")
+  timezone        String   @default("Asia/Jakarta")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  branches        Branch[]
+}
+
+model Branch {
+  id           String    @id @default(uuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id])
+  kode         String    @unique
+  nama         String
+  alamat       String?
+  isHeadOffice Boolean   @default(false)
+  isActive     Boolean   @default(true)
+  expenses     Expense[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ==================== AUTH EXTENSIONS ====================
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+// ==================== INVOICE ====================
+
+model Invoice {
+  id          String           @id @default(uuid())
+  tenantId    String
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+  noInvoice   String           @unique
+  customerId  String?
+  customer    Customer?        @relation(fields: [customerId], references: [id])
+  orderId     Int?
+  salesName   String?
+  tanggal     DateTime         @default(now())
+  dueDate     DateTime?
+  subtotal    Decimal          @default(0) @db.Decimal(15, 2)
+  diskon      Decimal          @default(0) @db.Decimal(15, 2)
+  pajak       Decimal          @default(0) @db.Decimal(15, 2)
+  grandTotal  Decimal          @default(0) @db.Decimal(15, 2)
+  paidAmount  Decimal          @default(0) @db.Decimal(15, 2)
+  status      String           @default("draft")
+  notes       String?
+  sentAt      DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  items       InvoiceItem[]
+  payments    InvoicePayment[]
+  creditNotes CreditNote[]
+}
+
+model InvoiceItem {
+  id        String  @id @default(uuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId String?
+  nama      String
+  qty       Int
+  harga     Decimal @db.Decimal(15, 2)
+  subtotal  Decimal @db.Decimal(15, 2)
+}
+
+model InvoicePayment {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount    Decimal  @db.Decimal(15, 2)
+  method    String   @default("transfer")
+  tanggal   DateTime @default(now())
+  referensi String?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model CreditNote {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  invoiceId    String
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id])
+  noCreditNote String   @unique
+  amount       Decimal  @db.Decimal(15, 2)
+  reason       String?
+  status       String   @default("draft")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ==================== SALES EXTENSIONS ====================
+
+model SalesReturn {
+  id          String            @id @default(uuid())
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id])
+  noReturn    String            @unique
+  customerId  String?
+  customer    Customer?         @relation(fields: [customerId], references: [id])
+  orderId     Int?
+  reason      String?
+  status      String            @default("draft")
+  totalAmount Decimal           @default(0) @db.Decimal(15, 2)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  items       SalesReturnItem[]
+}
+
+model SalesReturnItem {
+  id        String      @id @default(uuid())
+  tenantId  String
+  tenant    Tenant      @relation(fields: [tenantId], references: [id])
+  returnId  String
+  return    SalesReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  productId String?
+  nama      String
+  qty       Int
+  harga     Decimal     @db.Decimal(15, 2)
+  subtotal  Decimal     @db.Decimal(15, 2)
+}
+
+// ==================== INVENTORY EXTENSIONS ====================
+
+model StockTransfer {
+  id            String              @id @default(uuid())
+  tenantId      String
+  tenant        Tenant              @relation(fields: [tenantId], references: [id])
+  noTransfer    String              @unique
+  fromWarehouse String
+  toWarehouse   String
+  status        String              @default("draft")
+  notes         String?
+  createdBy     String?
+  approvedBy    String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  items         StockTransferItem[]
+}
+
+model StockTransferItem {
+  id         String        @id @default(uuid())
+  tenantId   String
+  tenant     Tenant        @relation(fields: [tenantId], references: [id])
+  transferId String
+  transfer   StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product       @relation(fields: [productId], references: [id])
+  qty        Decimal       @db.Decimal(15, 4)
+  notes      String?
+}
+
+model StockAdjustment {
+  id          String                @id @default(uuid())
+  tenantId    String
+  tenant      Tenant                @relation(fields: [tenantId], references: [id])
+  noAdjust    String                @unique
+  warehouseId String?
+  reason      String?
+  status      String                @default("draft")
+  notes       String?
+  createdBy   String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  items       StockAdjustmentItem[]
+}
+
+model StockAdjustmentItem {
+  id           String          @id @default(uuid())
+  tenantId     String
+  tenant       Tenant          @relation(fields: [tenantId], references: [id])
+  adjustmentId String
+  adjustment   StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product         @relation(fields: [productId], references: [id])
+  qtySystem    Decimal         @db.Decimal(15, 4)
+  qtyActual    Decimal         @db.Decimal(15, 4)
+  qtyDiff      Decimal         @db.Decimal(15, 4)
+  notes        String?
+}
+
+// ==================== HR EXTENSIONS ====================
+
+model EmployeeContract {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  tipeKontrak String    @default("PKWT")
+  startDate   DateTime
+  endDate     DateTime?
+  gapok       Decimal   @db.Decimal(15, 2)
+  tunjangan   Decimal   @default(0) @db.Decimal(15, 2)
+  status      String    @default("aktif")
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model WorkShift {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  nama      String
+  jamMasuk  String
+  jamKeluar String
+  toleransi Int      @default(15)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmployeeMutasi {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  fromDepartemen String?
+  toDepartemen   String?
+  fromJabatan    String?
+  toJabatan      String?
+  effectiveDate  DateTime
+  reason         String?
+  approvedBy     String?
+  createdAt      DateTime @default(now())
+}
+
+// ==================== BANK EXTENSIONS ====================
+
+model BankReconciliation {
+  id            String      @id @default(uuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id])
+  bankAccountId String
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id])
+  periodeAwal   DateTime
+  periodeAkhir  DateTime
+  saldoBuku     Decimal     @db.Decimal(15, 2)
+  saldoBank     Decimal     @db.Decimal(15, 2)
+  selisih       Decimal     @db.Decimal(15, 2)
+  status        String      @default("draft")
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+// ==================== SETTINGS EXTENSIONS ====================
+
+model SmtpSetting {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  host      String
+  port      Int      @default(587)
+  secure    Boolean  @default(false)
+  username  String
+  fromName  String?
+  fromEmail String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DocumentNumberConfig {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  docType   String   @unique
+  prefix    String
+  separator String   @default("/")
+  useYear   Boolean  @default(true)
+  useMonth  Boolean  @default(true)
+  padLength Int      @default(4)
+  lastSeq   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CompanyProfile {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  logo      String?
+  address   String?
+  phone     String?
+  email     String?
+  website   String?
+  npwp      String?
+  currency  String   @default("IDR")
+  timezone  String   @default("Asia/Jakarta")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Currency {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  code      String   @unique
+  name      String
+  symbol    String
+  rate      Float    @default(1)
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InvoiceTemplate {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id])
+  templateType       String   @unique
+  showLogo           Boolean  @default(true)
+  showBarcode        Boolean  @default(false)
+  primaryColor       String   @default("#000000")
+  headerColor        String   @default("#F3F4F6")
+  fontFamily         String   @default("Arial")
+  columns            String[] @default(["no", "product", "qty", "price", "total"])
+  showSignature      Boolean  @default(true)
+  signerName         String?
+  signerTitle        String?
+  showStamp          Boolean  @default(false)
+  footerText         String?
+  showCurrencySymbol Boolean  @default(true)
+  showProductImage   Boolean  @default(false)
+  defaultMessage     String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model WorkflowConfig {
+  id                     String   @id @default(cuid())
+  tenantId               String
+  tenant                 Tenant   @relation(fields: [tenantId], references: [id])
+  salesFlow              String   @default("quotation_to_invoice")
+  purchaseFlow           String   @default("po_to_bill")
+  requireApprovalPO      Boolean  @default(false)
+  poApprovalLimit        Float    @default(0)
+  requireApprovalExpense Boolean  @default(false)
+  expenseApprovalLimit   Float    @default(0)
+  requireApprovalLeave   Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model DefaultAccounts {
+  id                     String   @id @default(cuid())
+  tenantId               String
+  tenant                 Tenant   @relation(fields: [tenantId], references: [id])
+  arAccount              String?
+  apAccount              String?
+  inventoryAccount       String?
+  cogsAccount            String?
+  salesRevenueAccount    String?
+  purchaseAccount        String?
+  taxInputAccount        String?
+  taxOutputAccount       String?
+  cashAdjustmentAccount  String?
+  stockAdjustmentAccount String?
+  depreciationAccount    String?
+  wageExpenseAccount     String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model NotificationConfig {
+  id                     String   @id @default(cuid())
+  tenantId               String
+  tenant                 Tenant   @relation(fields: [tenantId], references: [id])
+  emailOnInvoiceDue      Boolean  @default(false)
+  invoiceDueDaysBefore   Int      @default(3)
+  emailOnLowStock        Boolean  @default(false)
+  emailOnPaymentReceived Boolean  @default(false)
+  slackWebhook           String?
+  wapiKey                String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model SalesQuotation {
+  id             String               @id @default(cuid())
+  tenantId       String
+  tenant         Tenant               @relation(fields: [tenantId], references: [id])
+  nomorQuotation String               @unique
+  customerId     String?
+  customer       Customer?            @relation(fields: [customerId], references: [id])
+  salesName      String?
+  tanggal        DateTime             @default(now())
+  validUntil     DateTime?
+  status         String               @default("draft")
+  subtotal       Decimal              @default(0)
+  discount       Decimal              @default(0)
+  tax            Decimal              @default(0)
+  total          Decimal              @default(0)
+  note           String?
+  quotationId    String?
+  deletedAt      DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  items          SalesQuotationItem[]
+}
+
+model SalesQuotationItem {
+  id          String         @id @default(cuid())
+  tenantId    String
+  tenant      Tenant         @relation(fields: [tenantId], references: [id])
+  quotationId String
+  quotation   SalesQuotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product?       @relation(fields: [productId], references: [id])
+  productName String
+  qty         Decimal        @default(1)
+  hargaSatuan Decimal        @default(0)
+  discount    Decimal        @default(0)
+  subtotal    Decimal        @default(0)
+  unit        String?
+  note        String?
+}
+
+model ReorderRule {
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id])
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  warehouseId     String?
+  minQty          Decimal   @default(0)
+  maxQty          Decimal?
+  reorderQty      Decimal   @default(1)
+  leadTimeDays    Int       @default(1)
+  active          Boolean   @default(true)
+  lastTriggeredAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Contact {
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id])
+  code            String    @unique
+  name            String
+  type            String[]
+  email           String?
+  phone           String?
+  mobile          String?
+  address         String?
+  city            String?
+  province        String?
+  postalCode      String?
+  country         String    @default("Indonesia")
+  npwp            String?
+  nik             String?
+  termOfPayment   Int?
+  creditLimit     Float?    @default(0)
+  currency        String    @default("IDR")
+  discountPercent Float?    @default(0)
+  bankName        String?
+  bankAccountNo   String?
+  bankAccountName String?
+  notes           String?
+  isActive        Boolean   @default(true)
+  companyId       String?
+  branchId        String?
+  expenses        Expense[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Expense {
+  id               String       @id @default(cuid())
+  tenantId         String
+  tenant           Tenant       @relation(fields: [tenantId], references: [id])
+  number           String       @unique
+  date             DateTime
+  contactId        String?
+  contact          Contact?     @relation(fields: [contactId], references: [id])
+  accountId        String
+  account          Account      @relation(fields: [accountId], references: [id])
+  paymentAccountId String?
+  paymentAccount   BankAccount? @relation(fields: [paymentAccountId], references: [id])
+  amount           Float
+  taxId            String?
+  tax              Tax?         @relation(fields: [taxId], references: [id])
+  taxAmount        Float        @default(0)
+  totalAmount      Float
+  description      String?
+  attachment       String?
+  status           String       @default("draft")
+  tags             String[]     @default([])
+  branchId         String?
+  branch           Branch?      @relation(fields: [branchId], references: [id])
+  createdBy        String
+  approvedBy       String?
+  approvedAt       DateTime?
+  paidAt           DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model InvoiceRecurring {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  invoiceId   String    @unique
+  frequency   String
+  startDate   DateTime
+  endDate     DateTime?
+  nextRunDate DateTime
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model PaymentLink {
+  id         String    @id @default(cuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  invoiceId  String
+  token      String    @unique
+  provider   String    @default("midtrans")
+  paymentUrl String
+  status     String    @default("pending")
+  expiredAt  DateTime
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+// ==================== OPEN TMS MODELS ====================
+
+model TmsCustomer {
+  id           String           @id @default(uuid())
+  name         String
+  contactEmail String?
+  contactPhone String?
+  address      String?
+  archived     Boolean          @default(false)
+  orgId        String           @default("default")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  shipments    TmsShipment[]
+  lanes        TmsCustomerLane[]
+}
+
+model TmsCarrier {
+  id                  String               @id @default(uuid())
+  name                String
+  mcNumber            String?
+  dotNumber           String?
+  scacCode            String?
+  contactName         String?
+  contactEmail        String?
+  contactPhone        String?
+  address1            String?
+  city                String?
+  state               String?
+  postalCode          String?
+  country             String?
+  validationTier      String               @default("unvalidated")
+  registrationChecked Boolean              @default(false)
+  insuranceVerified   Boolean              @default(false)
+  identityConfirmed   Boolean              @default(false)
+  complianceChecked   Boolean              @default(false)
+  validationNotes     String?
+  validatedAt         DateTime?
+  archived            Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  shipments           TmsShipment[]
+  laneCarriers        TmsLaneCarrier[]
+}
+
+model TmsLocation {
+  id                String          @id @default(uuid())
+  name              String
+  address1          String
+  address2          String?
+  city              String
+  state             String?
+  postalCode        String?
+  country           String
+  lat               Float?
+  lng               Float?
+  locationType      String?
+  contactName       String?
+  contactPhone      String?
+  contactEmail      String?
+  archived          Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  shipmentsAsOrigin TmsShipment[]   @relation("TmsShipmentOrigin")
+  shipmentsAsDest   TmsShipment[]   @relation("TmsShipmentDest")
+  lanesAsOrigin     TmsLane[]       @relation("TmsLaneOrigin")
+  lanesAsDest       TmsLane[]       @relation("TmsLaneDest")
+  laneStops         TmsLaneStop[]
+}
+
+model TmsShipment {
+  id                  String                @id @default(uuid())
+  reference           String                @unique
+  status              String                @default("draft")
+  customerId          String?
+  laneId              String?
+  carrierId           String?
+  originId            String?
+  destinationId       String?
+  pickupDate          DateTime?
+  deliveryDate        DateTime?
+  pickupWindowStart   DateTime?
+  pickupWindowEnd     DateTime?
+  deliveryWindowStart DateTime?
+  deliveryWindowEnd   DateTime?
+  proNumber           String?
+  shipmentTypeId      String?
+  archived            Boolean               @default(false)
+  currentLat          Float?
+  currentLng          Float?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  customer            TmsCustomer?          @relation(fields: [customerId], references: [id])
+  carrier             TmsCarrier?           @relation(fields: [carrierId], references: [id])
+  lane                TmsLane?              @relation(fields: [laneId], references: [id])
+  origin              TmsLocation?          @relation("TmsShipmentOrigin", fields: [originId], references: [id])
+  destination         TmsLocation?          @relation("TmsShipmentDest", fields: [destinationId], references: [id])
+  events              TmsShipmentEvent[]
+  items               TmsShipmentItem[]
+  attachments         TmsAttachment[]
+  comments            TmsComment[]
+  telemetry           TmsSensorReading[]
+  devices             TmsDeviceAssignment[]
+}
+
+model TmsShipmentEvent {
+  id          String      @id @default(uuid())
+  shipmentId  String
+  shipment    TmsShipment @relation(fields: [shipmentId], references: [id])
+  eventType   String
+  description String?
+  lat         Float?
+  lng         Float?
+  actorId     String?
+  eventTime   DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+}
+
+model TmsShipmentItem {
+  id          String      @id @default(uuid())
+  shipmentId  String
+  shipment    TmsShipment @relation(fields: [shipmentId], references: [id])
+  sku         String
+  description String?
+  quantity    Int
+  weightKg    Float?
+  volumeM3    Float?
+}
+
+model TmsShipmentType {
+  id                    String  @id @default(uuid())
+  name                  String
+  description           String?
+  requiresPickupDate    Boolean @default(true)
+  requiresDeliveryDate  Boolean @default(true)
+}
+
+model TmsLane {
+  id            String           @id @default(uuid())
+  name          String
+  originId      String
+  destinationId String
+  distance      Float?
+  notes         String?
+  status        String           @default("active")
+  archived      Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  origin        TmsLocation      @relation("TmsLaneOrigin", fields: [originId], references: [id])
+  destination   TmsLocation      @relation("TmsLaneDest", fields: [destinationId], references: [id])
+  stops         TmsLaneStop[]
+  laneCarriers  TmsLaneCarrier[]
+  customerLanes TmsCustomerLane[]
+  shipments     TmsShipment[]
+}
+
+model TmsLaneStop {
+  id         String      @id @default(uuid())
+  laneId     String
+  lane       TmsLane     @relation(fields: [laneId], references: [id])
+  locationId String
+  location   TmsLocation @relation(fields: [locationId], references: [id])
+  order      Int
+  notes      String?
+}
+
+model TmsLaneCarrier {
+  id           String     @id @default(uuid())
+  laneId       String
+  lane         TmsLane    @relation(fields: [laneId], references: [id])
+  carrierId    String
+  carrier      TmsCarrier @relation(fields: [carrierId], references: [id])
+  price        Float?
+  currency     String     @default("IDR")
+  serviceLevel String?
+  notes        String?
+  assigned     Boolean    @default(false)
+
+  @@unique([laneId, carrierId])
+}
+
+model TmsCustomerLane {
+  id         String      @id @default(uuid())
+  laneId     String
+  lane       TmsLane     @relation(fields: [laneId], references: [id])
+  customerId String
+  customer   TmsCustomer @relation(fields: [customerId], references: [id])
+  createdAt  DateTime    @default(now())
+
+  @@unique([laneId, customerId])
+}
+
+model TmsIssue {
+  id          String                  @id @default(uuid())
+  title       String
+  description String?
+  status      String                  @default("open")
+  priority    String                  @default("medium")
+  category    String?
+  assigneeId  String?
+  entityType  String?
+  entityId    String?
+  snoozedUntil DateTime?
+  snoozedBy   String?
+  resolution  String?
+  closedAt    DateTime?
+  closedBy    String?
+  needsCapa   Boolean                 @default(false)
+  archived    Boolean                 @default(false)
+  orgId       String                  @default("default")
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  comments    TmsComment[]
+  labels      TmsIssueLabelAssignment[]
+}
+
+model TmsIssueLabel {
+  id        String                    @id @default(uuid())
+  name      String
+  color     String                    @default("#6B7280")
+  orgId     String                    @default("default")
+  createdAt DateTime                  @default(now())
+  labels    TmsIssueLabelAssignment[]
+}
+
+model TmsIssueLabelAssignment {
+  id      String        @id @default(uuid())
+  issueId String
+  issue   TmsIssue      @relation(fields: [issueId], references: [id])
+  labelId String
+  label   TmsIssueLabel @relation(fields: [labelId], references: [id])
+
+  @@unique([issueId, labelId])
+}
+
+model TmsKanbanView {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  filters     Json     @default("{}")
+  groupBy     String   @default("status")
+  sortBy      String   @default("createdAt")
+  isDefault   Boolean  @default(false)
+  createdBy   String?
+  orgId       String   @default("default")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TmsComment {
+  id         String    @id @default(uuid())
+  entityType String
+  entityId   String
+  authorId   String
+  authorName String
+  authorType String    @default("user")
+  body       String
+  orgId      String    @default("default")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  issue      TmsIssue? @relation(fields: [entityId], references: [id], map: "TmsComment_issueId_fkey")
+  shipment   TmsShipment? @relation(fields: [entityId], references: [id], map: "TmsComment_shipmentId_fkey")
+}
+
+model TmsAttachment {
+  id          String       @id @default(uuid())
+  entityType  String
+  entityId    String
+  fileName    String
+  mimeType    String
+  fileSize    Int
+  storagePath String
+  uploadedBy  String?
+  description String?
+  createdAt   DateTime     @default(now())
+  shipment    TmsShipment? @relation(fields: [entityId], references: [id], map: "TmsAttachment_shipmentId_fkey")
+}
+
+model TmsOrganizationSettings {
+  id                  String   @id @default(uuid())
+  orgId               String   @unique @default("default")
+  name                String   @default("My Organization")
+  timezone            String   @default("Asia/Jakarta")
+  currency            String   @default("IDR")
+  logoUrl             String?
+  primaryColor        String?
+  autoTenderEnabled   Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model TmsTheme {
+  id           String   @id @default(uuid())
+  orgId        String   @unique @default("default")
+  primaryColor String?
+  logoUrl      String?
+  updatedAt    DateTime @updatedAt
+}
+
+model TmsEmailSettings {
+  id           String   @id @default(uuid())
+  orgId        String   @unique @default("default")
+  provider     String   @default("console")
+  smtpHost     String?
+  smtpPort     Int?
+  smtpSecure   Boolean  @default(false)
+  smtpUser     String?
+  smtpPassword String?
+  fromAddress  String   @default("noreply@example.com")
+  fromName     String   @default("ERP System")
+  updatedAt    DateTime @updatedAt
+}
+
+model TmsEmailTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  subject   String
+  type      String
+  body      String
+  orgId     String   @default("default")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TmsDocumentTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  type      String
+  content   String
+  orgId     String   @default("default")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TmsDevice {
+  id          String                @id @default(uuid())
+  externalId  String                @unique
+  displayId   String?
+  name        String
+  provider    String                @default("manual")
+  model       String?
+  status      String                @default("active")
+  lastSeenAt  DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  assignments TmsDeviceAssignment[]
+  readings    TmsSensorReading[]
+}
+
+model TmsDeviceAssignment {
+  id           String      @id @default(uuid())
+  deviceId     String
+  device       TmsDevice   @relation(fields: [deviceId], references: [id])
+  shipmentId   String?
+  shipment     TmsShipment? @relation(fields: [shipmentId], references: [id])
+  orderId      String?
+  active       Boolean     @default(true)
+  assignedAt   DateTime    @default(now())
+  unassignedAt DateTime?
+}
+
+model TmsSensorReading {
+  id           String      @id @default(uuid())
+  deviceId     String
+  device       TmsDevice   @relation(fields: [deviceId], references: [id])
+  shipmentId   String?
+  shipment     TmsShipment? @relation(fields: [shipmentId], references: [id])
+  orderId      String?
+  lat          Float?
+  lng          Float?
+  temperature  Float?
+  humidity     Float?
+  batteryLevel Float?
+  isAlert      Boolean     @default(false)
+  eventTime    DateTime    @default(now())
+}
+
+model TmsDriverLocation {
+  id        String   @id @default(uuid())
+  driverId  String
+  lat       Float
+  lng       Float
+  heading   Float?
+  speed     Float?
+  accuracy  Float?
+  timestamp DateTime @default(now())
+
+  @@index([driverId, timestamp])
+}
+
+model TmsDriverEarning {
+  id          String   @id @default(uuid())
+  driverId    String
+  orderId     String?
+  amount      Float
+  type        String
+  status      String   @default("pending")
+  description String?
+  date        DateTime
+  createdAt   DateTime @default(now())
+}
+
+model TmsChatRoom {
+  id        String         @id @default(uuid())
+  type      String
+  entityId  String?
+  createdAt DateTime       @default(now())
+  messages  TmsChatMessage[]
+}
+
+model TmsChatMessage {
+  id         String      @id @default(uuid())
+  roomId     String
+  room       TmsChatRoom @relation(fields: [roomId], references: [id])
+  senderId   String
+  senderName String
+  senderType String
+  body       String
+  readAt     DateTime?
+  createdAt  DateTime    @default(now())
+}
+
+model TmsDeliveryProof {
+  id         String   @id @default(uuid())
+  orderId    String
+  driverId   String
+  photoUrl   String
+  signature  String?
+  notes      String?
+  lat        Float?
+  lng        Float?
+  capturedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+}
+
+model TmsUserNotification {
+  id         String   @id @default(uuid())
+  userId     String
+  type       String
+  title      String
+  body       String
+  read       Boolean  @default(false)
+  entityType String?
+  entityId   String?
+  createdAt  DateTime @default(now())
+}

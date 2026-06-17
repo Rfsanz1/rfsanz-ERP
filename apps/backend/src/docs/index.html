@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RFSANZ ERP — Dokumentasi API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
+  <style>
+    /* ── VARIABLES ── */
+    :root {
+      --primary:#F86A2B; --primary-d:#d95920; --primary-bg:rgba(248,106,43,.1); --primary-border:rgba(248,106,43,.25);
+      --bg:#1c1c1e; --bg2:#242526; --bg3:#2c2c2e; --sidebar-bg:#18181a;
+      --border:#38383a; --border2:#2d2d2f;
+      --text:#e0e0e0; --muted:#8e8e93; --heading:#f5f5f5;
+      --code-bg:#141416; --code-text:#e0e0e0;
+      --nav-h:56px; --sb-w:280px; --toc-w:248px;
+      --shadow:0 1px 4px rgba(0,0,0,.5);
+      --radius:8px; --radius-sm:5px;
+      --note-bg:rgba(59,130,246,.08); --note-border:#3b82f6; --note-text:rgba(147,197,253,.9);
+      --tip-bg:rgba(16,185,129,.08); --tip-border:#10b981; --tip-text:rgba(110,231,183,.9);
+      --warn-bg:rgba(245,158,11,.08); --warn-border:#f59e0b; --warn-text:rgba(252,211,77,.9);
+      --danger-bg:rgba(239,68,68,.08); --danger-border:#ef4444; --danger-text:rgba(252,165,165,.9);
+    }
+    [data-theme="light"] {
+      --bg:#ffffff; --bg2:#f6f7f8; --bg3:#f0f1f2; --sidebar-bg:#f6f7f8;
+      --border:#e2e3e6; --border2:#dde0e4;
+      --text:#1c1c1e; --muted:#6c6c72; --heading:#111113;
+      --code-bg:#f4f4f6; --code-text:#1c1c1e;
+      --shadow:0 1px 3px rgba(0,0,0,.08);
+      --note-bg:rgba(59,130,246,.06); --note-text:#1d4ed8;
+      --tip-bg:rgba(16,185,129,.06); --tip-text:#047857;
+      --warn-bg:rgba(245,158,11,.07); --warn-text:#92400e;
+      --danger-bg:rgba(239,68,68,.06); --danger-text:#b91c1c;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth;font-size:16px}
+    body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    a{text-decoration:none;color:var(--primary)}
+    a:hover{text-decoration:underline;text-underline-offset:3px}
+    button{font-family:inherit;cursor:pointer;border:none;background:none}
+    code,pre{font-family:'JetBrains Mono',ui-monospace,monospace}
+    img{max-width:100%}
+
+    /* ── NAVBAR ── */
+    .navbar{position:fixed;top:0;left:0;right:0;z-index:300;height:var(--nav-h);display:flex;align-items:center;background:var(--sidebar-bg);border-bottom:1px solid var(--border);gap:0}
+    .nav-logo{display:flex;align-items:center;gap:10px;padding:0 20px;width:var(--sb-w);flex-shrink:0;color:var(--heading);font-weight:700;font-size:15px;cursor:pointer}
+    .nav-logo:hover{text-decoration:none}
+    .logo-mark{width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;flex-shrink:0}
+    .logo-txt{color:var(--heading)}
+    .logo-txt span{color:var(--primary)}
+    .logo-sep{font-size:18px;color:var(--border);margin:0 2px;font-weight:300}
+    .logo-sub{font-size:12px;font-weight:500;color:var(--muted)}
+    .nav-center{flex:1;display:flex;align-items:center;padding:0 20px}
+    .nav-tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:3px}
+    .nav-tab{padding:5px 14px;border-radius:5px;font-size:13px;font-weight:600;color:var(--muted);transition:all .15s;cursor:pointer}
+    .nav-tab.active{background:var(--bg);color:var(--text);box-shadow:var(--shadow)}
+    .nav-tab:hover:not(.active){color:var(--text)}
+    .nav-right{display:flex;align-items:center;gap:8px;padding-right:20px}
+    .nav-search{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:7px 12px;min-width:200px;cursor:text;transition:border-color .15s}
+    .nav-search:focus-within{border-color:var(--primary)}
+    .nav-search svg{color:var(--muted);flex-shrink:0;width:14px;height:14px}
+    .nav-search input{background:none;border:none;outline:none;font-size:13px;color:var(--text);width:100%}
+    .nav-search input::placeholder{color:var(--muted)}
+    .nav-version{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--primary-bg);border:1px solid var(--primary-border);color:var(--primary);white-space:nowrap}
+    .icon-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);color:var(--muted);font-size:14px;transition:all .15s;background:var(--bg2)}
+    .icon-btn:hover{border-color:var(--primary);color:var(--primary)}
+
+    /* ── LAYOUT ── */
+    .page-wrap{display:flex;margin-top:var(--nav-h);min-height:calc(100vh - var(--nav-h))}
+
+    /* ── SIDEBAR ── */
+    .sidebar{width:var(--sb-w);flex-shrink:0;position:fixed;top:var(--nav-h);bottom:0;left:0;overflow-y:auto;background:var(--sidebar-bg);border-right:1px solid var(--border);padding:16px 0 60px}
+    .sidebar::-webkit-scrollbar{width:3px}
+    .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    .sb-section{margin-bottom:6px}
+    .sb-category{display:flex;align-items:center;justify-content:space-between;padding:7px 16px 5px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);user-select:none;cursor:pointer}
+    .sb-category svg{width:12px;height:12px;transition:transform .2s}
+    .sb-category.open svg{transform:rotate(90deg)}
+    .sb-items{overflow:hidden;transition:max-height .25s ease}
+    .sb-link{display:flex;align-items:center;gap:8px;padding:6px 16px 6px 22px;font-size:13.5px;font-weight:500;color:var(--muted);border-left:2px solid transparent;transition:all .12s;cursor:pointer;border-radius:0 5px 5px 0;margin-right:8px}
+    .sb-link:hover{color:var(--text);background:var(--bg2);text-decoration:none}
+    .sb-link.active{color:var(--primary);background:var(--primary-bg);border-left-color:var(--primary);font-weight:600}
+    .sb-link-icon{font-size:14px;flex-shrink:0}
+    .sb-ext{margin-left:auto;font-size:11px;opacity:.5}
+
+    /* ── MAIN ── */
+    .doc-main{margin-left:var(--sb-w);flex:1;min-width:0;display:flex;padding:0}
+    .doc-article{flex:1;min-width:0;max-width:800px;padding:40px 40px 80px;margin:0 auto}
+    .doc-toc{width:var(--toc-w);flex-shrink:0;position:sticky;top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto;padding:24px 20px 40px;border-left:1px solid var(--border)}
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-bottom:24px;flex-wrap:wrap}
+    .breadcrumb span{color:var(--border)}
+
+    /* ── ARTICLE TYPOGRAPHY ── */
+    .doc-article h1{font-size:30px;font-weight:800;color:var(--heading);line-height:1.2;letter-spacing:-.02em;margin-bottom:12px}
+    .doc-article h2{font-size:20px;font-weight:700;color:var(--heading);margin:40px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+    .doc-article h3{font-size:16px;font-weight:700;color:var(--heading);margin:28px 0 10px}
+    .doc-article p{margin-bottom:16px;font-size:15px;line-height:1.75}
+    .doc-article ul,ol{padding-left:22px;margin-bottom:16px}
+    .doc-article li{font-size:15px;line-height:1.75;margin-bottom:4px}
+    .doc-lead{font-size:16px;color:var(--muted);line-height:1.7;margin-bottom:28px;border-bottom:1px solid var(--border);padding-bottom:24px}
+    .doc-article code:not(pre code){background:var(--bg3);color:var(--primary);padding:2px 6px;border-radius:4px;font-size:13px;border:1px solid var(--border)}
+
+    /* ── HERO BANNER ── */
+    .hero-banner{background:linear-gradient(135deg,rgba(248,106,43,.12) 0%,rgba(248,106,43,.04) 50%,rgba(59,130,246,.06) 100%);border:1px solid var(--border);border-top:3px solid var(--primary);border-radius:var(--radius);padding:28px 28px 24px;margin-bottom:32px}
+    .hero-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+    .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.02em}
+    .chip-g{background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.25)}
+    .chip-o{background:var(--primary-bg);color:var(--primary);border:1px solid var(--primary-border)}
+    .chip-b{background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.25)}
+    .hero-banner h1{font-size:28px;font-weight:800;color:var(--heading);line-height:1.2;margin-bottom:8px;letter-spacing:-.02em}
+    .hero-banner h1 em{font-style:normal;color:var(--primary)}
+    .hero-banner p{font-size:14.5px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:520px}
+    .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn-prim{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:var(--primary);color:#fff;border-radius:7px;font-size:13.5px;font-weight:700;transition:all .15s}
+    .btn-prim:hover{background:var(--primary-d);transform:translateY(-1px);box-shadow:0 4px 16px rgba(248,106,43,.35);text-decoration:none;color:#fff}
+    .btn-sec{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border:1px solid var(--border);color:var(--text);border-radius:7px;font-size:13.5px;font-weight:600;transition:all .15s}
+    .btn-sec:hover{border-color:var(--primary);color:var(--primary);text-decoration:none}
+    .hero-stats{display:flex;gap:24px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+    .stat{text-align:center}
+    .stat-n{font-size:22px;font-weight:800;color:var(--heading)}
+    .stat-l{font-size:11px;color:var(--muted);margin-top:1px}
+
+    /* ── ADMONITIONS ── */
+    .adm{display:flex;gap:12px;padding:14px 16px;border-radius:var(--radius);border-left:4px solid;margin:20px 0;font-size:14px;line-height:1.65}
+    .adm-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+    .adm-body{flex:1}
+    .adm-body strong{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+    .adm-note{background:var(--note-bg);border-color:var(--note-border);color:var(--note-text)}
+    .adm-tip{background:var(--tip-bg);border-color:var(--tip-border);color:var(--tip-text)}
+    .adm-warn{background:var(--warn-bg);border-color:var(--warn-border);color:var(--warn-text)}
+    .adm-danger{background:var(--danger-bg);border-color:var(--danger-border);color:var(--danger-text)}
+    .adm code{background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;font-size:12px}
+
+    /* ── ENDPOINT TABLE ── */
+    .ep-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;font-size:13.5px}
+    .ep-table thead tr{background:var(--bg2)}
+    .ep-table th{padding:9px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)}
+    .ep-table td{padding:10px 14px;border-bottom:1px solid var(--border2);vertical-align:middle}
+    .ep-table tr:last-child td{border-bottom:none}
+    .ep-table tr:hover td{background:var(--bg2)}
+    .ep-path{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--text)}
+    .ep-desc{color:var(--muted);font-size:13px}
+    .badge{display:inline-flex;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:4px;min-width:48px;justify-content:center}
+    .bg{background:rgba(16,185,129,.15);color:#34d399}
+    .bp{background:rgba(59,130,246,.15);color:#60a5fa}
+    .bu{background:rgba(245,158,11,.15);color:#fbbf24}
+    .bd{background:rgba(239,68,68,.15);color:#f87171}
+    .bpa{background:rgba(139,92,246,.15);color:#a78bfa}
+
+    /* ── CODE BLOCK ── */
+    .code-block{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:16px 0}
+    .code-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border)}
+    .code-lang{font-size:11px;font-weight:600;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .code-copy{font-size:11px;color:var(--muted);padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);transition:all .15s}
+    .code-copy:hover{color:var(--text)}
+    .code-copy.ok{color:#10b981;border-color:#10b981}
+    pre.code-body{padding:16px;font-size:13px;line-height:1.8;color:var(--code-text);overflow-x:auto;margin:0}
+    .tk{color:#6ee7b7}.ts{color:#f9a8d4}.tn{color:#fcd34d}.tw{color:#93c5fd}.tc{color:var(--muted)}.tpk{color:#c4b5fd}
+
+    /* ── MODULE CARDS ── */
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:16px 0}
+    .mod-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;display:block}
+    .mod-card:hover{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-bg);transform:translateY(-1px);text-decoration:none}
+    .mod-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .mod-ic{width:34px;height:34px;background:var(--primary-bg);border:1px solid var(--primary-border);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .mod-arr{color:var(--muted);font-size:14px;transition:transform .15s}
+    .mod-card:hover .mod-arr{color:var(--primary);transform:translateX(3px)}
+    .mod-name{font-size:13.5px;font-weight:700;color:var(--heading);margin-bottom:3px}
+    .mod-path{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--primary);opacity:.8;margin-bottom:6px}
+    .mod-desc{font-size:12px;color:var(--muted);line-height:1.55}
+    .mod-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+
+    /* ── ENV TABLE ── */
+    .env-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-size:13.5px;margin:12px 0}
+    .env-table thead tr{background:var(--bg2)}
+    .env-table th{padding:9px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)}
+    .env-table td{padding:10px 14px;border-bottom:1px solid var(--border2)}
+    .env-table tr:last-child td{border-bottom:none}
+    .env-table tr:hover td{background:var(--bg2)}
+    .env-k{font-family:'JetBrains Mono',monospace;color:var(--primary);font-size:12px}
+    .env-d{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+    .b-r{font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;background:var(--danger-bg);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+    .b-o{font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+
+    /* ── TOC ── */
+    .toc-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;display:block}
+    .toc-link{display:block;font-size:12.5px;color:var(--muted);padding:4px 0;border-left:2px solid transparent;padding-left:10px;transition:all .12s;line-height:1.4}
+    .toc-link:hover{color:var(--text);border-left-color:var(--border);text-decoration:none}
+    .toc-link.active{color:var(--primary);border-left-color:var(--primary);font-weight:600}
+    .toc-link.l2{padding-left:20px;font-size:12px}
+    .toc-divider{height:1px;background:var(--border);margin:14px 0}
+    .toc-action{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);padding:4px 0;transition:color .12s}
+    .toc-action:hover{color:var(--text);text-decoration:none}
+
+    /* ── DOC FOOTER ── */
+    .doc-footer{margin-top:48px;padding-top:24px;border-top:1px solid var(--border)}
+    .doc-nav{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}
+    .doc-nav-btn{display:flex;flex-direction:column;gap:3px;padding:14px 18px;border:1px solid var(--border);border-radius:var(--radius);min-width:180px;transition:all .15s;background:var(--bg2);cursor:pointer}
+    .doc-nav-btn:hover{border-color:var(--primary);text-decoration:none}
+    .doc-nav-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+    .doc-nav-title{font-size:14px;font-weight:700;color:var(--text)}
+    .doc-nav-btn.next .doc-nav-label::before{content:'Next »'}
+    .doc-nav-btn.prev .doc-nav-label::before{content:'« Previous'}
+    .doc-meta{margin-top:20px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:12px}
+
+    /* ── PAGE FOOTER ── */
+    .page-footer{margin-left:var(--sb-w);padding:18px 40px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);flex-wrap:wrap;gap:8px}
+    .page-footer a{color:var(--primary)}
+
+    /* ── SWAGGER VIEW ── */
+    #view-swagger{display:none;margin-left:0}
+    #view-swagger.active{display:block}
+    #swagger-ui{background:var(--bg);padding:24px 48px 80px;min-height:calc(100vh - var(--nav-h))}
+    #swagger-ui .swagger-ui{background:var(--bg)}
+    #swagger-ui .swagger-ui .info .title{color:var(--heading);font-family:'Inter',sans-serif;font-size:24px;font-weight:800}
+    #swagger-ui .swagger-ui .info p,#swagger-ui .swagger-ui .info li{color:var(--text)}
+    #swagger-ui .swagger-ui .scheme-container{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:none;padding:12px 16px;margin-bottom:20px}
+    #swagger-ui .swagger-ui select{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:4px 8px}
+    #swagger-ui .swagger-ui .opblock-tag{color:var(--heading);border-bottom:1px solid var(--border);font-family:'Inter',sans-serif;font-size:17px;padding:12px 0}
+    #swagger-ui .swagger-ui .opblock-tag:hover{background:var(--bg2)}
+    #swagger-ui .swagger-ui .opblock{border:1px solid var(--border)!important;border-radius:var(--radius)!important;margin-bottom:8px;background:var(--bg2)!important;box-shadow:none!important}
+    #swagger-ui .swagger-ui .opblock .opblock-summary{border-bottom:none;border-radius:var(--radius)}
+    #swagger-ui .swagger-ui .opblock.is-open .opblock-summary{border-radius:var(--radius) var(--radius) 0 0;border-bottom:1px solid var(--border)!important}
+    #swagger-ui .swagger-ui .opblock .opblock-summary-path{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px}
+    #swagger-ui .swagger-ui .opblock .opblock-summary-description{color:var(--muted);font-size:12px}
+    #swagger-ui .swagger-ui .opblock-body{background:var(--bg3)}
+    #swagger-ui .swagger-ui .opblock-section-header{background:var(--bg2);border-bottom:1px solid var(--border);border-radius:0}
+    #swagger-ui .swagger-ui .opblock-section-header h4{color:var(--text);font-family:'Inter',sans-serif}
+    #swagger-ui .swagger-ui table thead tr th,#swagger-ui .swagger-ui table thead tr td{color:var(--muted);border-bottom:1px solid var(--border)}
+    #swagger-ui .swagger-ui table tbody tr td{color:var(--text);border-bottom:1px solid var(--border2)}
+    #swagger-ui .swagger-ui .parameter__name{color:var(--heading);font-family:'JetBrains Mono',monospace;font-size:13px}
+    #swagger-ui .swagger-ui .parameter__type{color:var(--primary);font-family:'JetBrains Mono',monospace;font-size:11px}
+    #swagger-ui .swagger-ui input[type=text],#swagger-ui .swagger-ui textarea{background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:5px;font-family:'JetBrains Mono',monospace}
+    #swagger-ui .swagger-ui input[type=text]:focus,#swagger-ui .swagger-ui textarea:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 2px var(--primary-bg)}
+    #swagger-ui .swagger-ui .btn{border-radius:6px;font-family:'Inter',sans-serif;font-weight:600;font-size:13px}
+    #swagger-ui .swagger-ui .btn.execute{background:var(--primary);border-color:var(--primary);color:#fff}
+    #swagger-ui .swagger-ui .btn.execute:hover{background:var(--primary-d)}
+    #swagger-ui .swagger-ui .btn.authorize{background:transparent;border:1px solid var(--primary);color:var(--primary);border-radius:6px}
+    #swagger-ui .swagger-ui .btn.authorize svg{fill:var(--primary)}
+    #swagger-ui .swagger-ui .microlight{background:var(--code-bg)!important;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:12px;padding:12px}
+    #swagger-ui .swagger-ui section.models{border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2)}
+    #swagger-ui .swagger-ui section.models .model-container{background:var(--bg3);border-radius:var(--radius-sm)}
+    #swagger-ui .swagger-ui .model-title{color:var(--heading);font-family:'Inter',sans-serif}
+    #swagger-ui .swagger-ui .model{color:var(--text)}
+    #swagger-ui .swagger-ui .prop-type{color:var(--primary)}
+    #swagger-ui .swagger-ui .topbar{display:none}
+    #swagger-ui .swagger-ui .info{margin:20px 0 24px}
+    #swagger-ui .swagger-ui .filter-container input{background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:13px;padding:7px 12px}
+    #swagger-ui .swagger-ui .response-col_status{font-family:'JetBrains Mono',monospace;font-weight:700}
+
+    /* ── MOBILE ── */
+    @media(max-width:1100px){.doc-toc{display:none}}
+    @media(max-width:768px){
+      .sidebar{display:none}
+      .doc-main{margin-left:0}
+      .doc-article{padding:24px 20px 60px}
+      .page-footer{margin-left:0}
+      .nav-search{display:none}
+      #swagger-ui{padding:16px 20px 60px}
+    }
+
+    /* ── SCROLL TOP ── */
+    #st{position:fixed;bottom:24px;right:24px;width:36px;height:36px;border-radius:8px;background:var(--primary);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(248,106,43,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:200;border:none}
+    #st.show{opacity:1;pointer-events:all}
+
+    /* ── SECTION VISIBILITY ── */
+    .doc-section{scroll-margin-top:calc(var(--nav-h) + 12px)}
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAVBAR ═══ -->
+<nav class="navbar">
+  <div class="nav-logo" onclick="switchTab('docs')">
+    <div class="logo-mark">RF</div>
+    <span class="logo-txt">RFSANZ <span>ERP</span></span>
+    <span class="logo-sep">/</span>
+    <span class="logo-sub">Docs</span>
+  </div>
+  <div class="nav-center">
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-docs" onclick="switchTab('docs')">📄 Dokumentasi</button>
+      <button class="nav-tab" id="tab-api" onclick="switchTab('swagger')">⚡ API Explorer</button>
+    </div>
+  </div>
+  <div class="nav-right">
+    <label class="nav-search">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0z"/></svg>
+      <input type="text" id="search" placeholder="Cari modul…" />
+    </label>
+    <span class="nav-version">v2.0</span>
+    <a class="icon-btn" href="/api/health" target="_blank" title="Health Check">🟢</a>
+    <button class="icon-btn" id="themeBtn" title="Toggle theme">🌙</button>
+  </div>
+</nav>
+
+<!-- ═══ DOCS VIEW ═══ -->
+<div id="view-docs">
+  <div class="page-wrap">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sb-section">
+        <div class="sb-category open" onclick="toggleCat(this)">
+          <span>Mulai</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <div class="sb-items">
+          <div class="sb-link active" onclick="goto('intro',this)"><span class="sb-link-icon">🏠</span>Pengenalan</div>
+          <div class="sb-link" onclick="goto('quickstart',this)"><span class="sb-link-icon">⚡</span>Quick Start</div>
+          <div class="sb-link" onclick="goto('autentikasi',this)"><span class="sb-link-icon">🔐</span>Autentikasi</div>
+          <div class="sb-link" onclick="goto('env',this)"><span class="sb-link-icon">⚙️</span>Environment Variables</div>
+        </div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-category open" onclick="toggleCat(this)">
+          <span>Modul API</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <div class="sb-items">
+          <div class="sb-link" onclick="goto('core',this)"><span class="sb-link-icon">👤</span>Core &amp; Auth</div>
+          <div class="sb-link" onclick="goto('bisnis',this)"><span class="sb-link-icon">📦</span>Bisnis &amp; Operasi</div>
+          <div class="sb-link" onclick="goto('keuangan',this)"><span class="sb-link-icon">💰</span>Keuangan</div>
+          <div class="sb-link" onclick="goto('sdm',this)"><span class="sb-link-icon">👥</span>SDM &amp; Penggajian</div>
+          <div class="sb-link" onclick="goto('integrasi',this)"><span class="sb-link-icon">🔌</span>Integrasi</div>
+        </div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-category open" onclick="toggleCat(this)">
+          <span>Referensi</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <div class="sb-items">
+          <div class="sb-link" onclick="switchTab('swagger')"><span class="sb-link-icon">⚡</span>API Explorer <span class="sb-ext">↗</span></div>
+          <a class="sb-link" href="/docs-json" target="_blank"><span class="sb-link-icon">📄</span>OpenAPI JSON <span class="sb-ext">↗</span></a>
+          <a class="sb-link" href="/api/health" target="_blank"><span class="sb-link-icon">🟢</span>Health Check <span class="sb-ext">↗</span></a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="doc-main">
+      <article class="doc-article">
+        <!-- BREADCRUMB -->
+        <nav class="breadcrumb">
+          <span style="color:var(--text);font-weight:600">RFSANZ ERP</span>
+          <span>/</span>
+          <span>Dokumentasi</span>
+        </nav>
+
+        <!-- ── INTRO ── -->
+        <div id="intro" class="doc-section">
+          <div class="hero-banner">
+            <div class="hero-chips">
+              <span class="chip chip-g">● ONLINE</span>
+              <span class="chip chip-o">REST API v2.0</span>
+              <span class="chip chip-b">NestJS 11 · Prisma · PostgreSQL</span>
+            </div>
+            <h1>Dokumentasi <em>RFSANZ ERP</em></h1>
+            <p>Backend ERP multi-tenant end-to-end — penjualan, inventori, keuangan, SDM, manufaktur, dan integrasi Kledo. Semua endpoint terdokumentasi dan bisa dicoba langsung.</p>
+            <div class="hero-actions">
+              <button class="btn-prim" onclick="switchTab('swagger')">⚡ Buka API Explorer</button>
+              <button class="btn-sec" onclick="goto('quickstart')">🚀 Quick Start</button>
+            </div>
+            <div class="hero-stats">
+              <div class="stat"><div class="stat-n">35+</div><div class="stat-l">Modul API</div></div>
+              <div class="stat"><div class="stat-n">200+</div><div class="stat-l">Endpoint</div></div>
+              <div class="stat"><div class="stat-n">JWT</div><div class="stat-l">Autentikasi</div></div>
+              <div class="stat"><div class="stat-n">Multi-tenant</div><div class="stat-l">Arsitektur</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── QUICKSTART ── -->
+        <div id="quickstart" class="doc-section">
+          <h2>⚡ Quick Start</h2>
+          <p class="doc-lead">Ikuti langkah berikut untuk mulai menggunakan API RFSANZ ERP dalam hitungan menit.</p>
+
+          <div class="adm adm-note">
+            <span class="adm-icon">ℹ️</span>
+            <div class="adm-body">
+              <strong>Info</strong>
+              <strong>Base URL:</strong> <code>http://localhost:6000</code> (development). Semua endpoint diawali <code>/api/</code>, kecuali Fleetbase adapter (<code>/int/v1/</code>).
+            </div>
+          </div>
+
+          <h3>Endpoint Utama</h3>
+          <table class="ep-table">
+            <thead><tr><th>Method</th><th>Endpoint</th><th>Keterangan</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge bp">POST</span></td><td class="ep-path">/api/auth/login</td><td class="ep-desc">Kirim email &amp; password → dapat JWT token</td></tr>
+              <tr><td><span class="badge bg">GET</span></td><td class="ep-path">/api/auth/me</td><td class="ep-desc">Profil user yang sedang login</td></tr>
+              <tr><td><span class="badge bp">POST</span></td><td class="ep-path">/api/auth/refresh</td><td class="ep-desc">Perbarui access token</td></tr>
+              <tr><td><span class="badge bp">POST</span></td><td class="ep-path">/api/auth/logout</td><td class="ep-desc">Logout dan invalidasi token</td></tr>
+              <tr><td><span class="badge bg">GET</span></td><td class="ep-path">/api/health</td><td class="ep-desc">Status server &amp; database</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── AUTENTIKASI ── -->
+        <div id="autentikasi" class="doc-section">
+          <h2>🔐 Autentikasi</h2>
+          <p>RFSANZ ERP menggunakan <strong>JWT Bearer Token</strong>. Semua request ke endpoint protected harus menyertakan header <code>Authorization</code>.</p>
+
+          <div class="adm adm-warn">
+            <span class="adm-icon">⚠️</span>
+            <div class="adm-body">
+              <strong>Perhatian</strong>
+              Semua endpoint (kecuali <code>/api/auth/login</code>) memerlukan header: <code>Authorization: Bearer &lt;your_jwt_token&gt;</code>
+            </div>
+          </div>
+
+          <h3>Contoh Login Request</h3>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">http</span>
+              <button class="code-copy" onclick="copyCode(this,'snip-login')">Copy</button>
+            </div>
+            <pre class="code-body" id="snip-login"><span class="tw">POST</span> <span class="ts">/api/auth/login</span>
+<span class="tk">Content-Type</span>: application/json
+
+{
+  <span class="tk">"email"</span>: <span class="ts">"admin@rfsanz.com"</span>,
+  <span class="tk">"password"</span>: <span class="ts">"your_password"</span>
+}
+
+<span class="tc">// Response 200 OK</span>
+{
+  <span class="tk">"accessToken"</span>:  <span class="ts">"eyJhbGciOiJIUzI1NiJ9..."</span>,
+  <span class="tk">"refreshToken"</span>: <span class="ts">"eyJhbGciOiJIUzI1NiJ9..."</span>,
+  <span class="tk">"user"</span>: { <span class="tk">"id"</span>: <span class="ts">"uuid"</span>, <span class="tk">"name"</span>: <span class="ts">"Admin"</span>, <span class="tk">"role"</span>: <span class="ts">"ADMIN"</span> }
+}</pre>
+          </div>
+
+          <div class="adm adm-tip">
+            <span class="adm-icon">💡</span>
+            <div class="adm-body">
+              <strong>Tip</strong>
+              Gunakan tombol <strong>Authorize</strong> di tab <strong>API Explorer</strong> untuk menyimpan token dan mencoba semua endpoint langsung dari browser.
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ENV ── -->
+        <div id="env" class="doc-section">
+          <h2>⚙️ Environment Variables</h2>
+          <p>Konfigurasi server melalui variabel environment. Variabel <strong>Wajib</strong> harus diset sebelum menjalankan aplikasi.</p>
+
+          <table class="env-table">
+            <thead><tr><th>Variable</th><th>Default</th><th>Keterangan</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="env-k">DATABASE_URL</td><td class="env-d">—</td><td>PostgreSQL connection string</td><td><span class="b-r">Wajib</span></td></tr>
+              <tr><td class="env-k">JWT_SECRET</td><td class="env-d">—</td><td>Secret key untuk signing JWT access token</td><td><span class="b-r">Wajib</span></td></tr>
+              <tr><td class="env-k">JWT_REFRESH_SECRET</td><td class="env-d">—</td><td>Secret key untuk refresh token</td><td><span class="b-r">Wajib</span></td></tr>
+              <tr><td class="env-k">ADMIN_PASSWORD</td><td class="env-d">—</td><td>Password akun admin default</td><td><span class="b-r">Wajib</span></td></tr>
+              <tr><td class="env-k">JWT_EXPIRES_IN</td><td class="env-d">7d</td><td>Masa berlaku access token</td><td><span class="b-o">Opsional</span></td></tr>
+              <tr><td class="env-k">PORT</td><td class="env-d">6000</td><td>Port server berjalan</td><td><span class="b-o">Opsional</span></td></tr>
+              <tr><td class="env-k">NODE_ENV</td><td class="env-d">development</td><td>Mode environment</td><td><span class="b-o">Opsional</span></td></tr>
+              <tr><td class="env-k">ADMIN_EMAIL</td><td class="env-d">admin@rfsanz.com</td><td>Email akun admin default saat seed</td><td><span class="b-o">Opsional</span></td></tr>
+              <tr><td class="env-k">CORS_ORIGINS</td><td class="env-d">—</td><td>Allowed CORS origins, pisahkan koma</td><td><span class="b-o">Opsional</span></td></tr>
+              <tr><td class="env-k">KLEDO_TOKEN</td><td class="env-d">—</td><td>API token integrasi Kledo</td><td><span class="b-o">Opsional</span></td></tr>
+              <tr><td class="env-k">RATE_LIMIT_MAX</td><td class="env-d">1000</td><td>Maks request per window per IP</td><td><span class="b-o">Opsional</span></td></tr>
+              <tr><td class="env-k">RATE_LIMIT_WINDOW_MS</td><td class="env-d">60000</td><td>Window rate limiting (ms)</td><td><span class="b-o">Opsional</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── CORE ── -->
+        <div id="core" class="doc-section">
+          <h2>👤 Core &amp; Auth <small style="font-size:13px;font-weight:500;color:var(--muted);margin-left:6px">6 modul</small></h2>
+          <p>Modul inti sistem: autentikasi, manajemen user, tenant, role, dan konfigurasi global.</p>
+          <div class="card-grid">
+            <div class="mod-card" onclick="openExplorer('auth')"><div class="mod-card-top"><div class="mod-ic">🔐</div><span class="mod-arr">→</span></div><div class="mod-name">Authentication</div><div class="mod-path">/api/auth/*</div><div class="mod-desc">Login, logout, refresh token, dan profil user aktif.</div><div class="mod-badges"><span class="badge bp">POST</span><span class="badge bg">GET</span></div></div>
+            <div class="mod-card" onclick="openExplorer('user')"><div class="mod-card-top"><div class="mod-ic">👤</div><span class="mod-arr">→</span></div><div class="mod-name">User Management</div><div class="mod-path">/api/users/*</div><div class="mod-desc">CRUD user, assign role, dan manage hak akses per user.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span><span class="badge bd">DELETE</span></div></div>
+            <div class="mod-card" onclick="openExplorer('tenant')"><div class="mod-card-top"><div class="mod-ic">🏢</div><span class="mod-arr">→</span></div><div class="mod-name">Tenant</div><div class="mod-path">/api/tenants/*</div><div class="mod-desc">Manajemen multi-tenant — buat dan konfigurasi organisasi.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('role')"><div class="mod-card-top"><div class="mod-ic">🛡️</div><span class="mod-arr">→</span></div><div class="mod-name">Role &amp; Permission</div><div class="mod-path">/api/roles/*</div><div class="mod-desc">Role, permission, dan kontrol akses berbasis peran (RBAC).</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('branch')"><div class="mod-card-top"><div class="mod-ic">🏬</div><span class="mod-arr">→</span></div><div class="mod-name">Branch / Cabang</div><div class="mod-path">/api/branches/*</div><div class="mod-desc">Kelola cabang, lokasi bisnis, dan konfigurasi per-cabang.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('settings')"><div class="mod-card-top"><div class="mod-ic">⚙️</div><span class="mod-arr">→</span></div><div class="mod-name">Settings</div><div class="mod-path">/api/settings/*</div><div class="mod-desc">Konfigurasi sistem, preferensi perusahaan, dan pengaturan umum.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bu">PUT</span></div></div>
+          </div>
+        </div>
+
+        <!-- ── BISNIS ── -->
+        <div id="bisnis" class="doc-section">
+          <h2>📦 Bisnis &amp; Operasi <small style="font-size:13px;font-weight:500;color:var(--muted);margin-left:6px">11 modul</small></h2>
+          <p>Operasi bisnis end-to-end: penjualan, inventori, pembelian, manufaktur, proyek, dan helpdesk.</p>
+          <div class="card-grid">
+            <div class="mod-card" onclick="openExplorer('inventory')"><div class="mod-card-top"><div class="mod-ic">📦</div><span class="mod-arr">→</span></div><div class="mod-name">Inventory</div><div class="mod-path">/api/inventory/*</div><div class="mod-desc">Stok barang, gudang, pergerakan inventori, dan laporan stok.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('sales')"><div class="mod-card-top"><div class="mod-ic">🛒</div><span class="mod-arr">→</span></div><div class="mod-name">Sales / Penjualan</div><div class="mod-path">/api/sales/*</div><div class="mod-desc">Order penjualan, penawaran, konfirmasi, dan pengiriman.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('purchasing')"><div class="mod-card-top"><div class="mod-ic">🏪</div><span class="mod-arr">→</span></div><div class="mod-name">Purchasing</div><div class="mod-path">/api/purchasing/*</div><div class="mod-desc">Purchase order, penerimaan barang, dan manajemen supplier.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('invoice')"><div class="mod-card-top"><div class="mod-ic">🧾</div><span class="mod-arr">→</span></div><div class="mod-name">Invoice</div><div class="mod-path">/api/invoices/*</div><div class="mod-desc">Buat, kirim, dan track faktur penjualan dan pembelian.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('pos')"><div class="mod-card-top"><div class="mod-ic">🖥️</div><span class="mod-arr">→</span></div><div class="mod-name">Point of Sale (POS)</div><div class="mod-path">/api/pos/*</div><div class="mod-desc">Transaksi kasir, sesi POS, pembayaran, dan cetak struk.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span></div></div>
+            <div class="mod-card" onclick="openExplorer('crm')"><div class="mod-card-top"><div class="mod-ic">🤝</div><span class="mod-arr">→</span></div><div class="mod-name">CRM</div><div class="mod-path">/api/crm/*</div><div class="mod-desc">Lead, pipeline penjualan, aktivitas, dan analisis win/loss.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('customers')"><div class="mod-card-top"><div class="mod-ic">👥</div><span class="mod-arr">→</span></div><div class="mod-name">Customers</div><div class="mod-path">/api/customers/*</div><div class="mod-desc">Database pelanggan, riwayat transaksi, dan segmentasi.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('manufacturing')"><div class="mod-card-top"><div class="mod-ic">🏭</div><span class="mod-arr">→</span></div><div class="mod-name">Manufacturing</div><div class="mod-path">/api/manufacturing/*</div><div class="mod-desc">Work order, BOM, proses produksi, dan kontrol kualitas.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('project')"><div class="mod-card-top"><div class="mod-ic">📋</div><span class="mod-arr">→</span></div><div class="mod-name">Project</div><div class="mod-path">/api/projects/*</div><div class="mod-desc">Proyek, task, milestone, dan alokasi sumber daya.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('helpdesk')"><div class="mod-card-top"><div class="mod-ic">🎫</div><span class="mod-arr">→</span></div><div class="mod-name">Helpdesk</div><div class="mod-path">/api/helpdesk/*</div><div class="mod-desc">Tiket dukungan, prioritas, status, dan penugasan tim.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('dashboard')"><div class="mod-card-top"><div class="mod-ic">📊</div><span class="mod-arr">→</span></div><div class="mod-name">Dashboard</div><div class="mod-path">/api/dashboard/*</div><div class="mod-desc">KPI per-role: admin, sales, gudang, driver, POS.</div><div class="mod-badges"><span class="badge bg">GET</span></div></div>
+          </div>
+        </div>
+
+        <!-- ── KEUANGAN ── -->
+        <div id="keuangan" class="doc-section">
+          <h2>💰 Keuangan <small style="font-size:13px;font-weight:500;color:var(--muted);margin-left:6px">5 modul</small></h2>
+          <p>Manajemen keuangan lengkap: akuntansi, pajak, pengeluaran, pelaporan, dan audit.</p>
+          <div class="card-grid">
+            <div class="mod-card" onclick="openExplorer('finance')"><div class="mod-card-top"><div class="mod-ic">💰</div><span class="mod-arr">→</span></div><div class="mod-name">Finance</div><div class="mod-path">/api/finance/*</div><div class="mod-desc">Jurnal umum, buku besar, rekonsiliasi bank, dan chart of accounts.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('tax')"><div class="mod-card-top"><div class="mod-ic">📑</div><span class="mod-arr">→</span></div><div class="mod-name">Tax / Pajak</div><div class="mod-path">/api/taxes/*</div><div class="mod-desc">Konfigurasi pajak, PPN, PPh, dan ekspor e-faktur DJP.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('expense')"><div class="mod-card-top"><div class="mod-ic">💳</div><span class="mod-arr">→</span></div><div class="mod-name">Expense</div><div class="mod-path">/api/expenses/*</div><div class="mod-desc">Klaim pengeluaran, persetujuan, dan reimburse karyawan.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('reporting')"><div class="mod-card-top"><div class="mod-ic">📈</div><span class="mod-arr">→</span></div><div class="mod-name">Reporting</div><div class="mod-path">/api/reporting/*</div><div class="mod-desc">Laba rugi, neraca, arus kas, buku besar, trial balance.</div><div class="mod-badges"><span class="badge bg">GET</span></div></div>
+            <div class="mod-card" onclick="openExplorer('audit')"><div class="mod-card-top"><div class="mod-ic">🔍</div><span class="mod-arr">→</span></div><div class="mod-name">Audit Log</div><div class="mod-path">/api/audit/*</div><div class="mod-desc">Log aktivitas, perubahan data, dan jejak audit kepatuhan.</div><div class="mod-badges"><span class="badge bg">GET</span></div></div>
+          </div>
+        </div>
+
+        <!-- ── SDM ── -->
+        <div id="sdm" class="doc-section">
+          <h2>👥 SDM &amp; Penggajian <small style="font-size:13px;font-weight:500;color:var(--muted);margin-left:6px">6 modul</small></h2>
+          <p>Manajemen sumber daya manusia: karyawan, payroll, cuti, rekrutmen, armada, dan perawatan.</p>
+          <div class="card-grid">
+            <div class="mod-card" onclick="openExplorer('hr')"><div class="mod-card-top"><div class="mod-ic">👥</div><span class="mod-arr">→</span></div><div class="mod-name">HR / Karyawan</div><div class="mod-path">/api/hr/*</div><div class="mod-desc">Data karyawan, jabatan, mutasi, kontrak, dan import CSV.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('payroll')"><div class="mod-card-top"><div class="mod-ic">💵</div><span class="mod-arr">→</span></div><div class="mod-name">Payroll</div><div class="mod-path">/api/payroll/*</div><div class="mod-desc">Periode gaji, slip gaji, BPJS, PPh 21, dan ekspor bank.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span></div></div>
+            <div class="mod-card" onclick="openExplorer('leave')"><div class="mod-card-top"><div class="mod-ic">🏖️</div><span class="mod-arr">→</span></div><div class="mod-name">Leave / Cuti</div><div class="mod-path">/api/hr/leaves/*</div><div class="mod-desc">Pengajuan cuti, persetujuan, alokasi jatah, kalender cuti.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('recruitment')"><div class="mod-card-top"><div class="mod-ic">📝</div><span class="mod-arr">→</span></div><div class="mod-name">Recruitment</div><div class="mod-path">/api/recruitment/*</div><div class="mod-desc">Lowongan, lamaran masuk, proses seleksi, dan onboarding.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('fleet')"><div class="mod-card-top"><div class="mod-ic">🚚</div><span class="mod-arr">→</span></div><div class="mod-name">Fleet / Armada</div><div class="mod-path">/api/fleet/*</div><div class="mod-desc">Manajemen kendaraan, penugasan driver, riwayat penggunaan.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+            <div class="mod-card" onclick="openExplorer('maintenance')"><div class="mod-card-top"><div class="mod-ic">🔧</div><span class="mod-arr">→</span></div><div class="mod-name">Maintenance</div><div class="mod-path">/api/maintenance/*</div><div class="mod-desc">Perawatan aset, work order perbaikan, dan riwayat servis.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span><span class="badge bu">PUT</span></div></div>
+          </div>
+        </div>
+
+        <!-- ── INTEGRASI ── -->
+        <div id="integrasi" class="doc-section">
+          <h2>🔌 Integrasi <small style="font-size:13px;font-weight:500;color:var(--muted);margin-left:6px">2 modul</small></h2>
+          <p>Integrasi dengan sistem eksternal: akuntansi Kledo dan adapter Fleetbase untuk manajemen armada.</p>
+          <div class="adm adm-note">
+            <span class="adm-icon">ℹ️</span>
+            <div class="adm-body">
+              <strong>Catatan</strong>
+              <strong>Fleetbase Adapter</strong> menggunakan prefix <code>/int/v1/</code> (bukan <code>/api/</code>). <strong>Kledo</strong> membutuhkan env <code>KLEDO_TOKEN</code>.
+            </div>
+          </div>
+          <div class="card-grid">
+            <div class="mod-card" onclick="openExplorer('kledo')"><div class="mod-card-top"><div class="mod-ic">🔗</div><span class="mod-arr">→</span></div><div class="mod-name">Kledo Integration</div><div class="mod-path">/api/kledo/*</div><div class="mod-desc">Sinkronisasi kontak, produk, dan invoice ke akuntansi Kledo.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span></div></div>
+            <div class="mod-card" onclick="openExplorer('fleetbase')"><div class="mod-card-top"><div class="mod-ic">🚀</div><span class="mod-arr">→</span></div><div class="mod-name">Fleetbase Adapter</div><div class="mod-path">/int/v1/*</div><div class="mod-desc">Adapter kompatibel Fleetbase — auth, session, user, organisasi.</div><div class="mod-badges"><span class="badge bg">GET</span><span class="badge bp">POST</span></div></div>
+          </div>
+        </div>
+
+        <!-- DOC FOOTER -->
+        <div class="doc-footer">
+          <div class="doc-nav">
+            <button class="doc-nav-btn prev" onclick="goto('sdm')">
+              <span class="doc-nav-label"></span>
+              <span class="doc-nav-title">SDM &amp; Penggajian</span>
+            </button>
+            <button class="doc-nav-btn next" onclick="switchTab('swagger')">
+              <span class="doc-nav-label"></span>
+              <span class="doc-nav-title">API Explorer ⚡</span>
+            </button>
+          </div>
+          <div class="doc-meta">
+            <span>© 2026 RFSANZ ERP</span>
+            <span>·</span>
+            <a href="/docs-json" target="_blank">OpenAPI JSON</a>
+            <span>·</span>
+            <a href="/api/health" target="_blank">Health</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- TOC -->
+      <aside class="doc-toc">
+        <span class="toc-label">Di halaman ini</span>
+        <a class="toc-link active" onclick="goto('intro')" href="#">Pengenalan</a>
+        <a class="toc-link" onclick="goto('quickstart')" href="#">Quick Start</a>
+        <a class="toc-link l2" onclick="goto('quickstart')" href="#">Endpoint Utama</a>
+        <a class="toc-link" onclick="goto('autentikasi')" href="#">Autentikasi</a>
+        <a class="toc-link l2" onclick="goto('autentikasi')" href="#">Contoh Login</a>
+        <a class="toc-link" onclick="goto('env')" href="#">Environment Variables</a>
+        <a class="toc-link" onclick="goto('core')" href="#">Core &amp; Auth</a>
+        <a class="toc-link" onclick="goto('bisnis')" href="#">Bisnis &amp; Operasi</a>
+        <a class="toc-link" onclick="goto('keuangan')" href="#">Keuangan</a>
+        <a class="toc-link" onclick="goto('sdm')" href="#">SDM &amp; Penggajian</a>
+        <a class="toc-link" onclick="goto('integrasi')" href="#">Integrasi</a>
+        <div class="toc-divider"></div>
+        <a class="toc-action" onclick="switchTab('swagger')" href="#">⚡ Buka API Explorer</a>
+        <a class="toc-action" href="/docs-json" target="_blank">📄 OpenAPI JSON</a>
+        <a class="toc-action" href="/api/health" target="_blank">🟢 Health Check</a>
+      </aside>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <span>© 2026 <strong>RFSANZ ERP</strong> — REST API v2.0 · NestJS 11 · Prisma · PostgreSQL</span>
+    <span style="display:flex;gap:12px">
+      <button onclick="switchTab('swagger')" style="color:var(--primary);font-size:12px">API Explorer</button>
+      <a href="/api/health">Health</a>
+      <a href="/docs-json">OpenAPI JSON</a>
+    </span>
+  </footer>
+</div>
+
+<!-- ═══ SWAGGER VIEW ═══ -->
+<div id="view-swagger">
+  <div id="swagger-ui"></div>
+</div>
+
+<button id="st" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Scroll to top">↑</button>
+
+<script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+<script>
+  var swaggerReady = false;
+
+  /* ── TAB SWITCHING ── */
+  function switchTab(tab) {
+    var vDocs = document.getElementById('view-docs');
+    var vSwag = document.getElementById('view-swagger');
+    var tDocs = document.getElementById('tab-docs');
+    var tApi  = document.getElementById('tab-api');
+    if (tab === 'swagger') {
+      vDocs.style.display = 'none';
+      vSwag.classList.add('active');
+      tDocs.classList.remove('active');
+      tApi.classList.add('active');
+      if (!swaggerReady) { initSwagger(); swaggerReady = true; }
+    } else {
+      vDocs.style.display = '';
+      vSwag.classList.remove('active');
+      tDocs.classList.add('active');
+      tApi.classList.remove('active');
+    }
+  }
+
+  function openExplorer(tag) {
+    switchTab('swagger');
+    setTimeout(function() {
+      var el = document.querySelector('[data-tag="' + tag + '"]') ||
+               document.querySelector('.opblock-tag-section .opblock-tag[data-tag="' + tag + '"]');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 700);
+  }
+
+  function initSwagger() {
+    SwaggerUIBundle({
+      url: '/docs-swagger-json',
+      dom_id: '#swagger-ui',
+      presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+      layout: 'BaseLayout',
+      persistAuthorization: true,
+      docExpansion: 'none',
+      filter: true,
+      tryItOutEnabled: true,
+    });
+  }
+
+  /* ── SIDEBAR TOGGLE ── */
+  function toggleCat(el) {
+    el.classList.toggle('open');
+    var items = el.nextElementSibling;
+    if (items.style.maxHeight) {
+      items.style.maxHeight = null;
+    } else {
+      items.style.maxHeight = items.scrollHeight + 'px';
+    }
+  }
+  document.querySelectorAll('.sb-category').forEach(function(c) {
+    var items = c.nextElementSibling;
+    if (c.classList.contains('open')) items.style.maxHeight = items.scrollHeight + 'px';
+  });
+
+  /* ── SCROLL / GOTO ── */
+  function goto(id, el) {
+    var s = document.getElementById(id);
+    if (s) s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (el) {
+      document.querySelectorAll('.sb-link').forEach(function(l){ l.classList.remove('active'); });
+      el.classList.add('active');
+    }
+  }
+
+  /* ── TOC ACTIVE TRACKING ── */
+  var sections = ['intro','quickstart','autentikasi','env','core','bisnis','keuangan','sdm','integrasi'];
+  var tocLinks = document.querySelectorAll('.toc-link');
+  var sbLinks  = document.querySelectorAll('.sb-link');
+  window.addEventListener('scroll', function() {
+    var scrollY = window.scrollY + 100;
+    var active = 'intro';
+    sections.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.offsetTop <= scrollY) active = id;
+    });
+    tocLinks.forEach(function(l) {
+      var href = l.getAttribute('onclick') || '';
+      l.classList.toggle('active', href.includes("'" + active + "'") && !l.classList.contains('l2') || (l.classList.contains('l2') && href.includes("'" + active + "'")));
+    });
+    document.getElementById('st').classList.toggle('show', window.scrollY > 300);
+  }, { passive: true });
+
+  /* ── THEME TOGGLE ── */
+  document.getElementById('themeBtn').addEventListener('click', function() {
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+    this.textContent = dark ? '☀️' : '🌙';
+  });
+
+  /* ── SEARCH ── */
+  document.getElementById('search').addEventListener('input', function() {
+    var q = this.value.toLowerCase().trim();
+    document.querySelectorAll('.mod-card').forEach(function(c) {
+      c.style.opacity = (!q || c.textContent.toLowerCase().includes(q)) ? '1' : '0.25';
+    });
+  });
+
+  /* ── COPY CODE ── */
+  function copyCode(btn, id) {
+    var pre = document.getElementById(id);
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(function() {
+      btn.textContent = '✓ Copied'; btn.classList.add('ok');
+      setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('ok'); }, 2000);
+    });
+  }
+
+  if (window.location.hash === '#explorer') switchTab('swagger');
+</script>
+</body>
+</html>

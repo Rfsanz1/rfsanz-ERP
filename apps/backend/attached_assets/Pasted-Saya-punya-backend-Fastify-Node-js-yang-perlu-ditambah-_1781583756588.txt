@@ -1,0 +1,47 @@
+Saya punya backend Fastify (Node.js) yang perlu ditambah fitur *Driver Portal*. Tolong tambahkan 11 endpoint baru di bawah prefix /api/v1/driver-portal/ tanpa mengubah endpoint yang sudah ada.
+
+*Endpoint yang dibutuhkan:*
+
+| Method | URL | Fungsi | Body/Params |
+|--------|-----|--------|-------------|
+| POST | /api/v1/driver-portal/login | Login driver | { identifier, password } |
+| GET | /api/v1/driver-portal/my-loads | Daftar tugas driver | Header: Authorization: Bearer <token> |
+| GET | /api/v1/driver-portal/loads/:id | Detail 1 pengiriman | — |
+| POST | /api/v1/driver-portal/loads/:id/status | Update status | { status, note } |
+| GET | /api/v1/driver-portal/loads/:id/documents | Daftar dokumen | — |
+| POST | /api/v1/driver-portal/loads/:id/documents | Upload foto POD | multipart/form-data: file, documentType |
+| POST | /api/v1/driver-portal/stops/:stopId/signature | Upload tanda tangan | multipart/form-data: signature, recipientName |
+| POST | /api/v1/driver-portal/loads/:id/location | Kirim GPS | { latitude, longitude, accuracy, timestamp } |
+| GET | /api/v1/driver-portal/documents | Semua dokumen driver | — |
+| GET | /api/v1/driver-portal/report | Statistik driver | Query: ?period=week/month/all |
+| POST | /api/v1/driver-portal/change-password | Ganti password | { currentPassword, newPassword } |
+
+*Requirement teknis:*
+
+1. *CORS* — izinkan origin dari https://*.replit.dev dan https://briskly-underpaid-shucking.ngrok-free.dev
+
+2. *Multipart* — pasang @fastify/multipart dengan limit file 50MB
+
+3. *Format response yang wajib diikuti:*
+   - List endpoint → { data: [...] }
+   - Detail endpoint → { data: { ... } }
+   - Upload endpoint → { data: { url: "https://...", fileName: "...", createdAt: "..." } }
+   - Login → { token: "...", user: { id, name, phone, email } }
+
+4. *File upload* — simpan ke /DATA/AppData/tms-driver/uploads/ dengan subfolder:
+   - Foto POD → proof-of-delivery/
+   - Tanda tangan → signatures/
+
+5. *Static file serving* — pasang @fastify/static agar file bisa diakses via URL:
+   - Root: /DATA/AppData/tms-driver/uploads
+   - Prefix: /uploads/
+
+6. *Base URL file* → https://briskly-underpaid-shucking.ngrok-free.dev/uploads/...
+
+7. *Environment variables* yang dipakai:
+   
+   UPLOAD_DIR=/DATA/AppData/tms-driver/uploads
+   FILE_BASE_URL=https://briskly-underpaid-shucking.ngrok-free.dev/uploads
+   
+
+Tolong tunjukkan kode lengkapnya, termasuk registrasi plugin dan semua route handler.
