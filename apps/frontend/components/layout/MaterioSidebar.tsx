@@ -324,10 +324,11 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
       </div>
 
       {/* ── Sticky footer: Help — always visible, never scrolled away ── */}
+      {/* paddingBottom 70px = clears the mobile bottom nav bar (≈65px) */}
       <div style={{
         flexShrink: 0,
         borderTop: '1px solid #F0F0F5',
-        padding: '4px 0',
+        padding: '4px 0 70px 0',
       }}>
         <Link href="/help" style={{ textDecoration: 'none' }}>
           <div style={{
@@ -372,7 +373,7 @@ export function MaterioSidebar({ collapsed, mobileOpen, onMobileClose }: Sidebar
         <div style={{
           position: 'fixed', top: 0, left: 0, bottom: 0,
           width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
-          transition: 'width 0.25s ease', zIndex: 300, overflow: 'hidden',
+          transition: 'width 0.25s ease', zIndex: 100, overflow: 'hidden',
         }}>
           <SidebarContent onMobileClose={() => {}} />
         </div>
