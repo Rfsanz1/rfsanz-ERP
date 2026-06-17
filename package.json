@@ -2,12 +2,15 @@
     "private": true,
     "type": "module",
     "workspaces": [
-        "apps/frontend"
+        "apps/frontend",
+        "apps/backend",
+        "packages/*"
     ],
     "scripts": {
         "dev": "pnpm --filter @erp-modern/frontend dev",
         "build": "pnpm --filter @erp-modern/frontend build",
         "start": "pnpm --filter @erp-modern/frontend start",
+        "backend:dev": "pnpm --filter gentong-mas-backend start:dev",
         "cap:sync": "pnpm --filter @erp-modern/frontend cap:sync",
         "build:android": "pnpm build && pnpm --filter @erp-modern/frontend cap:sync",
         "build:ios": "pnpm build && pnpm --filter @erp-modern/frontend build:ios"
@@ -15,5 +18,16 @@
     "dependencies": {
         "concurrently": "^8.2.2",
         "pnpm": "^10.34.1"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "@prisma/client",
+            "@prisma/engines",
+            "@scarf/scarf",
+            "bcrypt",
+            "esbuild",
+            "prisma",
+            "unrs-resolver"
+        ]
     }
 }

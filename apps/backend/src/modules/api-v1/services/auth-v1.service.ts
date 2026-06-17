@@ -3,7 +3,7 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const jwt = require('jsonwebtoken') as typeof import('jsonwebtoken');
-const bcrypt = require('bcrypt') as typeof import('bcrypt');
+const bcrypt = require('bcryptjs') as typeof import('bcryptjs');
 
 @Injectable()
 export class AuthV1Service {

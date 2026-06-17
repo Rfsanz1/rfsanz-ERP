@@ -6,7 +6,7 @@ import * as path from 'path';
 
 const req2 = createRequire(import.meta.url);
 const jwt    = req2('jsonwebtoken') as typeof import('jsonwebtoken');
-const bcrypt = req2('bcrypt') as typeof import('bcrypt');
+const bcrypt = req2('bcryptjs') as typeof import('bcryptjs');
 
 @Injectable()
 export class DriverPortalService {

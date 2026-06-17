@@ -5,7 +5,7 @@ import { createRequire } from 'module';
 
 const req2 = createRequire(import.meta.url);
 const jwt = req2('jsonwebtoken') as typeof import('jsonwebtoken');
-const bcrypt = req2('bcrypt') as typeof import('bcrypt');
+const bcrypt = req2('bcryptjs') as typeof import('bcryptjs');
 
 @ApiTags('v1/auth')
 @Controller('v1/auth')
