@@ -450,6 +450,29 @@ export default function CreateOrderModal({
                 </div>
               </div>
 
+              {/* Info Rekening Bank — tampil saat Transfer dipilih */}
+              {metodePembayaran === 'transfer' && (
+                <div className="rounded-xl p-4 space-y-2"
+                  style={{ background: 'rgba(99,102,241,.06)', border: '1.5px solid rgba(99,102,241,.2)' }}>
+                  <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: COLOR }}>
+                    Nomor Rekening Tujuan
+                  </p>
+                  {[
+                    { bank: 'BRI',     no: '0262 01 000031 562', nama: 'Dian Purnama Reza T.' },
+                    { bank: 'MANDIRI', no: '136 000 4780612',    nama: 'Dian Purnama' },
+                    { bank: 'BCA',     no: '155 91 99999',       nama: 'Indarto Wibowo' },
+                    { bank: 'BNI',     no: '0822 705 836',       nama: 'Indarto Wibowo' },
+                  ].map(r => (
+                    <div key={r.bank} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2"
+                      style={{ background: 'var(--surface)' }}>
+                      <span className="text-[11px] font-bold w-16 flex-shrink-0" style={{ color: COLOR }}>{r.bank}</span>
+                      <span className="text-[13px] font-semibold flex-1" style={{ color: 'var(--text-primary)', letterSpacing: '.03em' }}>{r.no}</span>
+                      <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{r.nama}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Uang Muka / DP — tampil saat metode bukan cash penuh */}
               <div>
                 <Label optional>Uang Muka / DP (Rp)</Label>

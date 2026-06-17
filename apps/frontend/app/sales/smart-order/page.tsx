@@ -464,6 +464,27 @@ export default function SmartOrderPage() {
           })}
         </div>
 
+        {/* Info Rekening Bank — tampil saat Transfer dipilih */}
+        {metodePembayaran === 'transfer' && (
+          <div style={{ marginBottom: 16, padding: 14, borderRadius: 12, background: 'rgba(99,102,241,.06)', border: '1.5px solid rgba(99,102,241,.2)' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: ACCENT, margin: '0 0 10px' }}>
+              Nomor Rekening Tujuan
+            </p>
+            {[
+              { bank: 'BRI',     no: '0262 01 000031 562', nama: 'Dian Purnama Reza T.' },
+              { bank: 'MANDIRI', no: '136 000 4780612',    nama: 'Dian Purnama' },
+              { bank: 'BCA',     no: '155 91 99999',       nama: 'Indarto Wibowo' },
+              { bank: 'BNI',     no: '0822 705 836',       nama: 'Indarto Wibowo' },
+            ].map(r => (
+              <div key={r.bank} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 10, background: 'var(--surface)', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, width: 60, flexShrink: 0 }}>{r.bank}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '.03em', flex: 1 }}>{r.no}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{r.nama}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Uang Muka */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
           <div>
