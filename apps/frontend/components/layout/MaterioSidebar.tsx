@@ -190,7 +190,7 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
       </div>
 
       {/* ── Nav list ───────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 0' }}>
         {NAV.map((item) => {
           const Icon   = item.icon;
           const hasCh  = !!item.children?.length;
