@@ -118,7 +118,14 @@ const NAV: NavItem[] = [
   { href: '/marketing', label: 'Marketing',    icon: Megaphone },
   { href: '/website',   label: 'Website',      icon: Globe     },
   { href: '/notifications', label: 'Notifikasi', icon: Bell, badge: '5' },
-  { href: '/settings', label: 'Pengaturan', icon: Settings, dividerBefore: true },
+  {
+    label: 'Pengaturan', icon: Settings, dividerBefore: true,
+    children: [
+      { href: '/settings',          label: 'Pengaturan Umum' },
+      { href: '/settings/workflow', label: 'Workflow Config' },
+      { href: '/help',              label: 'FAQ / Bantuan'   },
+    ],
+  },
 ];
 
 const LS_KEY = 'erp_sidebar_open_v2';
@@ -323,30 +330,6 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
         <div style={{ height: 8, flexShrink: 0 }} />
       </div>
 
-      {/* ── Sticky footer: Help — always visible, never scrolled away ── */}
-      {/* paddingBottom 70px = clears the mobile bottom nav bar (≈65px) */}
-      <div style={{
-        flexShrink: 0,
-        borderTop: '1px solid #F0F0F5',
-        padding: '4px 0 70px 0',
-      }}>
-        <Link href="/help" style={{ textDecoration: 'none' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '8px 16px',
-            cursor: 'pointer',
-            transition: 'background 0.15s',
-          }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-          >
-            <HelpCircle size={16} strokeWidth={1.8} style={{ color: '#9CA3AF', flexShrink: 0 }} />
-            <span style={{ fontSize: 13, fontWeight: 400, color: '#374151' }}>
-              FAQ / Bantuan
-            </span>
-          </div>
-        </Link>
-      </div>
     </div>
   );
 }
