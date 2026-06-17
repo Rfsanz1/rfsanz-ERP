@@ -1,9 +1,7 @@
-const CACHE_NAME = 'gm-erp-v3';
-const API_CACHE_NAME = 'gm-erp-api-v3';
+const CACHE_NAME = 'gm-erp-v5';
+const API_CACHE_NAME = 'gm-erp-api-v5';
 
 const STATIC_ASSETS = [
-  '/',
-  '/login',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -37,15 +35,16 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // API calls — network first, fallback to cache
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request, API_CACHE_NAME));
+  // Next.js JS/CSS chunks — ALWAYS network only, never cache
+  // Chunks are content-hash addressed and stale chunks cause ChunkLoadError
+  if (url.pathname.startsWith('/_next/')) {
+    event.respondWith(networkOnly(request));
     return;
   }
 
-  // Next.js JS/CSS chunks — ALWAYS network first to pick up new compilations
-  if (url.pathname.startsWith('/_next/')) {
-    event.respondWith(networkFirst(request, CACHE_NAME));
+  // API calls — network first, fallback to cache
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(networkFirst(request, API_CACHE_NAME));
     return;
   }
 
@@ -64,6 +63,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 });
+
+async function networkOnly(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    return new Response('', { status: 504, statusText: 'Network Error' });
+  }
+}
 
 async function networkFirst(request, cacheName) {
   try {
