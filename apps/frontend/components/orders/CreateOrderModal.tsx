@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Plus, X, Trash2, Package,
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
-  CreditCard, Banknote, Smartphone, Wallet,
+  CreditCard, Banknote, Smartphone, Wallet, ChevronDown,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { api } from '../../lib/api';
@@ -427,26 +427,35 @@ export default function CreateOrderModal({
               {/* Metode Pembayaran */}
               <div>
                 <Label>Metode Pembayaran</Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {METODE_OPTIONS.map(opt => {
-                    const Icon = opt.icon;
-                    const active = metodePembayaran === opt.value;
+                <div className="relative">
+                  {(() => {
+                    const selected = METODE_OPTIONS.find(o => o.value === metodePembayaran);
+                    const Icon = selected?.icon ?? Smartphone;
                     return (
-                      <button key={opt.value}
-                        type="button"
-                        onClick={() => setMetodePembayaran(opt.value)}
-                        className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-center transition-all"
-                        style={{
-                          border: `2px solid ${active ? COLOR : 'var(--border)'}`,
-                          background: active ? `${COLOR}12` : 'var(--surface)',
-                          color: active ? COLOR : 'var(--text-muted)',
-                          cursor: 'pointer',
-                        }}>
-                        <Icon className="h-4 w-4" />
-                        <span className="text-[10px] font-semibold leading-tight">{opt.label}</span>
-                      </button>
+                      <>
+                        <div className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center" style={{ color: COLOR }}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <select
+                          value={metodePembayaran}
+                          onChange={e => setMetodePembayaran(e.target.value)}
+                          className="w-full rounded-xl pl-9 pr-9 py-2.5 text-sm font-semibold appearance-none outline-none transition-colors cursor-pointer"
+                          style={{
+                            border: `1.5px solid ${COLOR}`,
+                            background: 'var(--surface)',
+                            color: 'var(--text-primary)',
+                          }}
+                        >
+                          {METODE_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center" style={{ color: 'var(--text-muted)' }}>
+                          <ChevronDown className="h-4 w-4" />
+                        </div>
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
               </div>
 
