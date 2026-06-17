@@ -4,9 +4,23 @@ const BACKEND = rawBackend.startsWith('http://') || rawBackend.startsWith('https
   ? rawBackend
   : `https://${rawBackend}`;
 
+const replitDevDomain = process.env.REPLIT_DEV_DOMAIN;
+const allowedDevOrigins = [
+  '*.replit.dev',
+  '*.repl.co',
+  '*.replit.app',
+  '*.replit.com',
+  '*.pike.replit.dev',
+  '*.kirk.replit.dev',
+  '*.sisko.replit.dev',
+  '*.janeway.replit.dev',
+];
+if (replitDevDomain) allowedDevOrigins.push(replitDevDomain);
+
 const nextConfig = {
   transpilePackages: ['@gm/ui', '@gm/utils', '@gm/types'],
   reactStrictMode: true,
+  allowedDevOrigins,
 
   typescript: {
     ignoreBuildErrors: true,
@@ -45,7 +59,6 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
         ],
       },
