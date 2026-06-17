@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
       status = 'pending', items = [], customerId,
       kledoContactId,
       metodePembayaran = 'transfer',
+      bankPilihan = null,
       uangMuka = 0,
     } = body;
 
@@ -72,6 +73,9 @@ export async function POST(req: NextRequest) {
         diskonTotal: diskonTotal ?? 0,
         pajak: pajak ?? 0,
         ongkir: ongkir ?? 0,
+        totalHarga: totalHarga ?? 0,
+        metodePembayaran,
+        bankPilihan: bankPilihan ?? null,
         items: savedItems.length > 0 ? savedItems : items,
       });
 

@@ -85,6 +85,7 @@ export default function CreateOrderModal({
   const [metodeOpen, setMetodeOpen]           = useState(false);
   const metodeRef                             = useRef<HTMLDivElement>(null);
   const [copiedBank, setCopiedBank]           = useState<string | null>(null);
+  const [bankPilihan, setBankPilihan]         = useState<string | null>(null);
   const [uangMuka, setUangMuka]               = useState(0);
 
   const [items, setItems]                     = useState<OrderItem[]>([emptyItem()]);
@@ -177,6 +178,7 @@ export default function CreateOrderModal({
       status: 'pending',
       kledoContactId: kledoContactId || undefined,
       metodePembayaran,
+      bankPilihan: metodePembayaran === 'transfer' ? (bankPilihan ?? undefined) : undefined,
       uangMuka: uangMuka || undefined,
       items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId, unit }) => ({
         nama, qty, harga, subtotal,
@@ -456,7 +458,7 @@ export default function CreateOrderModal({
                       {/* Trigger button */}
                       <button
                         type="button"
-                        onClick={() => setMetodeOpen(v => !v)}
+                        onClick={() => { setMetodeOpen(v => !v); if (metodePembayaran !== 'transfer') setBankPilihan(null); }}
                         className="w-full flex items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all"
                         style={{
                           border: `1.5px solid ${metodeOpen ? COLOR : 'var(--border)'}`,
@@ -492,7 +494,7 @@ export default function CreateOrderModal({
                               <button
                                 key={opt.value}
                                 type="button"
-                                onClick={() => { setMetodePembayaran(opt.value); setMetodeOpen(false); }}
+                                onClick={() => { setMetodePembayaran(opt.value); setMetodeOpen(false); if (opt.value !== 'transfer') setBankPilihan(null); }}
                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left"
                                 style={{
                                   background: isActive ? `${COLOR}12` : 'transparent',
@@ -515,46 +517,87 @@ export default function CreateOrderModal({
                 })()}
               </div>
 
-              {/* Info Rekening Bank — tampil saat Transfer dipilih */}
-              {metodePembayaran === 'transfer' && (
-                <div className="rounded-xl p-4 space-y-2"
-                  style={{ background: 'rgba(99,102,241,.06)', border: '1.5px solid rgba(99,102,241,.2)' }}>
-                  <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: COLOR }}>
-                    Nomor Rekening Tujuan
-                  </p>
-                  {[
-                    { bank: 'BRI',     no: '0262 01 000031 562', nama: 'Dian Purnama Reza T.' },
-                    { bank: 'MANDIRI', no: '136 000 4780612',    nama: 'Dian Purnama' },
-                    { bank: 'BCA',     no: '155 91 99999',       nama: 'Indarto Wibowo' },
-                    { bank: 'BNI',     no: '0822 705 836',       nama: 'Indarto Wibowo' },
-                  ].map(r => {
-                    const isCopied = copiedBank === r.bank;
-                    return (
-                      <button
-                        key={r.bank}
-                        type="button"
-                        onClick={() => copyRekening(r.bank, r.no)}
-                        className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all active:scale-[.98]"
-                        style={{
-                          background: isCopied ? `${COLOR}18` : 'var(--surface)',
-                          border: `1.5px solid ${isCopied ? COLOR : 'transparent'}`,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <span className="text-[11px] font-bold w-14 flex-shrink-0 text-left" style={{ color: COLOR }}>{r.bank}</span>
-                        <span className="text-[13px] font-semibold flex-1 text-left" style={{ color: 'var(--text-primary)', letterSpacing: '.03em' }}>{r.no}</span>
-                        <span className="text-[11px] flex-shrink-0 hidden sm:block" style={{ color: 'var(--text-muted)' }}>{r.nama}</span>
-                        <span className="flex-shrink-0 ml-auto pl-2">
-                          {isCopied
-                            ? <Check className="h-3.5 w-3.5" style={{ color: COLOR }} />
-                            : <Copy className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
-                          }
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Info Rekening + Pilih Bank — tampil saat Transfer dipilih */}
+              {metodePembayaran === 'transfer' && (() => {
+                const REKENING = [
+                  { key: 'bri',     label: 'BRI EDC',    bank: 'BRI',     no: '0262 01 000031 562', nama: 'Dian Purnama Reza T.' },
+                  { key: 'mandiri', label: 'Mandiri',    bank: 'MANDIRI', no: '136 000 4780612',    nama: 'Dian Purnama' },
+                  { key: 'bca',     label: 'BCA GIRO',   bank: 'BCA',     no: '155 91 99999',       nama: 'Indarto Wibowo' },
+                  { key: 'bni',     label: 'BNI',        bank: 'BNI',     no: '0822 705 836',       nama: 'Indarto Wibowo' },
+                ];
+                return (
+                  <div className="space-y-3">
+                    {/* Pilih bank yang digunakan */}
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5" style={{ color: COLOR }}>
+                        Bank yang Digunakan
+                        <span className="font-normal normal-case text-[10px]" style={{ color: 'var(--text-muted)' }}>— pilih untuk otomatis lunas di Kledo</span>
+                      </p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {REKENING.map(r => {
+                          const isSelected = bankPilihan === r.key;
+                          return (
+                            <button
+                              key={r.key}
+                              type="button"
+                              onClick={() => setBankPilihan(isSelected ? null : r.key)}
+                              className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95"
+                              style={{
+                                border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`,
+                                background: isSelected ? `${COLOR}15` : 'var(--surface)',
+                              }}
+                            >
+                              <span className="text-[11px] font-bold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{r.bank}</span>
+                              <span className="text-[9px] font-medium leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>{r.label.replace(r.bank, '').trim() || r.label}</span>
+                              {isSelected && <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: COLOR }} />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {bankPilihan && (
+                        <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
+                          <CheckCircle2 className="h-3 w-3" /> Invoice Kledo akan otomatis ditandai <strong>LUNAS</strong> via {REKENING.find(r => r.key === bankPilihan)?.label}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Nomor rekening — tap untuk copy */}
+                    <div className="rounded-xl p-3 space-y-1.5"
+                      style={{ background: 'rgba(99,102,241,.06)', border: '1.5px solid rgba(99,102,241,.2)' }}>
+                      <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: COLOR }}>
+                        Nomor Rekening Tujuan
+                      </p>
+                      {REKENING.map(r => {
+                        const isCopied   = copiedBank === r.bank;
+                        const isSelected = bankPilihan === r.key;
+                        return (
+                          <button
+                            key={r.bank}
+                            type="button"
+                            onClick={() => { copyRekening(r.bank, r.no); setBankPilihan(r.key); }}
+                            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all active:scale-[.98]"
+                            style={{
+                              background: isSelected ? `${COLOR}18` : isCopied ? `${COLOR}0D` : 'var(--surface)',
+                              border: `1.5px solid ${isSelected ? COLOR : isCopied ? `${COLOR}50` : 'transparent'}`,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <span className="text-[11px] font-bold w-14 flex-shrink-0 text-left" style={{ color: COLOR }}>{r.bank}</span>
+                            <span className="text-[13px] font-semibold flex-1 text-left" style={{ color: 'var(--text-primary)', letterSpacing: '.03em' }}>{r.no}</span>
+                            <span className="text-[11px] flex-shrink-0 hidden sm:block" style={{ color: 'var(--text-muted)' }}>{r.nama}</span>
+                            <span className="flex-shrink-0 ml-auto pl-2">
+                              {isCopied
+                                ? <Check className="h-3.5 w-3.5" style={{ color: COLOR }} />
+                                : <Copy className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
+                              }
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Uang Muka / DP — tampil saat metode bukan cash penuh */}
               <div>
