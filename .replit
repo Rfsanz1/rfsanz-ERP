@@ -47,6 +47,10 @@ args = "cd apps/backend && pnpm exec prisma generate && pnpm run start:dev"
 waitForPort = 3000
 
 [[ports]]
+localPort = 3000
+externalPort = 3000
+
+[[ports]]
 localPort = 5000
 externalPort = 80
 
@@ -54,16 +58,16 @@ externalPort = 80
 localPort = 6000
 externalPort = 6000
 
-[[ports]]
-localPort = 3000
-externalPort = 3000
-
 [userenv]
 
 [userenv.shared]
 NODE_ENV = "development"
 BACKEND_URL = "http://localhost:3000"
 PORT = "3000"
+ADMIN_EMAIL = "admin@rfsanz.com"
+ADMIN_PASSWORD = "root"
+ADMIN_NAME = "Administrator"
+COMPANY_NAME = "Gentong Mas"
 
 [deployment]
 deploymentTarget = "vm"
