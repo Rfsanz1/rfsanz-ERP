@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, generateSoNumber } from '@/lib/localDb';
 import { pushOrderToKledo } from '@/lib/kledoSync';
+import { sendAllOrderNotifications } from '@/lib/server/waServer';
 
 export async function POST(req: NextRequest) {
   try {
@@ -100,10 +101,35 @@ export async function POST(req: NextRequest) {
     }
 
     const fullOrder = await getOrderById(db, order.id);
+
+    /* ── Kirim notifikasi WhatsApp ke grup & konsumen (non-blocking) ── */
+    let waResult: any = { skipped: true };
+    try {
+      waResult = await sendAllOrderNotifications({
+        soNumber,
+        namaCustomer,
+        noHp: noHp ?? null,
+        salesName: salesName ?? null,
+        items: (savedItems.length > 0 ? savedItems : items).map((it: any) => ({
+          nama: it.nama,
+          qty: Number(it.qty ?? 1),
+          harga: Number(it.harga ?? 0),
+        })),
+        totalHarga: Number(totalHarga ?? 0),
+        metodePembayaran,
+        bankPilihan: bankPilihan ?? null,
+        status: 'pending',
+      });
+      console.log('[WA notifikasi]', JSON.stringify(waResult));
+    } catch (waErr: any) {
+      console.error('[WA notifikasi error]', waErr.message);
+    }
+
     return NextResponse.json({
       data: fullOrder,
       error: null,
       kledo: { ok: kledoOk, invoiceId: kledoInvoiceId, error: kledoError },
+      wa: waResult,
     });
   } catch (e: any) {
     console.error('[POST /api/sales/orders]', e);

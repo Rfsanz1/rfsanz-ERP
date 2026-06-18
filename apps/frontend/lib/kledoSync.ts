@@ -4,6 +4,12 @@ const BACKEND = BACKEND_RAW && !BACKEND_RAW.startsWith('http')
   : BACKEND_RAW;
 
 export async function getKledoCfg(authHeader: string): Promise<{ token: string; baseUrl: string } | null> {
+  // 1. Baca dari env langsung (paling reliable di Replit)
+  if (process.env.KLEDO_TOKEN) {
+    return { token: process.env.KLEDO_TOKEN, baseUrl: 'https://api.kledo.com/api/v1' };
+  }
+
+  // 2. Fallback: ambil dari backend settings
   try {
     const r = await fetch(`${BACKEND}/api/settings`, {
       headers: { Authorization: authHeader, 'ngrok-skip-browser-warning': '1' },
@@ -17,17 +23,86 @@ export async function getKledoCfg(authHeader: string): Promise<{ token: string; 
   return null;
 }
 
+/**
+ * Cari finance_account_id yang valid untuk item invoice Kledo.
+ * Kledo memakai "product account" (akun produk/pendapatan penjualan) yang
+ * BERBEDA dari akun chart-of-accounts biasa. Endpoint /finance/accounts
+ * hanya menampilkan COA (id ≤ 1500-an); akun produk seperti id 3234 tidak
+ * muncul di sana. Kita ambil dari produk pertama yang ada sebagai referensi,
+ * dan fallback ke KLEDO_DEFAULT_INCOME_ACCOUNT (env) atau 3234 jika gagal.
+ */
 export async function getDefaultFinanceAccount(baseUrl: string, token: string): Promise<number | null> {
+  // Env override — bisa diset manual jika tahu account id yang valid
+  if (process.env.KLEDO_DEFAULT_INCOME_ACCOUNT) {
+    return Number(process.env.KLEDO_DEFAULT_INCOME_ACCOUNT);
+  }
+
+  // Ambil dari produk pertama Kledo — finance_account_id produk sudah pasti valid
   try {
-    const r = await fetch(`${baseUrl}/finance/accounts?type=income&per_page=50`, {
+    const r = await fetch(`${baseUrl}/finance/products?per_page=1`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (r.ok) {
       const d = await r.json();
-      const accounts: any[] = d?.data?.data ?? d?.data ?? [];
-      if (accounts.length > 0) return accounts[0].id;
+      const products: any[] = d?.data?.data ?? d?.data ?? [];
+      if (products.length > 0) {
+        const accId = products[0].income_account_id ?? products[0].account_id;
+        if (accId) return Number(accId);
+      }
     }
   } catch {}
+
+  // Fallback hardcoded: akun "Penjualan" Kledo yang diketahui valid (dari invoice existing)
+  return 3234;
+}
+
+/**
+ * Cari kontak Kledo berdasarkan nama/telepon; jika tidak ada, buat baru.
+ * Kembalikan contact_id (number) atau null jika gagal.
+ */
+export async function findOrCreateKledoContact(
+  baseUrl: string,
+  token: string,
+  namaCustomer: string,
+  noHp?: string | null,
+): Promise<number | null> {
+  if (!namaCustomer) return null;
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  // 1. Coba buat kontak baru langsung — type_id:3 = customer di Kledo
+  try {
+    const body: any = { name: namaCustomer, type_id: 3 };
+    if (noHp) body.phone = noHp;
+    const cr = await fetch(`${baseUrl}/finance/contacts`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (cr.ok) {
+      const cd = await cr.json();
+      const newId = cd?.data?.id;
+      if (newId) return newId;
+    }
+  } catch {}
+
+  // 2. Jika create gagal (misal duplikat), cari via search dengan per_page besar
+  try {
+    const searchUrl = `${baseUrl}/finance/contacts?keyword=${encodeURIComponent(namaCustomer)}&per_page=50`;
+    const sr = await fetch(searchUrl, { headers });
+    if (sr.ok) {
+      const sd = await sr.json();
+      const items: any[] = sd?.data?.data ?? sd?.data ?? [];
+      const nameLower = namaCustomer.toLowerCase();
+      const phoneClean = (noHp ?? '').replace(/\D/g, '').slice(-8);
+      const match = items.find(c => {
+        const cName = (c.name ?? '').toLowerCase();
+        const cPhone = (c.phone ?? '').replace(/\D/g, '');
+        return cName === nameLower || (phoneClean && cPhone.endsWith(phoneClean));
+      });
+      if (match) return match.id;
+    }
+  } catch {}
+
   return null;
 }
 
@@ -140,6 +215,17 @@ export async function pushOrderToKledo(
 
     const defaultAccountId = await getDefaultFinanceAccount(cfg.baseUrl, cfg.token);
 
+    // Resolusi contact_id — wajib di Kledo
+    let resolvedContactId = order.contactId ?? null;
+    if (!resolvedContactId && order.contactName) {
+      resolvedContactId = await findOrCreateKledoContact(
+        cfg.baseUrl,
+        cfg.token,
+        order.contactName,
+        (order as any).noHp ?? null,
+      );
+    }
+
     const kledoItems = order.items.map(it => {
       const qty   = Number(it.qty ?? 1);
       const price = Number(it.harga ?? 0);
@@ -165,15 +251,17 @@ export async function pushOrderToKledo(
       });
     }
 
+    // due_date wajib di Kledo — pakai tanggal yang sama dengan trans_date
     const payload: any = {
       trans_date: order.tanggal,
+      due_date: order.tanggal,
       include_tax: (order.pajak ?? 0) > 0 ? 1 : 0,
       items: kledoItems,
     };
-    if (order.soNumber)     payload.ref_number   = order.soNumber;
-    if (order.catatan)      payload.memo         = order.catatan;
-    if (order.contactId)    payload.contact_id   = order.contactId;
-    if (order.contactName)  payload.contact_name = order.contactName;
+    if (order.soNumber)         payload.ref_number   = order.soNumber;
+    if (order.catatan)          payload.memo         = order.catatan;
+    if (resolvedContactId)      payload.contact_id   = resolvedContactId;
+    else if (order.contactName) payload.contact_name = order.contactName;
     if (order.diskonTotal)  payload.discount     = order.diskonTotal;
 
     const res = await fetch(`${cfg.baseUrl}/finance/invoices`, {
