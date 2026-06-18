@@ -12,6 +12,7 @@ import {
 import CustomerSearchDropdown, { type CustomerOption } from '../../../../components/ui/CustomerSearchDropdown';
 import ProductSearchDropdown, { type ProductOption } from '../../../../components/ui/ProductSearchDropdown';
 import SalesDropdown from '../../../../components/ui/SalesDropdown';
+import { sendGrupOrder, sendKonsumen } from '../../../../lib/fonnte';
 
 const C = '#00ACC1';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -283,36 +284,46 @@ export default function NewInvoicePage() {
       setError('Gagal menyimpan invoice ke ERP dan Kledo. Periksa koneksi backend.');
     }
 
-    // --- 5. Kirim WA ---
-    if (sendWa && waPhone.trim()) {
-      setWaStatus('sending'); setWaError('');
-      try {
-        const fonnteConfig = JSON.parse(localStorage.getItem('erp_intg_fonnte') ?? '{}');
-        const fonnteToken = fonnteConfig.token ?? '';
-        if (!fonnteToken) {
-          setWaError('Token Fonnte belum diatur. Isi di Settings → WA Gateway.');
-          setWaStatus('error');
-        } else {
-          const dueFmt = new Date(dueDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-          const amtFmt = `Rp ${grandTotal.toLocaleString('id-ID')}`;
-          const waMsg = `Halo ${customerName}, invoice ${refNumber} senilai ${amtFmt} jatuh tempo pada ${dueFmt}. Mohon segera melakukan pembayaran. Terima kasih.`;
-          const wr = await fetch('/api/direct/whatsapp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: fonnteToken, target: waPhone.trim(), message: waMsg }),
-          });
-          const wd = await wr.json();
-          if (wr.ok && wd.status !== false) {
-            setWaStatus('ok');
-          } else {
-            setWaError(wd.reason ?? wd.message ?? 'Gagal kirim WA');
-            setWaStatus('error');
-          }
-        }
-      } catch (e: any) {
-        setWaError(e?.message ?? 'Gagal kirim WA');
+    // --- 5. Kirim WA (grup order + konsumen) ---
+    setWaStatus('sending'); setWaError('');
+    try {
+      const [grupRes, konsumenRes] = await Promise.allSettled([
+        sendGrupOrder({
+          order_no: refNumber,
+          customer_name: customerName,
+          phone: waPhone.trim() || undefined,
+          sales: salesName || undefined,
+          items: items.map(it => ({ nama: it.nama, qty: it.qty, harga: it.harga })),
+          total: grandTotal,
+          payment_method: 'Transfer',
+          status: 'pending',
+        }),
+        sendWa && waPhone.trim()
+          ? sendKonsumen({
+              phone: waPhone.trim(),
+              customer_name: customerName,
+              items: items.map(it => ({ nama: it.nama, qty: it.qty, harga: it.harga })),
+              total: grandTotal,
+              status: 'pending',
+            })
+          : Promise.resolve({ skipped: true }),
+      ]);
+
+      const grupOk = grupRes.status === 'fulfilled' && (grupRes.value as any)?.status !== false && !(grupRes.value as any)?.skipped;
+      const konsOk = konsumenRes.status === 'fulfilled' && (konsumenRes.value as any)?.status !== false && !(konsumenRes.value as any)?.skipped;
+
+      if (grupOk || konsOk) {
+        setWaStatus('ok');
+      } else {
+        const reason = (grupRes.status === 'fulfilled' ? (grupRes.value as any)?.reason : null)
+          ?? (konsumenRes.status === 'fulfilled' ? (konsumenRes.value as any)?.reason : null)
+          ?? 'WA tidak terkirim. Cek token Fonnte di Settings → WA Gateway.';
+        setWaError(reason);
         setWaStatus('error');
       }
+    } catch (e: any) {
+      setWaError(e?.message ?? 'Gagal kirim WA');
+      setWaStatus('error');
     }
 
     setLoading(false);
