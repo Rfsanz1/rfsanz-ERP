@@ -47,7 +47,7 @@ function filterProducts(local: ProductOption[], kledo: ProductOption[], q: strin
   const localFiltered = local.filter(match);
   const localNames = new Set(localFiltered.map(p => p.name.toLowerCase().trim()));
   const kledoFiltered = kledo.filter(p => match(p) && !localNames.has(p.name.toLowerCase().trim()));
-  return [...localFiltered, ...kledoFiltered].slice(0, 20);
+  return [...localFiltered, ...kledoFiltered].slice(0, 50);
 }
 
 export default function ProductSearchDropdown({

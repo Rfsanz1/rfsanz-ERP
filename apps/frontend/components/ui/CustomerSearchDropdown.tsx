@@ -50,15 +50,15 @@ function filterAndMerge(q: string): CustomerOption[] {
   const t = q.trim();
   const local = t
     ? _localContacts.filter(c => textMatch(c.name, t) || textMatch(c.phone ?? '', t))
-    : _localContacts.slice(0, 20);
+    : _localContacts.slice(0, 50);
   const localNames = new Set(local.map(c => c.name.toLowerCase().trim()));
   const kledo = t
     ? _kledoContacts.filter(c =>
         !localNames.has(c.name.toLowerCase().trim()) &&
         (textMatch(c.name, t) || textMatch(c.phone ?? '', t)),
       )
-    : _kledoContacts.filter(c => !localNames.has(c.name.toLowerCase().trim())).slice(0, 20);
-  return [...local, ...kledo].slice(0, 40);
+    : _kledoContacts.filter(c => !localNames.has(c.name.toLowerCase().trim())).slice(0, 50);
+  return [...local, ...kledo].slice(0, 100);
 }
 
 async function warmKledo() {

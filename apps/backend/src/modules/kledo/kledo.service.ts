@@ -123,7 +123,7 @@ export class KledoService {
   async getProducts(query: any = {}) {
     const token = await this.getToken();
     if (!token) return { data: { data: [], total: 0, last_page: 1 } };
-    const { page = 1, per_page = 50, search } = query;
+    const { page = 1, per_page = 500, search } = query;
     const params: any = { page, per_page };
     if (search) params.name = search;
     const headers = await this.getHeaders();
@@ -135,7 +135,7 @@ export class KledoService {
   async getContacts(query: any = {}) {
     const token = await this.getToken();
     if (!token) return { data: { data: [], total: 0, last_page: 1 } };
-    const { page = 1, per_page = 50, search, type } = query;
+    const { page = 1, per_page = 500, search, type } = query;
     const params: any = { page, per_page };
     if (search) params.name = search;
     if (type === 'customer') params.is_customer = 1;
@@ -194,14 +194,23 @@ export class KledoService {
     const headers = await this.getHeaders();
     const baseUrl = await this.getBaseUrl();
     try {
-      const res = await firstValueFrom(this.http.get(`${baseUrl}/finance/contacts`, { headers, params: { per_page: 100 } }));
-      const contacts: any[] = res.data?.data?.data ?? [];
-      const found = contacts.find(
-        (c: any) =>
-          c.name?.toLowerCase() === name?.toLowerCase() ||
-          (phone && c.phone && c.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')),
-      );
-      if (found) return found.id;
+      let page = 1;
+      let totalPages = 1;
+      while (page <= totalPages) {
+        const res = await firstValueFrom(
+          this.http.get(`${baseUrl}/finance/contacts`, { headers, params: { per_page: 500, page } }),
+        );
+        const body = res.data?.data ?? res.data;
+        const contacts: any[] = body?.data ?? [];
+        totalPages = body?.last_page ?? 1;
+        const found = contacts.find(
+          (c: any) =>
+            c.name?.toLowerCase() === name?.toLowerCase() ||
+            (phone && c.phone && c.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')),
+        );
+        if (found) return found.id;
+        page++;
+      }
     } catch (e) {
       this.logger.warn('Gagal cari contact Kledo: ' + e);
     }
@@ -270,9 +279,9 @@ export class KledoService {
     let page = 1; let imported = 0; let totalPages = 1;
 
     while (page <= totalPages) {
-      const res = await this.http.axiosRef.get(`${baseUrl}/products`, {
+      const res = await this.http.axiosRef.get(`${baseUrl}/finance/products`, {
         headers,
-        params: { page, limit: 100 },
+        params: { page, per_page: 500 },
       });
       const body = res.data?.data ?? res.data;
       const items: any[] = body?.data ?? body ?? [];
