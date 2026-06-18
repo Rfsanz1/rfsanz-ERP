@@ -112,27 +112,43 @@ export default function WaGatewayPage() {
 
   useEffect(() => {
     if (!token) { router.push('/dashboard'); return; }
-    try {
-      const d = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-      setFonnteToken(d.token ?? '');
-      setOrder(s => ({
-        ...s,
-        groupId: d.groupInvoice ?? '',
-        // cek key baru dulu, fallback ke key lama (template_order), terakhir default
-        template: d.templateOrder ?? d.template_order ?? DEFAULT_TEMPLATE_ORDER,
-      }));
-      setPayment(s => ({
-        ...s,
-        groupId: d.groupBuktiTf ?? '',
-        template: d.templatePayment ?? d.template_payment ?? DEFAULT_TEMPLATE_PAYMENT,
-      }));
-      setKonsumen(s => ({
-        ...s,
-        // konsumen: key baru → template_invoice lama (paling relevan) → default
-        template: d.templateKonsumen ?? d.template_invoice ?? DEFAULT_TEMPLATE_KONSUMEN,
-      }));
-    } catch {}
-    setMounted(true);
+
+    const load = async () => {
+      try {
+        const d = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+
+        // Jika token belum tersimpan di localStorage, coba ambil dari server env (FONNTE_TOKEN secret)
+        let fonnteFromEnv = '';
+        if (!d.token) {
+          try {
+            const r = await fetch('/api/direct/app-config');
+            if (r.ok) {
+              const cfg = await r.json();
+              fonnteFromEnv = cfg.fonnte_token ?? '';
+            }
+          } catch {}
+        }
+
+        setFonnteToken(d.token ?? fonnteFromEnv);
+        setOrder(s => ({
+          ...s,
+          groupId: d.groupInvoice ?? '',
+          template: d.templateOrder ?? d.template_order ?? DEFAULT_TEMPLATE_ORDER,
+        }));
+        setPayment(s => ({
+          ...s,
+          groupId: d.groupBuktiTf ?? '',
+          template: d.templatePayment ?? d.template_payment ?? DEFAULT_TEMPLATE_PAYMENT,
+        }));
+        setKonsumen(s => ({
+          ...s,
+          template: d.templateKonsumen ?? d.template_invoice ?? DEFAULT_TEMPLATE_KONSUMEN,
+        }));
+      } catch {}
+      setMounted(true);
+    };
+
+    load();
   }, [token]);
 
   const save = useCallback(() => {

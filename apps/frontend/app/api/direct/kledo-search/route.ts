@@ -13,15 +13,28 @@ const CACHE_TTL = 10 * 60 * 1000; // 10 menit
 
 async function getKledoToken(): Promise<string | null> {
   if (cachedKledoToken) return cachedKledoToken;
+
+  // Coba dari env langsung (KLEDO_TOKEN di-set sebagai Replit secret)
+  if (process.env.KLEDO_TOKEN) {
+    cachedKledoToken = process.env.KLEDO_TOKEN;
+    return cachedKledoToken;
+  }
+
+  // Fallback: ambil dari backend settings
   try {
     const r = await fetch(`${BACKEND}/api/settings`, {
       headers: { 'ngrok-skip-browser-warning': '1' },
     });
     if (r.ok) {
       const d = await r.json();
-      cachedKledoToken = d?.data?.kledo_token ?? null;
+      const fromSettings = d?.data?.kledo_token ?? null;
+      if (fromSettings) {
+        cachedKledoToken = fromSettings;
+        return cachedKledoToken;
+      }
     }
   } catch {}
+
   return cachedKledoToken;
 }
 
