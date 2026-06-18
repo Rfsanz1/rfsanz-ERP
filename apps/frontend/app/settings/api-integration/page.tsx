@@ -6,8 +6,11 @@ import { useAuthStore } from '../../../lib/store/useAuthStore';
 import { OdooLayout } from '../../../components/layout/OdooLayout';
 import {
   CheckCircle, AlertCircle, X, Eye, EyeOff,
-  Save, Loader2, ExternalLink,
+  Save, Loader2, ExternalLink, RotateCcw,
 } from 'lucide-react';
+import {
+  DEFAULT_TEMPLATE_ORDER, DEFAULT_TEMPLATE_PAYMENT, DEFAULT_TEMPLATE_KONSUMEN,
+} from '../../../lib/fonnte';
 
 /* ══════════════════════════════════════════════════════════════════════════
    DATA
@@ -18,6 +21,9 @@ interface Field {
   placeholder: string;
   secret?: boolean;
   hint?: string;
+  type?: 'text' | 'textarea';
+  rows?: number;
+  defaultValue?: string;
 }
 
 interface Integration {
@@ -51,8 +57,20 @@ const INTEGRATIONS: Integration[] = [
     docsUrl: 'https://fonnte.com', docsLabel: 'Daftar Fonnte',
     fields: [
       { key: 'token', label: 'Token Fonnte', secret: true, placeholder: 'Paste token Fonnte…', hint: 'Login fonnte.com → Perangkat → klik nomor WA → salin Token' },
-      { key: 'groupInvoice', label: 'Group ID Notif Order', placeholder: '120363xxxxxx@g.us' },
-      { key: 'groupBuktiTf', label: 'Group ID Bukti Transfer', placeholder: '120363xxxxxx@g.us' },
+      { key: 'groupInvoice', label: 'Group ID Grup Order (Order Baru)', placeholder: '120363xxxxxx@g.us', hint: 'Format: 120363...@g.us — cari di Fonnte → Perangkat → Grup' },
+      { key: 'groupBuktiTf', label: 'Group ID Grup Payment (Bukti TF)', placeholder: '120363xxxxxx@g.us', hint: 'Bisa grup berbeda dari Grup Order (misal: grup kasir/keuangan)' },
+      { key: 'templateOrder', label: '📢 Template Pesan — Grup Order', type: 'textarea', rows: 7,
+        placeholder: 'Template pesan ke grup saat order baru masuk…',
+        defaultValue: DEFAULT_TEMPLATE_ORDER,
+        hint: 'Variabel: {order_no} {customer_name} {phone} {sales} {items} {total} {payment_method} {status} {datetime}' },
+      { key: 'templatePayment', label: '💸 Template Pesan — Grup Payment', type: 'textarea', rows: 6,
+        placeholder: 'Template pesan ke grup saat bukti transfer masuk…',
+        defaultValue: DEFAULT_TEMPLATE_PAYMENT,
+        hint: 'Variabel: {order_no} {customer_name} {phone} {total} {bank} {sales} {datetime}' },
+      { key: 'templateKonsumen', label: '👤 Template Pesan — ke Konsumen', type: 'textarea', rows: 7,
+        placeholder: 'Template pesan ke WA konsumen saat order berhasil dibuat…',
+        defaultValue: DEFAULT_TEMPLATE_KONSUMEN,
+        hint: 'Variabel: {customer_name} {item_name} {qty} {total} {status} {datetime}' },
     ],
   },
   {
@@ -108,7 +126,8 @@ const LS_INTG_PREFIX = 'erp_intg_';
 
 function saveIntgConfig(id: string, vals: Record<string, string>) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(LS_INTG_PREFIX + id, JSON.stringify(vals));
+  const existing = loadIntgConfig(id);
+  window.localStorage.setItem(LS_INTG_PREFIX + id, JSON.stringify({ ...existing, ...vals }));
 }
 
 function loadIntgConfig(id: string): Record<string, string> {
@@ -197,7 +216,16 @@ function ConfigModal({
   onOtherSaved: (id: string) => void;
 }) {
   const existingSaved = intg.id !== 'kledo' ? loadIntgConfig(intg.id) : {};
-  const [values, setValues] = useState<Record<string, string>>(existingSaved);
+  // Pre-populate template fields: key baru → key lama → defaultValue
+  const initValues = intg.id === 'fonnte'
+    ? {
+        ...existingSaved,
+        templateOrder: existingSaved.templateOrder ?? existingSaved.template_order ?? DEFAULT_TEMPLATE_ORDER,
+        templatePayment: existingSaved.templatePayment ?? existingSaved.template_payment ?? DEFAULT_TEMPLATE_PAYMENT,
+        templateKonsumen: existingSaved.templateKonsumen ?? existingSaved.template_invoice ?? DEFAULT_TEMPLATE_KONSUMEN,
+      }
+    : existingSaved;
+  const [values, setValues] = useState<Record<string, string>>(initValues);
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -284,8 +312,8 @@ function ConfigModal({
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-3xl p-6 space-y-5 overflow-y-auto"
-        style={{ background: '#fff', maxHeight: '88vh', boxShadow: '0 32px 80px rgba(0,0,0,.2)' }}
+        className={`w-full rounded-3xl p-6 space-y-5 overflow-y-auto ${intg.id === 'fonnte' ? 'max-w-2xl' : 'max-w-md'}`}
+        style={{ background: '#fff', maxHeight: '90vh', boxShadow: '0 32px 80px rgba(0,0,0,.2)' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -331,27 +359,61 @@ function ConfigModal({
         )}
 
         {/* Form */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {intg.fields.map(field => (
             <div key={field.key} className="space-y-1">
-              <label className="text-xs font-semibold" style={{ color: '#6B7280' }}>{field.label}</label>
-              <div className="flex items-center gap-2 rounded-xl px-3 py-2.5"
-                style={{ border: `1.5px solid ${values[field.key] ? intg.color + '80' : '#E5E7EB'}`, background: '#FAFAFA' }}>
-                <input
-                  type={field.secret && !show[field.key] ? 'password' : 'text'}
-                  value={values[field.key] ?? ''}
-                  onChange={e => { setValues(v => ({ ...v, [field.key]: e.target.value })); setSaveMsg(null); }}
-                  placeholder={field.placeholder}
-                  className="flex-1 bg-transparent text-sm outline-none"
-                  style={{ color: '#1E1B4B', fontFamily: field.secret ? 'monospace' : undefined }}
-                />
-                {field.secret && (
-                  <button onClick={() => setShow(s => ({ ...s, [field.key]: !s[field.key] }))} style={{ color: '#9CA3AF' }}>
-                    {show[field.key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold" style={{ color: '#6B7280' }}>{field.label}</label>
+                {field.type === 'textarea' && field.defaultValue && (
+                  <button
+                    onClick={() => { setValues(v => ({ ...v, [field.key]: field.defaultValue! })); setSaveMsg(null); }}
+                    className="flex items-center gap-1 text-[10px] opacity-60 hover:opacity-100 transition"
+                    style={{ color: intg.color }}
+                    title="Reset ke template default"
+                  >
+                    <RotateCcw className="h-2.5 w-2.5" /> Reset
                   </button>
                 )}
               </div>
-              {field.hint && <p className="text-[11px]" style={{ color: '#9CA3AF' }}>{field.hint}</p>}
+
+              {field.type === 'textarea' ? (
+                <textarea
+                  value={values[field.key] ?? field.defaultValue ?? ''}
+                  onChange={e => { setValues(v => ({ ...v, [field.key]: e.target.value })); setSaveMsg(null); }}
+                  placeholder={field.placeholder}
+                  rows={field.rows ?? 4}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm resize-none font-mono"
+                  style={{
+                    border: `1.5px solid ${values[field.key] ? intg.color + '60' : '#E5E7EB'}`,
+                    background: '#FAFAFA', color: '#1E1B4B', outline: 'none', lineHeight: 1.6,
+                  }}
+                  onFocus={e => (e.target.style.borderColor = intg.color)}
+                  onBlur={e => (e.target.style.borderColor = values[field.key] ? intg.color + '60' : '#E5E7EB')}
+                />
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl px-3 py-2.5"
+                  style={{ border: `1.5px solid ${values[field.key] ? intg.color + '80' : '#E5E7EB'}`, background: '#FAFAFA' }}>
+                  <input
+                    type={field.secret && !show[field.key] ? 'password' : 'text'}
+                    value={values[field.key] ?? ''}
+                    onChange={e => { setValues(v => ({ ...v, [field.key]: e.target.value })); setSaveMsg(null); }}
+                    placeholder={field.placeholder}
+                    className="flex-1 bg-transparent text-sm outline-none"
+                    style={{ color: '#1E1B4B', fontFamily: field.secret ? 'monospace' : undefined }}
+                  />
+                  {field.secret && (
+                    <button onClick={() => setShow(s => ({ ...s, [field.key]: !s[field.key] }))} style={{ color: '#9CA3AF' }}>
+                      {show[field.key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {field.hint && (
+                <p className="text-[10px] leading-relaxed" style={{ color: '#9CA3AF' }}>
+                  {field.type === 'textarea' ? <><span className="font-semibold">Variabel: </span>{field.hint.replace('Variabel: ', '')}</> : field.hint}
+                </p>
+              )}
             </div>
           ))}
         </div>
