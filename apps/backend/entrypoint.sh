@@ -1,16 +1,21 @@
 #!/bin/sh
 set -e
 
+echo "================================================="
+echo "  Gentong Mas ERP — Backend Startup"
+echo "================================================="
+
 PRISMA_BIN="./node_modules/.bin/prisma"
 SCHEMA="./prisma/schema.prisma"
 
-echo "==> Menjalankan prisma db push..."
+echo "[1/2] Menjalankan database migration..."
 if [ -f "$PRISMA_BIN" ]; then
-  "$PRISMA_BIN" db push --schema="$SCHEMA" --accept-data-loss || \
-    echo "WARN: prisma db push gagal, melanjutkan startup..."
+  "$PRISMA_BIN" migrate deploy --schema="$SCHEMA" \
+    && echo "Migration selesai." \
+    || echo "WARN: migrate deploy gagal, melanjutkan startup..."
 else
-  echo "WARN: Prisma binary tidak ditemukan, melewati db push..."
+  echo "WARN: Prisma binary tidak ditemukan, melewati migration..."
 fi
 
-echo "==> Memulai backend server..."
+echo "[2/2] Memulai backend server di port ${PORT:-3000}..."
 exec node dist/main.js
