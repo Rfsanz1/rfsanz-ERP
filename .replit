@@ -43,16 +43,12 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/backend && pnpm exec prisma migrate deploy && pnpm run start:dev"
+args = "cd apps/backend && pnpm exec prisma migrate deploy && node --loader ts-node/esm prisma/seed.ts && pnpm run start:dev"
 waitForPort = 3000
 
 [[ports]]
 localPort = 3000
 externalPort = 3000
-
-[[ports]]
-localPort = 6000
-externalPort = 6000
 
 [userenv]
 
