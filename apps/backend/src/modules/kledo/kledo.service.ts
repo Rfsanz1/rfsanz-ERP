@@ -348,15 +348,188 @@ export class KledoService {
     return result;
   }
 
-  async syncProducts() { return { success: true, message: 'Data produk diambil langsung dari Kledo saat dibutuhkan.' }; }
-  async syncContacts() { return { success: true, message: 'Data kontak diambil langsung dari Kledo saat dibutuhkan.' }; }
+  /**
+   * Ambil semua halaman produk dari Kledo, simpan/update ke tabel Product lokal.
+   */
+  async syncProducts(): Promise<{ success: boolean; imported: number; updated: number; message: string }> {
+    const token = await this.getToken();
+    if (!token) return { success: false, imported: 0, updated: 0, message: 'KLEDO_TOKEN belum dikonfigurasi.' };
+
+    const tenant = await this.getOrCreateTenant();
+    const baseUrl = await this.getBaseUrl();
+    const headers = await this.getHeaders();
+
+    let page = 1;
+    let totalPages = 1;
+    let imported = 0;
+    let updated = 0;
+
+    while (page <= totalPages) {
+      try {
+        const res = await this.http.axiosRef.get(`${baseUrl}/finance/products`, {
+          headers,
+          params: { page, per_page: 500 },
+        });
+        const body = res.data?.data ?? res.data;
+        const items: any[] = body?.data ?? body ?? [];
+        totalPages = body?.last_page ?? 1;
+
+        for (const item of items) {
+          try {
+            const kledoId = String(item.id);
+            const sku = (item.code || item.sku || `KLEDO-${kledoId}`).trim().substring(0, 100);
+            const price = Number(item.price ?? 0);
+            const hargaJual = Math.ceil(price * 1.15);
+
+            const existing = await this.prisma.product.findFirst({
+              where: { kledoProductId: kledoId, tenantId: tenant.id },
+            });
+
+            if (existing) {
+              await this.prisma.product.update({
+                where: { id: existing.id },
+                data: {
+                  name: item.name ?? existing.name,
+                  hargaKledo: price,
+                  hargaJual: hargaJual,
+                  updatedAt: new Date(),
+                },
+              });
+              updated++;
+            } else {
+              const skuFinal = await this.prisma.product.findUnique({ where: { sku } })
+                ? `${sku}-K${kledoId}`
+                : sku;
+              await this.prisma.product.create({
+                data: {
+                  tenantId: tenant.id,
+                  sku: skuFinal,
+                  name: item.name ?? 'Produk Kledo',
+                  kledoProductId: kledoId,
+                  hargaKledo: price,
+                  hargaJual: hargaJual,
+                  hargaBeli: price,
+                  stok: 0,
+                  active: true,
+                },
+              });
+              imported++;
+            }
+          } catch { /* skip individual failures */ }
+        }
+
+        page++;
+      } catch (e: any) {
+        this.logger.error('syncProducts page error: ' + e?.message);
+        break;
+      }
+    }
+
+    const message = `Produk: ${imported} ditambahkan, ${updated} diperbarui dari Kledo.`;
+    this.logger.log(message);
+    return { success: true, imported, updated, message };
+  }
+
+  /**
+   * Ambil semua halaman kontak customer dari Kledo, simpan/update ke tabel Customer lokal.
+   */
+  async syncContacts(): Promise<{ success: boolean; imported: number; updated: number; message: string }> {
+    const token = await this.getToken();
+    if (!token) return { success: false, imported: 0, updated: 0, message: 'KLEDO_TOKEN belum dikonfigurasi.' };
+
+    const tenant = await this.getOrCreateTenant();
+    const baseUrl = await this.getBaseUrl();
+    const headers = await this.getHeaders();
+
+    let page = 1;
+    let totalPages = 1;
+    let imported = 0;
+    let updated = 0;
+
+    while (page <= totalPages) {
+      try {
+        const res = await this.http.axiosRef.get(`${baseUrl}/finance/contacts`, {
+          headers,
+          params: { page, per_page: 500, is_customer: 1 },
+        });
+        const body = res.data?.data ?? res.data;
+        const items: any[] = body?.data ?? body ?? [];
+        totalPages = body?.last_page ?? 1;
+
+        for (const item of items) {
+          try {
+            const kledoId = String(item.id);
+
+            const existing = await this.prisma.customer.findFirst({
+              where: { kledoId, tenantId: tenant.id },
+            });
+
+            if (existing) {
+              await this.prisma.customer.update({
+                where: { id: existing.id },
+                data: {
+                  name: item.name ?? existing.name,
+                  phone: item.phone ?? existing.phone,
+                  email: item.email ?? existing.email,
+                  address: item.address ?? existing.address,
+                },
+              });
+              updated++;
+            } else {
+              await this.prisma.customer.create({
+                data: {
+                  tenantId: tenant.id,
+                  name: item.name ?? 'Kontak Kledo',
+                  phone: item.phone ?? null,
+                  email: item.email ?? null,
+                  address: item.address ?? null,
+                  kledoId,
+                  active: true,
+                },
+              });
+              imported++;
+            }
+          } catch { /* skip individual failures */ }
+        }
+
+        page++;
+      } catch (e: any) {
+        this.logger.error('syncContacts page error: ' + e?.message);
+        break;
+      }
+    }
+
+    const message = `Kontak: ${imported} ditambahkan, ${updated} diperbarui dari Kledo.`;
+    this.logger.log(message);
+    return { success: true, imported, updated, message };
+  }
+
   async syncInvoices(_limit = 500) { return { success: true, message: 'Invoice diambil langsung dari Kledo saat dibutuhkan.' }; }
-  async syncAll() { return { success: true, message: 'Sync selesai — data diambil real-time dari Kledo.' }; }
-  async syncNow() { return this.syncProducts(); }
+
+  async syncAll() {
+    const [prodResult, contResult] = await Promise.allSettled([
+      this.syncProducts(),
+      this.syncContacts(),
+    ]);
+    const prod = prodResult.status === 'fulfilled' ? prodResult.value : { imported: 0, updated: 0 };
+    const cont = contResult.status === 'fulfilled' ? contResult.value : { imported: 0, updated: 0 };
+    return {
+      success: true,
+      productsImported: prod.imported,
+      productsUpdated: prod.updated,
+      contactsImported: cont.imported,
+      contactsUpdated: cont.updated,
+      message: `Sync selesai — Produk: ${prod.imported} baru, ${prod.updated} diperbarui. Kontak: ${cont.imported} baru, ${cont.updated} diperbarui.`,
+    };
+  }
+
+  async syncNow() { return this.syncAll(); }
+
   async autoSync() {
     const token = await this.getToken();
     if (!token) return { success: false, message: 'Token belum dikonfigurasi.' };
-    return { success: true, message: 'Auto sync selesai.' };
+    return this.syncAll();
   }
+
   async getSyncLogs(_query: any) { return { data: [], total: 0 }; }
 }

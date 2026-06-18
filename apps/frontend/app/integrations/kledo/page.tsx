@@ -40,7 +40,7 @@ export default function KledoPage() {
   const [syncLogs, setSyncLogs] = useState<KledoSyncLog[]>([]);
   const [spmBrands, setSpmBrands] = useState<{ brand: string; pic: string }[]>([]);
   const [syncing, setSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<{ success: boolean; synced: number } | null>(null);
+  const [syncResult, setSyncResult] = useState<{ success: boolean; synced: number; productsImported?: number; productsUpdated?: number; contactsImported?: number; contactsUpdated?: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [syncMode, setSyncMode] = useState<'all' | 'products' | 'contacts' | 'invoices'>('all');
@@ -63,9 +63,9 @@ export default function KledoPage() {
       setSpmBrands(brands);
       if (st.connected) {
         const [prods, conts, invs, logs] = await Promise.allSettled([
-          kledoService.getProducts({ per_page: 50 }),
-          kledoService.getContacts({ per_page: 30, type: 'customer' }),
-          kledoService.getInvoices({ per_page: 20 }),
+          kledoService.getProducts({ per_page: 500 }),
+          kledoService.getContacts({ per_page: 500, type: 'customer' }),
+          kledoService.getInvoices({ per_page: 50 }),
           kledoService.getSyncLogs({ limit: 20 }),
         ]);
         if (prods.status === 'fulfilled') setProducts(prods.value?.data ?? []);
@@ -87,28 +87,36 @@ export default function KledoPage() {
   }, []);
 
   // Auto-sync saat pertama buka halaman jika terhubung & belum pernah sync
-  const triggerSync = useCallback(async (silent = false) => {
+  const triggerSync = useCallback(async (silent = false, overrideMode?: typeof syncMode) => {
     if (syncing) return;
     setSyncing(true);
     if (!silent) { setSyncResult(null); setSyncMessage(''); }
+    const mode = overrideMode ?? syncMode;
     try {
       let res: any;
-      if (syncMode === 'all' || silent) {
+      if (mode === 'all' || silent) {
         res = await kledoService.syncAll();
-        if (!silent) setSyncMessage(res.message ?? 'Sync semua dimulai di background');
-      } else if (syncMode === 'products') {
+        if (!silent) setSyncMessage(res.message ?? 'Sync semua selesai');
+      } else if (mode === 'products') {
         res = await kledoService.syncProducts();
-        if (!silent) setSyncMessage(res.message ?? 'Sync produk dimulai');
-      } else if (syncMode === 'contacts') {
+        if (!silent) setSyncMessage(res.message ?? 'Sync produk selesai');
+      } else if (mode === 'contacts') {
         res = await kledoService.syncContacts();
-        if (!silent) setSyncMessage(res.message ?? 'Sync kontak dimulai');
+        if (!silent) setSyncMessage(res.message ?? 'Sync kontak selesai');
       } else {
         res = await kledoService.syncInvoices(500);
-        if (!silent) setSyncMessage(res.message ?? 'Sync invoice dimulai');
+        if (!silent) setSyncMessage(res.message ?? 'Sync invoice selesai');
       }
-      if (!silent) setSyncResult({ success: true, synced: res?.total ?? 0 });
+      if (!silent) setSyncResult({
+        success: res?.success !== false,
+        synced: (res?.productsImported ?? 0) + (res?.contactsImported ?? 0),
+        productsImported: res?.productsImported,
+        productsUpdated: res?.productsUpdated,
+        contactsImported: res?.contactsImported,
+        contactsUpdated: res?.contactsUpdated,
+      });
       setLastSyncAt(new Date());
-      setTimeout(() => load(true), 3000);
+      setTimeout(() => load(true), 1500);
     } catch {
       if (!silent) setSyncResult({ success: false, synced: 0 });
     } finally {
@@ -322,9 +330,27 @@ export default function KledoPage() {
               color: syncResult.success ? '#15803D' : '#DC2626',
             }}
           >
-            {syncResult.success
-              ? <><CheckCircle className="h-4 w-4" /> {syncMessage || 'Sync berhasil dimulai di background.'}</>
-              : <><AlertCircle className="h-4 w-4" /> Sync gagal. Periksa koneksi dan KLEDO_TOKEN.</>}
+            {syncResult.success ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2"><CheckCircle className="h-4 w-4 flex-shrink-0" /> <span className="font-semibold">{syncMessage || 'Sync ke ERP berhasil!'}</span></div>
+                {(syncResult.productsImported !== undefined || syncResult.contactsImported !== undefined) && (
+                  <div className="flex flex-wrap gap-3 ml-6 text-xs">
+                    {syncResult.productsImported !== undefined && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,.15)' }}>
+                        <Package className="h-3 w-3" /> Produk: <b>{syncResult.productsImported}</b> baru, <b>{syncResult.productsUpdated ?? 0}</b> diperbarui
+                      </span>
+                    )}
+                    {syncResult.contactsImported !== undefined && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,.15)' }}>
+                        <Users className="h-3 w-3" /> Kontak: <b>{syncResult.contactsImported}</b> baru, <b>{syncResult.contactsUpdated ?? 0}</b> diperbarui
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <><AlertCircle className="h-4 w-4" /> Sync gagal. Periksa koneksi dan KLEDO_TOKEN.</>
+            )}
           </div>
         )}
 
@@ -366,6 +392,48 @@ export default function KledoPage() {
                 </div>
               ))}
             </div>
+
+            {/* Import Semua ke ERP */}
+            {status?.connected && (
+              <div className="rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center gap-4"
+                style={{ background: 'linear-gradient(135deg, #EDE9FE, #F5F3FF)', border: '1.5px solid #C4B5FD' }}>
+                <div className="flex-1">
+                  <h3 className="font-bold text-sm" style={{ color: '#1E1B4B' }}>Import Semua Data dari Kledo ke ERP</h3>
+                  <p className="text-xs mt-1" style={{ color: '#6B7280' }}>
+                    Simpan semua produk dan kontak Kledo ke database lokal ERP. Data bisa langsung dipilih saat buat invoice, order, dan lainnya.
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-shrink-0 flex-wrap">
+                  <button
+                    onClick={() => triggerSync(false, 'products')}
+                    disabled={syncing}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-50"
+                    style={{ background: '#3B82F6', color: '#fff' }}
+                  >
+                    <Package className="h-3.5 w-3.5" />
+                    Import Produk
+                  </button>
+                  <button
+                    onClick={() => triggerSync(false, 'contacts')}
+                    disabled={syncing}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-50"
+                    style={{ background: '#22C55E', color: '#fff' }}
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    Import Kontak
+                  </button>
+                  <button
+                    onClick={() => triggerSync(false, 'all')}
+                    disabled={syncing}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-50"
+                    style={{ background: '#5B52D1', color: '#fff' }}
+                  >
+                    <Zap className={`h-3.5 w-3.5 ${syncing ? 'animate-pulse' : ''}`} />
+                    {syncing ? 'Mengimpor...' : 'Import Semua'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Cara kerja sync */}
             <div className="rounded-2xl p-5" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
