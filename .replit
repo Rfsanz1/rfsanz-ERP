@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "bash", "nix", "postgresql-16"]
+modules = ["nodejs-20", "web", "bash"]
 [nix]
 channel = "stable-25_05"
 
@@ -43,7 +43,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/backend && pnpm exec prisma migrate deploy && node --loader ts-node/esm prisma/seed.ts && pnpm run start:dev"
+args = "cd apps/backend && pnpm exec prisma db push --accept-data-loss && pnpm run start:dev"
 waitForPort = 3000
 
 [[ports]]
@@ -64,6 +64,10 @@ ADMIN_EMAIL = "admin@rfsanz.com"
 ADMIN_PASSWORD = "root"
 ADMIN_NAME = "Administrator"
 COMPANY_NAME = "Gentong Mas"
+JWT_SECRET = "OsTYmmAfXjnyaiOxATwkYdvx9kzpqy+JpHOsh+m+xuIQUFOACKcbB4TuuN1i2Vfj3uhtGoZCGrR73qOMIUd9Hw=="
+JWT_REFRESH_SECRET = "nL0M5iog1hiAq0uvSXKpEgQPW/3jBspPkU+9azL+JAR7KL8HbbDTC0JQx0LxJUhhI+yLUffmYx/oTPJUt0Gppw=="
+JWT_EXPIRES_IN = "7d"
+JWT_REFRESH_EXPIRES_IN = "30d"
 
 [deployment]
 deploymentTarget = "vm"
