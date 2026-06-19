@@ -28,7 +28,7 @@ COPY packages/ ./packages/
 COPY apps/${APP_DIR}/package.json ./apps/${APP_DIR}/package.json
 
 # Install semua deps (termasuk devDeps untuk build)
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source app
 COPY apps/${APP_DIR}/ ./apps/${APP_DIR}/
@@ -52,7 +52,7 @@ COPY packages/ ./packages/
 COPY apps/${APP_DIR}/package.json ./apps/${APP_DIR}/package.json
 
 # Install production deps saja
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --no-frozen-lockfile --prod
 
 # Copy hasil build dari stage builder
 COPY --from=builder /app/apps/${APP_DIR}/.next ./apps/${APP_DIR}/.next
