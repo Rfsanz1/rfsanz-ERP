@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/localDb';
+import { getDb, ensureTables } from '@/lib/localDb';
 
 async function getOrderById(db: any, id: string) {
   const res = await db.query(
@@ -45,6 +45,7 @@ async function getOrderById(db: any, id: string) {
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    await ensureTables();
     const db = getDb();
     const order = await getOrderById(db, params.id);
     if (!order) return NextResponse.json({ data: null, error: 'Order tidak ditemukan' }, { status: 404 });
@@ -56,6 +57,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    await ensureTables();
     const body = await req.json();
     const db = getDb();
 
@@ -102,6 +104,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    await ensureTables();
     const db = getDb();
     await db.query('DELETE FROM local_orders WHERE id = $1', [params.id]);
     return NextResponse.json({ data: { id: params.id }, error: null });

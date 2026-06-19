@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, generateSoNumber } from '@/lib/localDb';
+import { getDb, generateSoNumber, ensureTables } from '@/lib/localDb';
 import { pushOrderToKledo } from '@/lib/kledoSync';
 import { sendAllOrderNotifications } from '@/lib/server/waServer';
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureTables();
     const body = await req.json();
     const {
       namaCustomer, noHp, alamat, catatan, salesName,
@@ -139,6 +140,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureTables();
     const { searchParams } = new URL(req.url);
     const limit  = Number(searchParams.get('limit')  ?? 30);
     const page   = Number(searchParams.get('page')   ?? 1);

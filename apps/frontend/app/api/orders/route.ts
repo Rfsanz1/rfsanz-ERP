@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/localDb';
+import { getDb, ensureTables } from '@/lib/localDb';
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureTables();
     const { searchParams } = new URL(req.url);
     const limit  = Number(searchParams.get('limit')  ?? 30);
     const page   = Number(searchParams.get('page')   ?? 1);
