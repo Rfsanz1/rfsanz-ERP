@@ -9,18 +9,18 @@ let cachedKledoBase = 'https://api.kledo.com/api/v1';
 
 const contactsCache: { data: any[]; ts: number } = { data: [], ts: 0 };
 const productsCache: { data: any[]; ts: number } = { data: [], ts: 0 };
-const CACHE_TTL = 10 * 60 * 1000; // 10 menit
+const CACHE_TTL = 30 * 60 * 1000; // 30 menit
+const PER_PAGE = 100;
+const CONCURRENCY = 8; // maks 8 halaman paralel sekaligus
 
 async function getKledoToken(): Promise<string | null> {
   if (cachedKledoToken) return cachedKledoToken;
 
-  // Coba dari env langsung (KLEDO_TOKEN di-set sebagai Replit secret)
   if (process.env.KLEDO_TOKEN) {
     cachedKledoToken = process.env.KLEDO_TOKEN;
     return cachedKledoToken;
   }
 
-  // Fallback: ambil dari backend settings
   try {
     const r = await fetch(`${BACKEND}/api/settings`, {
       headers: { 'ngrok-skip-browser-warning': '1' },
@@ -38,28 +38,39 @@ async function getKledoToken(): Promise<string | null> {
   return cachedKledoToken;
 }
 
-async function fetchKledoPages(
-  token: string,
-  endpoint: string,
-  maxPages = 100,
-  perPage = 100,
-): Promise<any[]> {
-  const results: any[] = [];
-  const headers = { Authorization: `Bearer ${token}` };
+/** Ambil satu halaman dari Kledo API */
+async function fetchPage(token: string, endpoint: string, page: number): Promise<{ items: any[]; lastPage: number }> {
+  const url = `${cachedKledoBase}/${endpoint}?per_page=${PER_PAGE}&page=${page}`;
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) return { items: [], lastPage: 1 };
+  const d = await r.json();
+  const items: any[] = d?.data?.data ?? [];
+  const lastPage: number = d?.data?.last_page ?? 1;
+  return { items, lastPage };
+}
 
-  for (let page = 1; page <= maxPages; page++) {
-    try {
-      const url = `${cachedKledoBase}/${endpoint}?per_page=${perPage}&page=${page}`;
-      const r = await fetch(url, { headers });
-      if (!r.ok) break;
-      const d = await r.json();
-      const items: any[] = d?.data?.data ?? [];
-      results.push(...items);
-      const totalPages: number = d?.data?.last_page ?? 1;
-      if (page >= totalPages) break;
-      if (items.length === 0) break;
-    } catch { break; }
+/** Ambil semua halaman secara paralel dengan batching */
+async function fetchAllPages(token: string, endpoint: string): Promise<any[]> {
+  // Halaman 1 dulu untuk tahu total halaman
+  const first = await fetchPage(token, endpoint, 1);
+  const results: any[] = [...first.items];
+  const totalPages = first.lastPage;
+
+  if (totalPages <= 1) return results;
+
+  // Ambil sisa halaman secara paralel, batch per CONCURRENCY
+  const remaining = Array.from({ length: totalPages - 1 }, (_, i) => i + 2); // [2,3,4,...,totalPages]
+
+  for (let i = 0; i < remaining.length; i += CONCURRENCY) {
+    const batch = remaining.slice(i, i + CONCURRENCY);
+    const settled = await Promise.allSettled(
+      batch.map(page => fetchPage(token, endpoint, page))
+    );
+    for (const res of settled) {
+      if (res.status === 'fulfilled') results.push(...res.value.items);
+    }
   }
+
   return results;
 }
 
@@ -71,7 +82,7 @@ function textMatch(text: string, query: string): boolean {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const type = searchParams.get('type') ?? 'contacts'; // 'contacts' | 'products'
+  const type = searchParams.get('type') ?? 'contacts';
   const q = (searchParams.get('q') ?? '').trim();
 
   const token = await getKledoToken();
@@ -83,7 +94,7 @@ export async function GET(req: NextRequest) {
 
   if (type === 'products') {
     if (now - productsCache.ts > CACHE_TTL || productsCache.data.length === 0) {
-      const raw = await fetchKledoPages(token, 'finance/products', 100, 100);
+      const raw = await fetchAllPages(token, 'finance/products');
       productsCache.data = raw.map((p: any) => ({
         id: `kledo-${p.id}`,
         kledoId: p.id,
@@ -104,7 +115,7 @@ export async function GET(req: NextRequest) {
 
   // contacts
   if (now - contactsCache.ts > CACHE_TTL || contactsCache.data.length === 0) {
-    const raw = await fetchKledoPages(token, 'finance/contacts', 100, 100);
+    const raw = await fetchAllPages(token, 'finance/contacts');
     contactsCache.data = raw.map((c: any) => ({
       id: `kledo-${c.id}`,
       kledoId: c.id,
