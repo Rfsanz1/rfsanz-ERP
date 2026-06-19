@@ -41,8 +41,8 @@ async function getKledoToken(): Promise<string | null> {
 async function fetchKledoPages(
   token: string,
   endpoint: string,
-  maxPages = 10,
-  perPage = 500,
+  maxPages = 100,
+  perPage = 100,
 ): Promise<any[]> {
   const results: any[] = [];
   const headers = { Authorization: `Bearer ${token}` };
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
 
   if (type === 'products') {
     if (now - productsCache.ts > CACHE_TTL || productsCache.data.length === 0) {
-      const raw = await fetchKledoPages(token, 'finance/products', 12, 500);
+      const raw = await fetchKledoPages(token, 'finance/products', 100, 100);
       productsCache.data = raw.map((p: any) => ({
         id: `kledo-${p.id}`,
         kledoId: p.id,
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
 
   // contacts
   if (now - contactsCache.ts > CACHE_TTL || contactsCache.data.length === 0) {
-    const raw = await fetchKledoPages(token, 'finance/contacts', 20, 500);
+    const raw = await fetchKledoPages(token, 'finance/contacts', 100, 100);
     contactsCache.data = raw.map((c: any) => ({
       id: `kledo-${c.id}`,
       kledoId: c.id,
