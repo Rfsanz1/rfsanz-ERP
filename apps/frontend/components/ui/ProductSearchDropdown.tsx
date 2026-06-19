@@ -58,16 +58,22 @@ async function preloadKledo() {
   try {
     const res = await fetch('/api/direct/kledo-search?type=products&q=').then(r => r.json());
     if (res?.success && Array.isArray(res.data)) {
-      _allKledoProducts = res.data.map((p: any) => ({
-        id: p.id,
-        name: p.name ?? '',
-        sku: p.sku ?? '',
-        hargaJual: Number(p.price ?? 0),
-        stok: 0,
-        kledoProductId: String(p.kledoId ?? ''),
-        unit: p.unit ? { name: p.unit } : null,
-        source: 'kledo' as const,
-      }));
+      _allKledoProducts = res.data.map((p: any) => {
+        const hargaJual = Number(p.hargaJual ?? 0);
+        const hargaBeli = Number(p.hargaBeli ?? 0);
+        const hpp       = Number(p.hpp       ?? 0);
+        const hargaTertinggi = Math.max(hargaJual, hargaBeli, hpp, Number(p.price ?? 0));
+        return {
+          id: p.id,
+          name: p.name ?? '',
+          sku: p.sku ?? '',
+          hargaJual: hargaTertinggi,
+          stok: 0,
+          kledoProductId: String(p.kledoId ?? ''),
+          unit: p.unit ? { name: p.unit } : null,
+          source: 'kledo' as const,
+        };
+      });
       _kledoCacheTs = Date.now();
       _queryCache.clear();
     }

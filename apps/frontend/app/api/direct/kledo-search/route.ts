@@ -95,14 +95,23 @@ export async function GET(req: NextRequest) {
   if (type === 'products') {
     if (now - productsCache.ts > CACHE_TTL || productsCache.data.length === 0) {
       const raw = await fetchAllPages(token, 'finance/products');
-      productsCache.data = raw.map((p: any) => ({
-        id: `kledo-${p.id}`,
-        kledoId: p.id,
-        name: p.name ?? '',
-        sku: p.code ?? '',
-        price: Number(p.price ?? 0),
-        unit: p.unit ? (typeof p.unit === 'string' ? p.unit : (p.unit?.name ?? '')) : '',
-      }));
+      productsCache.data = raw.map((p: any) => {
+        const hargaJual  = Number(p.price      ?? p.sell_price      ?? 0);
+        const hargaBeli  = Number(p.buy_price  ?? p.purchase_price  ?? 0);
+        const hpp        = Number(p.hpp        ?? p.cost_price      ?? p.cogs ?? 0);
+        const hargaTertinggi = Math.max(hargaJual, hargaBeli, hpp);
+        return {
+          id: `kledo-${p.id}`,
+          kledoId: p.id,
+          name: p.name ?? '',
+          sku: p.code ?? '',
+          price: hargaTertinggi,
+          hargaJual,
+          hargaBeli,
+          hpp,
+          unit: p.unit ? (typeof p.unit === 'string' ? p.unit : (p.unit?.name ?? '')) : '',
+        };
+      });
       productsCache.ts = now;
     }
 
