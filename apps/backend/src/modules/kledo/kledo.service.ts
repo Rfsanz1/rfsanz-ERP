@@ -450,11 +450,13 @@ export class KledoService {
       try {
         const res = await this.http.axiosRef.get(`${baseUrl}/finance/contacts`, {
           headers,
-          params: { page, per_page: 500, is_customer: 1 },
+          params: { page, per_page: 500 },
         });
         const body = res.data?.data ?? res.data;
         const items: any[] = body?.data ?? body ?? [];
         totalPages = body?.last_page ?? 1;
+
+        this.logger.log(`syncContacts: halaman ${page}/${totalPages}, ${items.length} kontak`);
 
         for (const item of items) {
           try {
@@ -489,7 +491,9 @@ export class KledoService {
               });
               imported++;
             }
-          } catch { /* skip individual failures */ }
+          } catch (err: any) {
+            this.logger.warn(`syncContacts skip kontak ${item?.id}: ${err?.message}`);
+          }
         }
 
         page++;
