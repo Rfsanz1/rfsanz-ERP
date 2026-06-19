@@ -59,6 +59,7 @@ export async function getDefaultFinanceAccount(baseUrl: string, token: string): 
 /**
  * Cari kontak Kledo berdasarkan nama/telepon; jika tidak ada, buat baru.
  * Kembalikan contact_id (number) atau null jika gagal.
+ * CATATAN: param yang benar di Kledo adalah `?search=` bukan `?keyword=`
  */
 export async function findOrCreateKledoContact(
   baseUrl: string,
@@ -68,8 +69,33 @@ export async function findOrCreateKledoContact(
 ): Promise<number | null> {
   if (!namaCustomer) return null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const nameLower   = namaCustomer.toLowerCase();
+  const phoneClean  = (noHp ?? '').replace(/\D/g, '').slice(-8);
 
-  // 1. Coba buat kontak baru langsung — type_id:3 = customer di Kledo
+  const findInList = (items: any[]): number | null => {
+    const match = items.find(c => {
+      const cName  = (c.name  ?? '').toLowerCase();
+      const cPhone = (c.phone ?? '').replace(/\D/g, '');
+      return cName === nameLower || (phoneClean && cPhone.endsWith(phoneClean));
+    });
+    return match ? Number(match.id) : null;
+  };
+
+  // 1. Cari dulu pakai ?search= (parameter yang benar di Kledo, bukan ?keyword=)
+  try {
+    const sr = await fetch(
+      `${baseUrl}/finance/contacts?search=${encodeURIComponent(namaCustomer)}&per_page=100`,
+      { headers },
+    );
+    if (sr.ok) {
+      const sd    = await sr.json();
+      const items = sd?.data?.data ?? sd?.data ?? [];
+      const found = findInList(items);
+      if (found) return found;
+    }
+  } catch {}
+
+  // 2. Belum ketemu → buat kontak baru (type_id:3 = customer di Kledo)
   try {
     const body: any = { name: namaCustomer, type_id: 3 };
     if (noHp) body.phone = noHp;
@@ -78,28 +104,22 @@ export async function findOrCreateKledoContact(
       headers,
       body: JSON.stringify(body),
     });
-    if (cr.ok) {
-      const cd = await cr.json();
-      const newId = cd?.data?.id;
-      if (newId) return newId;
-    }
-  } catch {}
-
-  // 2. Jika create gagal (misal duplikat), cari via search dengan per_page besar
-  try {
-    const searchUrl = `${baseUrl}/finance/contacts?keyword=${encodeURIComponent(namaCustomer)}&per_page=50`;
-    const sr = await fetch(searchUrl, { headers });
-    if (sr.ok) {
-      const sd = await sr.json();
-      const items: any[] = sd?.data?.data ?? sd?.data ?? [];
-      const nameLower = namaCustomer.toLowerCase();
-      const phoneClean = (noHp ?? '').replace(/\D/g, '').slice(-8);
-      const match = items.find(c => {
-        const cName = (c.name ?? '').toLowerCase();
-        const cPhone = (c.phone ?? '').replace(/\D/g, '');
-        return cName === nameLower || (phoneClean && cPhone.endsWith(phoneClean));
-      });
-      if (match) return match.id;
+    const cd = await cr.json();
+    // Sukses buat baru
+    if (cr.ok && cd?.data?.id) return Number(cd.data.id);
+    // Gagal karena nama sudah ada → cari lagi (mungkin dibuat sebelumnya)
+    if (!cr.ok && (cd?.message ?? '').includes('sudah ada')) {
+      // Cari ulang dengan search lebih luas
+      const sr2 = await fetch(
+        `${baseUrl}/finance/contacts?search=${encodeURIComponent(namaCustomer)}&per_page=200`,
+        { headers },
+      );
+      if (sr2.ok) {
+        const sd2   = await sr2.json();
+        const items2 = sd2?.data?.data ?? sd2?.data ?? [];
+        const found2 = findInList(items2);
+        if (found2) return found2;
+      }
     }
   } catch {}
 
