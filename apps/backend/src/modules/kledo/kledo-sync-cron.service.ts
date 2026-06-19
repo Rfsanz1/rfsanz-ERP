@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { KledoService } from './kledo.service.js';
 
 /**
@@ -18,7 +18,7 @@ export class KledoSyncCronService {
   private readonly logger = new Logger(KledoSyncCronService.name);
   private isRunning = false;
 
-  constructor(private readonly kledo: KledoService) {}
+  constructor(@Inject(KledoService) private readonly kledo: KledoService) {}
 
   /**
    * Poll Kledo setiap 15 menit.
