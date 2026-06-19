@@ -319,10 +319,12 @@ export default function ProductSearchDropdown({
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0 pl-2">
-                  <p className="text-sm font-bold" style={{ color: accentColor }}>{fmtRp(p.hargaJual)}</p>
-                  <p className="text-[11px] font-semibold mt-0.5" style={{ color: stockColor(p.stok, p.source) }}>
-                    {p.source === 'kledo' ? 'Dari Kledo' : `Stok: ${p.stok}`}
+                  <p className="text-sm font-bold" style={{ color: p.hargaJual > 0 ? accentColor : 'var(--text-muted)' }}>
+                    {p.hargaJual > 0 ? fmtRp(p.hargaJual) : 'Harga belum diset'}
                   </p>
+                  {p.source === 'kledo' && (
+                    <p className="text-[11px] font-semibold mt-0.5" style={{ color: '#6366F1' }}>Dari Kledo</p>
+                  )}
                 </div>
               </button>
             ))

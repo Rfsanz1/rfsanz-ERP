@@ -439,10 +439,9 @@ export default function CreateOrderModal({
                       placeholder="Ketik nama produk atau SKU..."
                       accentColor={COLOR}
                     />
-                    {item.stokInfo !== undefined && (
-                      <p className="text-[11px] mt-1.5 font-medium"
-                        style={{ color: item.stokInfo > 20 ? '#22C55E' : item.stokInfo > 5 ? '#F59E0B' : 'var(--danger)' }}>
-                        ● Stok tersedia: {item.stokInfo} {item.unit ?? ''}
+                    {item.nama && item.harga > 0 && (
+                      <p className="text-[11px] mt-1.5 font-semibold flex items-center gap-1" style={{ color: COLOR }}>
+                        <Tag className="h-3 w-3" /> Harga satuan: {fmtRp(item.harga)}
                       </p>
                     )}
                   </div>
