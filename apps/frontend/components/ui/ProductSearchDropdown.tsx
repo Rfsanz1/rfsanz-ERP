@@ -85,12 +85,19 @@ async function preloadLocal() {
   if (Date.now() - _localCacheTs < LOCAL_TTL && _allLocalProducts.length > 0) return;
   try {
     const res = await api.get('/inventory/products', { params: { limit: 1000 } });
-    const raw: any[] = (() => { const d = res.data; return Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : []; })();
+    const d = res.data;
+    const raw: any[] = Array.isArray(d)
+      ? d
+      : Array.isArray(d?.data?.data)
+        ? d.data.data
+        : Array.isArray(d?.data)
+          ? d.data
+          : [];
     _allLocalProducts = raw.map((p: any) => ({
       id: String(p.id),
       name: p.name ?? '',
       sku: p.sku ?? p.code ?? '',
-      hargaJual: Number(p.hargaJual ?? p.price ?? 0),
+      hargaJual: Number(p.hargaJual ?? p.sellPrice ?? p.price ?? 0),
       stok: Number(p.stok ?? p.stock ?? p.qty ?? 0),
       kledoProductId: p.kledoProductId ?? null,
       unit: p.unit ?? null,
