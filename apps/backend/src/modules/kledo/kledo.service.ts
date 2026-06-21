@@ -11,6 +11,10 @@ const SPM_BRAND_PIC: Record<string, string> = {
 const DB_KEY_TOKEN   = 'kledo_token';
 const DB_KEY_BASEURL = 'kledo_base_url';
 
+// ── In-memory cache untuk getProducts (cegah 429 rate limit) ─────────
+const _productsCache: { data: any; ts: number } = { data: null, ts: 0 };
+const _PRODUCTS_TTL = 5 * 60 * 1000; // 5 menit
+
 @Injectable()
 export class KledoService {
   private readonly logger = new Logger(KledoService.name);
@@ -123,12 +127,27 @@ export class KledoService {
   async getProducts(query: any = {}) {
     const token = await this.getToken();
     if (!token) return { data: { data: [], total: 0, last_page: 1 } };
-    const { page = 1, per_page = 500, search } = query;
+    const { page = 1, per_page = 500, search, name } = query;
+    const searchTerm = search ?? name ?? '';
+
+    // Gunakan cache jika tidak ada search term khusus dan cache masih valid
+    const now = Date.now();
+    if (!searchTerm && _productsCache.data && (now - _productsCache.ts) < _PRODUCTS_TTL) {
+      return _productsCache.data;
+    }
+
     const params: any = { page, per_page };
-    if (search) params.name = search;
+    if (searchTerm) params.name = searchTerm;
     const headers = await this.getHeaders();
     const baseUrl = await this.getBaseUrl();
     const res = await firstValueFrom(this.http.get(`${baseUrl}/finance/products`, { headers, params }));
+
+    // Simpan ke cache hanya jika tidak ada filter search
+    if (!searchTerm) {
+      _productsCache.data = res.data;
+      _productsCache.ts = now;
+    }
+
     return res.data;
   }
 

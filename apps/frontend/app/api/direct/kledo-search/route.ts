@@ -11,7 +11,7 @@ const contactsCache: { data: any[]; ts: number } = { data: [], ts: 0 };
 const productsCache: { data: any[]; ts: number } = { data: [], ts: 0 };
 const CACHE_TTL = 30 * 60 * 1000; // 30 menit
 const PER_PAGE = 100;
-const CONCURRENCY = 8; // maks 8 halaman paralel sekaligus
+const CONCURRENCY = 3; // maks 3 halaman paralel (hindari 429 rate limit)
 
 async function getKledoToken(): Promise<string | null> {
   if (cachedKledoToken) return cachedKledoToken;

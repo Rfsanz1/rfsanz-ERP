@@ -76,6 +76,8 @@ async function preloadKledo() {
       });
       _kledoCacheTs = Date.now();
       _queryCache.clear();
+      // Patch harga lokal yang masih 0 menggunakan data Kledo
+      patchLocalPricesFromKledo();
     }
   } catch { /* ignore */ }
   _kledoLoading = false;
@@ -93,19 +95,48 @@ async function preloadLocal() {
         : Array.isArray(d?.data)
           ? d.data
           : [];
-    _allLocalProducts = raw.map((p: any) => ({
-      id: String(p.id),
-      name: p.name ?? '',
-      sku: p.sku ?? p.code ?? '',
-      hargaJual: Number(p.hargaJual ?? p.sellPrice ?? p.price ?? 0),
-      stok: Number(p.stok ?? p.stock ?? p.qty ?? 0),
-      kledoProductId: p.kledoProductId ?? null,
-      unit: p.unit ?? null,
-      source: 'local' as const,
-    }));
+    _allLocalProducts = raw.map((p: any) => {
+      const hargaJual = Number(p.hargaJual ?? p.sellPrice ?? p.price ?? 0);
+      const hargaBeli = Number(p.hargaBeli ?? p.buyPrice ?? 0);
+      // Tampilkan harga tertinggi yang tersedia (jual atau beli)
+      const hargaTertinggi = Math.max(hargaJual, hargaBeli);
+      return {
+        id: String(p.id),
+        name: p.name ?? '',
+        sku: p.sku ?? p.code ?? '',
+        hargaJual: hargaTertinggi,
+        stok: Number(p.stok ?? p.stock ?? p.qty ?? 0),
+        kledoProductId: p.kledoProductId ?? null,
+        unit: p.unit ?? null,
+        source: 'local' as const,
+        _rawHargaJual: hargaJual, // simpan asli untuk patch Kledo
+      };
+    });
     _localCacheTs = Date.now();
     _queryCache.clear();
   } catch { /* ignore */ }
+}
+
+/** Setelah Kledo selesai load, patch harga lokal yang masih 0 dari data Kledo */
+function patchLocalPricesFromKledo() {
+  if (_allKledoProducts.length === 0 || _allLocalProducts.length === 0) return;
+
+  const kledoById = new Map<string, ProductOption>();
+  const kledoByName = new Map<string, ProductOption>();
+  for (const k of _allKledoProducts) {
+    if (k.kledoProductId) kledoById.set(k.kledoProductId, k);
+    kledoByName.set(k.name.toLowerCase().trim(), k);
+  }
+
+  let changed = false;
+  _allLocalProducts = _allLocalProducts.map(p => {
+    if (p.hargaJual > 0) return p; // sudah ada harga, skip
+    const match = (p.kledoProductId ? kledoById.get(p.kledoProductId) : null)
+      ?? kledoByName.get(p.name.toLowerCase().trim());
+    if (match && match.hargaJual > 0) { changed = true; return { ...p, hargaJual: match.hargaJual }; }
+    return p;
+  });
+  if (changed) _queryCache.clear();
 }
 
 export default function ProductSearchDropdown({
