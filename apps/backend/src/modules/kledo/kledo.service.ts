@@ -378,9 +378,9 @@ export class KledoService {
           try {
             const kledoId = String(item.id);
             const sku = (item.code || item.sku || `KLEDO-${kledoId}`).trim().substring(0, 100);
-            const hargaJualKledo = Number(item.price ?? item.sell_price ?? 0);
-            const hargaBeli      = Number(item.buy_price ?? item.purchase_price ?? 0);
-            const hpp            = Number(item.hpp ?? item.cost_price ?? item.cogs ?? 0);
+            const hargaJualKledo = Number(item.price         ?? item.sell_price      ?? 0);
+            const hargaBeli      = Number(item.base_price    ?? item.buy_price       ?? item.purchase_price ?? 0);
+            const hpp            = Number(item.avg_base_price ?? item.hpp            ?? item.cost_price     ?? item.cogs ?? 0);
             const price          = Math.max(hargaJualKledo, hargaBeli, hpp);
 
             const existing = await this.prisma.product.findFirst({
