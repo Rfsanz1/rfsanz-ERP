@@ -316,40 +316,100 @@ export default function DashboardContent() {
           background: 'var(--surface)',
           border: '1px solid var(--border)',
           borderRadius: 16,
-          padding: '18px 20px',
+          padding: '20px 24px',
           boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px', letterSpacing: '-0.01em' }}>
-          Aksi Cepat
-        </p>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
+          <div>
+            <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+              Aksi Cepat
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '3px 0 0' }}>Pintasan menu yang sering digunakan</p>
+          </div>
+          <ArrowUpRight size={16} style={{ color: 'var(--text-muted)' }} />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {QUICK_ACTIONS.map((a) => {
             const Icon = a.icon;
             const base: React.CSSProperties = {
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-              padding: '12px 8px', borderRadius: 12,
-              border: '1px solid var(--border)',
-              background: 'transparent',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 12,
+              padding: '20px 12px 18px',
+              borderRadius: 14,
+              border: '1.5px solid var(--border)',
+              background: 'var(--surface-sunken)',
               cursor: 'pointer',
-              transition: 'all 0.15s ease',
+              transition: 'all 0.18s ease',
               width: '100%',
+              textDecoration: 'none',
             };
             const inner = (
               <>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: a.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon size={16} style={{ color: a.color }} strokeWidth={2} />
+                <div style={{
+                  width: 52, height: 52, borderRadius: 14,
+                  background: a.bg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: `1.5px solid ${a.color}22`,
+                  flexShrink: 0,
+                }}>
+                  <Icon size={24} style={{ color: a.color }} strokeWidth={1.8} />
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.3 }}>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: 'var(--text-primary)',
+                  textAlign: 'center',
+                  lineHeight: 1.35,
+                  letterSpacing: '-0.01em',
+                }}>
                   {a.label}
                 </span>
               </>
             );
             if (a.modal) return (
-              <button key={a.label} onClick={() => setShowOrder(true)} style={base}>{inner}</button>
+              <button
+                key={a.label}
+                onClick={() => setShowOrder(true)}
+                style={base}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = a.color;
+                  (e.currentTarget as HTMLElement).style.background = a.bg;
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${a.color}22`;
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+                  (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                }}
+              >
+                {inner}
+              </button>
             );
             return (
-              <Link key={a.label} href={a.href} style={{ ...base, textDecoration: 'none' }}>{inner}</Link>
+              <Link
+                key={a.label}
+                href={a.href}
+                style={base}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = a.color;
+                  (e.currentTarget as HTMLElement).style.background = a.bg;
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${a.color}22`;
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+                  (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                }}
+              >
+                {inner}
+              </Link>
             );
           })}
         </div>
