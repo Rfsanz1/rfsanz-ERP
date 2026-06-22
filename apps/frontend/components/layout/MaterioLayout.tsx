@@ -20,8 +20,10 @@ export function MaterioLayout({ children }: MaterioLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  const sidebarW = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
+
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Sidebar */}
       <MaterioSidebar
         collapsed={sidebarCollapsed}
@@ -29,15 +31,16 @@ export function MaterioLayout({ children }: MaterioLayoutProps) {
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
 
-      {/* Main content */}
+      {/* Main content — marginLeft mengikuti lebar sidebar dengan transisi mulus */}
       <Box
         component="main"
         sx={{
-          flex: 1,
           display: 'flex',
           flexDirection: 'column',
+          minHeight: '100vh',
+          marginLeft: { xs: 0, lg: `${sidebarW}px` },
+          transition: 'margin-left 0.25s ease',
           minWidth: 0,
-          transition: 'all 0.25s ease',
         }}
       >
         <MaterioTopbar
