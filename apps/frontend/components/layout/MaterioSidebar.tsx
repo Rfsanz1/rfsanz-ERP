@@ -16,12 +16,12 @@ export const SIDEBAR_WIDTH           = 240;
 export const SIDEBAR_COLLAPSED_WIDTH = 0;
 
 interface NavChild { href: string; label: string; }
-interface NavItem  { href?: string; label: string; icon: React.ElementType; children?: NavChild[]; badge?: string; dividerBefore?: boolean; }
+interface NavItem  { href?: string; label: string; icon: React.ElementType; children?: NavChild[]; badge?: string; dividerBefore?: boolean; categoryLabel?: string; }
 
 const NAV: NavItem[] = [
-  { href: '/dashboard',  label: 'Beranda',         icon: LayoutDashboard },
+  { href: '/dashboard',  label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'UTAMA' },
   {
-    label: 'Penjualan', icon: ShoppingCart,
+    label: 'Penjualan', icon: ShoppingCart, categoryLabel: 'OPERASIONAL',
     children: [
       { href: '/sales/smart-order', label: 'Smart Order'      },
       { href: '/sales/quotations',  label: 'Penawaran'        },
@@ -86,7 +86,7 @@ const NAV: NavItem[] = [
     ],
   },
   {
-    label: 'Keuangan', icon: DollarSign, dividerBefore: true,
+    label: 'Keuangan', icon: DollarSign, categoryLabel: 'KEUANGAN',
     children: [
       { href: '/finance/journal',            label: 'Jurnal'             },
       { href: '/accounting',                  label: 'Chart of Accounts'  },
@@ -103,7 +103,7 @@ const NAV: NavItem[] = [
       { href: '/reports/inventory', label: 'Laporan Stok'    },
     ],
   },
-  { href: '/hr',      label: 'Karyawan', icon: Users,    dividerBefore: true },
+  { href: '/hr',      label: 'Karyawan', icon: Users,    categoryLabel: 'SDM & OPERASI' },
   { href: '/payroll', label: 'Payroll',  icon: BookOpen },
   { href: '/pos/orders', label: 'Point of Sale', icon: CreditCard },
   {
@@ -114,12 +114,12 @@ const NAV: NavItem[] = [
       { href: '/crm/opportunities', label: 'Opportunity'},
     ],
   },
-  { href: '/ai',        label: 'AI Assistant', icon: Brain,    badge: 'AI', dividerBefore: true },
+  { href: '/ai',        label: 'AI Assistant', icon: Brain,    badge: 'AI', categoryLabel: 'DIGITAL' },
   { href: '/marketing', label: 'Marketing',    icon: Megaphone },
   { href: '/website',   label: 'Website',      icon: Globe     },
   { href: '/notifications', label: 'Notifikasi', icon: Bell, badge: '5' },
   {
-    label: 'Pengaturan', icon: Settings, dividerBefore: true,
+    label: 'Pengaturan', icon: Settings, categoryLabel: 'SISTEM',
     children: [
       { href: '/settings',          label: 'Pengaturan Umum' },
       { href: '/settings/workflow', label: 'Workflow Config' },
@@ -206,8 +206,25 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
 
           return (
             <div key={item.label}>
-              {/* Divider sebelum grup baru */}
-              {item.dividerBefore && (
+              {/* Category label */}
+              {item.categoryLabel && (
+                <div style={{
+                  padding: '12px 16px 4px',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+                    color: '#9CA3AF', textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {item.categoryLabel}
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: '#F3F4F6' }} />
+                </div>
+              )}
+
+              {/* Divider sebelum grup baru (legacy — tidak dipakai lagi) */}
+              {item.dividerBefore && !item.categoryLabel && (
                 <div style={{ height: 1, background: '#F3F4F6', margin: '6px 16px' }} />
               )}
 
