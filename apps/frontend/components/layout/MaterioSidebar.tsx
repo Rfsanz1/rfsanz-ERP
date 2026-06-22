@@ -228,27 +228,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
           padding: '0 12px 0 16px',
           height: 56, borderBottom: '1px solid #F0F0F5', flexShrink: 0,
         }}>
-          {/* Logo mark */}
-          <div style={{
-            width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
-          }}>
-            <span style={{ color: '#fff', fontWeight: 800, fontSize: 10, letterSpacing: 0.3 }}>GM</span>
-          </div>
-
-          {/* App name */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#1E1B4B', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden' }}>
-              Gentong Mas
-            </p>
-            <p style={{ margin: 0, fontSize: 10, color: '#9CA3AF', lineHeight: 1, fontWeight: 500 }}>
-              ERP System
-            </p>
-          </div>
-
-          {/* Collapse button — di ujung kanan setelah nama */}
+          {/* Collapse button — di sebelah KIRI logo GM */}
           {onToggle && (
             <button
               onClick={onToggle}
@@ -271,6 +251,26 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
               <PanelLeftClose size={14} strokeWidth={2} />
             </button>
           )}
+
+          {/* Logo mark */}
+          <div style={{
+            width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
+          }}>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: 10, letterSpacing: 0.3 }}>GM</span>
+          </div>
+
+          {/* App name */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#1E1B4B', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+              Gentong Mas
+            </p>
+            <p style={{ margin: 0, fontSize: 10, color: '#9CA3AF', lineHeight: 1, fontWeight: 500 }}>
+              ERP System
+            </p>
+          </div>
         </div>
       )}
 
