@@ -30,13 +30,17 @@ function formatRelative(iso: string): string {
 
 /* ── Status pills ──────────────────────────────────────────────────── */
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  confirmed:   { label: 'Dikonfirmasi', color: '#3B82F6', bg: 'rgba(59,130,246,0.10)' },
-  in_progress: { label: 'Diproses',     color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
-  done:        { label: 'Selesai',       color: '#10B981', bg: 'rgba(16,185,129,0.10)' },
-  cancelled:   { label: 'Dibatalkan',   color: '#EF4444', bg: 'rgba(239,68,68,0.10)'  },
-  pending:     { label: 'Pending',       color: '#94A3B8', bg: 'rgba(148,163,184,0.10)'},
+  confirmed:   { label: 'Dikonfirmasi',    color: '#3B82F6', bg: 'rgba(59,130,246,0.10)'  },
+  in_progress: { label: 'Diproses',        color: '#F59E0B', bg: 'rgba(245,158,11,0.10)'  },
+  done:        { label: 'Selesai',          color: '#10B981', bg: 'rgba(16,185,129,0.10)'  },
+  cancelled:   { label: 'Dibatalkan',      color: '#EF4444', bg: 'rgba(239,68,68,0.10)'   },
+  pending:     { label: 'Pending',          color: '#94A3B8', bg: 'rgba(148,163,184,0.10)' },
+  lunas:       { label: 'Lunas',            color: '#10B981', bg: 'rgba(16,185,129,0.10)'  },
+  sebagian:    { label: 'Dibayar Sebagian', color: '#F59E0B', bg: 'rgba(245,158,11,0.10)'  },
+  belum_bayar: { label: 'Belum Bayar',      color: '#EF4444', bg: 'rgba(239,68,68,0.10)'   },
+  dibatalkan:  { label: 'Dibatalkan',       color: '#94A3B8', bg: 'rgba(148,163,184,0.10)' },
 };
-const getStatus = (s: string) => STATUS_MAP[s?.toLowerCase()] ?? STATUS_MAP.pending;
+const getStatus = (s: string) => STATUS_MAP[s?.toLowerCase()] ?? STATUS_MAP.belum_bayar;
 
 /* ── Skeleton ──────────────────────────────────────────────────────── */
 function Skel({ w = '100%', h = 16, r = 8 }: { w?: string | number; h?: number; r?: number }) {

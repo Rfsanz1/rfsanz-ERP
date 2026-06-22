@@ -76,11 +76,11 @@ const DEFAULT: DashboardData = {
 
 /* Konversi status invoice Kledo → label lokal */
 const KLEDO_STATUS_MAP: Record<string, string> = {
-  paid:    'done',
-  partial: 'in_progress',
-  open:    'pending',
-  draft:   'pending',
-  void:    'cancelled',
+  paid:    'lunas',
+  partial: 'sebagian',
+  open:    'belum_bayar',
+  draft:   'belum_bayar',
+  void:    'dibatalkan',
 };
 
 export function useDashboardData() {
