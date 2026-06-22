@@ -121,11 +121,11 @@ export default function DashboardContent() {
 
   const revenueTitle =
     tab === 'today' ? 'Penjualan Hari Ini' :
-    tab === 'week'  ? 'Penjualan Minggu Ini' :
+    tab === 'week'  ? 'Penjualan 7 Hari Terakhir' :
     'Penjualan Bulan Ini';
 
   const revenueSub =
-    tab === 'today' ? `Minggu ini: ${formatRp(summary.weekRevenue)}` :
+    tab === 'today' ? `7 hari: ${formatRp(summary.weekRevenue)}` :
     tab === 'week'  ? `Bulan ini: ${formatRp(summary.monthRevenue)}` :
     `Tahun ini: ${formatRp(summary.yearRevenue)}`;
 
@@ -162,13 +162,13 @@ export default function DashboardContent() {
       light:  'rgba(16,185,129,0.10)',
     },
     {
-      title:  'Invoice Belum Bayar',
-      value:  String(summary.overdueInvoiceCount || 0),
-      sub:    `AR: ${formatRp(summary.totalAR)}`,
+      title:  'Total Piutang (AR)',
+      value:  formatRp(summary.totalAR),
+      sub:    `${summary.overdueInvoiceCount} invoice jatuh tempo`,
       up:     summary.overdueInvoiceCount === 0,
       icon:   FileText,
-      accent: summary.overdueInvoiceCount > 0 ? '#EF4444' : '#F59E0B',
-      light:  summary.overdueInvoiceCount > 0 ? 'rgba(239,68,68,0.10)' : 'rgba(245,158,11,0.10)',
+      accent: summary.totalAR > 0 ? '#F59E0B' : '#10B981',
+      light:  summary.totalAR > 0 ? 'rgba(245,158,11,0.10)' : 'rgba(16,185,129,0.10)',
     },
   ];
 

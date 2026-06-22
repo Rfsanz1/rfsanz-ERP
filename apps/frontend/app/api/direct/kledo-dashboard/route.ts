@@ -68,13 +68,17 @@ export async function GET() {
   const monthStr  = now.toISOString().slice(0, 7);
   const yearStr   = String(now.getFullYear());
 
-  /* Hitung range minggu ini (Senin s.d. hari ini) */
-  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0=Senin
+  /* Hitung range tanggal — "minggu" = 7 hari bergulir termasuk hari ini */
   const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - dayOfWeek);
+  weekStart.setDate(now.getDate() - 6);
   const weekStartStr = weekStart.toISOString().slice(0, 10);
 
-  /* Fetch paralel: invoices (halaman 1-5 saja), expenses hal-1, bank accounts */
+  /*
+   * Kledo API TIDAK mendukung filter trans_date_to secara akurat —
+   * semua calls mengembalikan data lengkap (total=52002).
+   * Solusi: fetch 500 invoice terbaru, lalu filter per-periode di JavaScript.
+   * Ini akurat karena 500 invoice terbaru mencakup beberapa bulan terakhir.
+   */
   const invoiceParams = { per_page: '100', trans_date_from: dateFrom, include: 'status' };
   const [pg1Res, expRes, bankRes] = await Promise.allSettled([
     kfetch(token, 'finance/invoices', { ...invoiceParams, page: '1' }),
@@ -82,12 +86,12 @@ export async function GET() {
     kfetch(token, 'finance/bank_accounts'),
   ]);
 
-  const pg1     = pg1Res.status === 'fulfilled' ? pg1Res.value : null;
-  const expData = expRes.status === 'fulfilled' ? expRes.value : null;
-  const bankData = bankRes.status === 'fulfilled' ? bankRes.value : null;
+  const pg1      = pg1Res.status   === 'fulfilled' ? pg1Res.value   : null;
+  const expData  = expRes.status   === 'fulfilled' ? expRes.value   : null;
+  const bankData = bankRes.status  === 'fulfilled' ? bankRes.value  : null;
 
-  const firstPageItems: any[] = pg1?.data?.data ?? [];
-  const lastPage: number = pg1?.data?.last_page ?? 1;
+  const firstPageItems: any[]     = pg1?.data?.data ?? [];
+  const lastPage: number          = pg1?.data?.last_page ?? 1;
   const totalInvoiceCount: number = pg1?.data?.total ?? firstPageItems.length;
 
   /* Fetch sisa halaman (max 4 lagi = 500 invoice terbaru) */
@@ -104,39 +108,43 @@ export async function GET() {
     }
   }
 
-  /* ── Proses invoice ─────────────────────────────────────────────────── */
-  /*
-   * Kledo field mapping (dari raw API):
-   *   status_id  : integer langsung (bukan status.id)
-   *     1 = draft, 2 = open/belum bayar, 3 = lunas, 4+ = void/lainnya
-   *   amount     : total invoice
-   *   due        : sisa yang belum dibayar (0 = sudah lunas penuh)
-   *   paid       = amount - due
-   */
+  /* ── Helper: hitung jumlah terbayar dari satu invoice ───────────────── */
+  function calcPaid(inv: any): number {
+    const amount = Number(inv.amount ?? inv.total ?? 0);
+    /* inv.due = sisa belum bayar; 0 = lunas penuh */
+    const due = (inv.due !== null && inv.due !== undefined)
+      ? Number(inv.due)
+      : Number(inv.amount_remaining ?? amount);
+    return Math.max(amount - due, 0);
+  }
+  function calcDue(inv: any): number {
+    const amount = Number(inv.amount ?? inv.total ?? 0);
+    return (inv.due !== null && inv.due !== undefined)
+      ? Number(inv.due)
+      : Number(inv.amount_remaining ?? amount);
+  }
+
+  /* ── Hitung revenue & AR dari allInvoices, filter per periode ────────── */
   const MONTH_LABELS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   const monthBuckets: Record<string, number> = {};
   let todayRevenue = 0, weekRevenue = 0, monthRevenue = 0, yearRevenue = 0;
   let totalAR = 0, overdueCount = 0, unpaidCount = 0;
 
   for (const inv of allInvoices) {
-    const statusId  = Number(inv.status_id ?? inv.status?.id ?? 0);
-    const amount    = Number(inv.amount ?? inv.total ?? 0);
-    const dueAmt    = Number(inv.due ?? inv.amount_remaining ?? (statusId === 3 ? 0 : amount));
-    const paid      = Math.max(amount - dueAmt, 0);
+    const paid      = calcPaid(inv);
+    const dueAmt    = calcDue(inv);
     const transDate = (inv.trans_date ?? '').slice(0, 10);
     const dueDate   = (inv.due_date   ?? '').slice(0, 10);
     const monthKey  = transDate.slice(0, 7);
 
-    /* Revenue: ada pembayaran masuk (paid > 0) */
     if (paid > 0) {
-      if (transDate === todayStr)                             todayRevenue += paid;
-      if (transDate >= weekStartStr && transDate <= todayStr) weekRevenue  += paid;
-      if (transDate.startsWith(monthStr))                     monthRevenue += paid;
-      if (transDate.startsWith(yearStr))                      yearRevenue  += paid;
+      if (transDate === todayStr)                               todayRevenue += paid;
+      if (transDate >= weekStartStr && transDate <= todayStr)   weekRevenue  += paid;
+      if (transDate.startsWith(monthStr))                       monthRevenue += paid;
+      if (transDate.startsWith(yearStr))                        yearRevenue  += paid;
       monthBuckets[monthKey] = (monthBuckets[monthKey] ?? 0) + paid;
     }
 
-    /* AR: masih ada sisa tagihan */
     if (dueAmt > 0) {
       totalAR += dueAmt;
       unpaidCount++;
