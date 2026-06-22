@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/useAuthStore';
 
 export interface DashboardSummary {
   todayRevenue: number;
+  weekRevenue: number;
   monthRevenue: number;
   yearRevenue: number;
   totalAR: number;
@@ -61,7 +62,7 @@ export interface DashboardData {
 
 const DEFAULT: DashboardData = {
   summary: {
-    todayRevenue: 0, monthRevenue: 0, yearRevenue: 0,
+    todayRevenue: 0, weekRevenue: 0, monthRevenue: 0, yearRevenue: 0,
     totalAR: 0, cashBalance: 0, lowStockCount: 0,
     overdueInvoiceCount: 0, pendingPOCount: 0, monthExpense: 0,
   },
@@ -110,6 +111,7 @@ export function useDashboardData() {
         summary: {
           ...prev.summary,
           todayRevenue:        kledo.todayRevenue        ?? prev.summary.todayRevenue,
+          weekRevenue:         kledo.weekRevenue         ?? prev.summary.weekRevenue,
           monthRevenue:        kledo.monthRevenue        ?? prev.summary.monthRevenue,
           yearRevenue:         kledo.yearRevenue         ?? prev.summary.yearRevenue,
           totalAR:             kledo.totalAR             ?? prev.summary.totalAR,

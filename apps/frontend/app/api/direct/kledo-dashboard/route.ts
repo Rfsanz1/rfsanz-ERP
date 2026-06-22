@@ -68,6 +68,12 @@ export async function GET() {
   const monthStr  = now.toISOString().slice(0, 7);
   const yearStr   = String(now.getFullYear());
 
+  /* Hitung range minggu ini (Senin s.d. hari ini) */
+  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0=Senin
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - dayOfWeek);
+  const weekStartStr = weekStart.toISOString().slice(0, 10);
+
   /* Fetch paralel: invoices (halaman 1-5 saja), expenses hal-1, bank accounts */
   const invoiceParams = { per_page: '100', trans_date_from: dateFrom, include: 'status' };
   const [pg1Res, expRes, bankRes] = await Promise.allSettled([
@@ -101,7 +107,7 @@ export async function GET() {
   /* ── Proses invoice ─────────────────────────────────────────────────── */
   const MONTH_LABELS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   const monthBuckets: Record<string, number> = {};
-  let todayRevenue = 0, monthRevenue = 0, yearRevenue = 0;
+  let todayRevenue = 0, weekRevenue = 0, monthRevenue = 0, yearRevenue = 0;
   let totalAR = 0, overdueCount = 0, unpaidCount = 0;
 
   for (const inv of allInvoices) {
@@ -115,9 +121,10 @@ export async function GET() {
     /* Revenue: lunas (4) atau partial (3) */
     if (statusId === 4 || statusId === 3) {
       const paid = statusId === 4 ? amount : (amount - remaining);
-      if (transDate === todayStr)          todayRevenue += paid;
-      if (transDate.startsWith(monthStr))  monthRevenue += paid;
-      if (transDate.startsWith(yearStr))   yearRevenue  += paid;
+      if (transDate === todayStr)                           todayRevenue += paid;
+      if (transDate >= weekStartStr && transDate <= todayStr) weekRevenue  += paid;
+      if (transDate.startsWith(monthStr))                   monthRevenue += paid;
+      if (transDate.startsWith(yearStr))                    yearRevenue  += paid;
       monthBuckets[monthKey] = (monthBuckets[monthKey] ?? 0) + paid;
     }
 
@@ -166,7 +173,7 @@ export async function GET() {
   });
 
   const result = {
-    todayRevenue, monthRevenue, yearRevenue,
+    todayRevenue, weekRevenue, monthRevenue, yearRevenue,
     totalAR, totalExpense, overdueInvoiceCount: overdueCount,
     cashBalance, unpaidInvoiceCount: unpaidCount,
     totalInvoiceCount,

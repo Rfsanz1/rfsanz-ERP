@@ -114,13 +114,26 @@ export default function DashboardContent() {
   const { data, loading, refresh } = useDashboardData();
   const { summary, revenueChart, topProducts, lowStock, recentOrders, adminStats, kledoConnected, totalInvoiceCount } = data;
 
-  const revenue = tab === 'today' ? summary.todayRevenue : summary.monthRevenue;
+  const revenue =
+    tab === 'today' ? summary.todayRevenue :
+    tab === 'week'  ? summary.weekRevenue  :
+    summary.monthRevenue;
+
+  const revenueTitle =
+    tab === 'today' ? 'Penjualan Hari Ini' :
+    tab === 'week'  ? 'Penjualan Minggu Ini' :
+    'Penjualan Bulan Ini';
+
+  const revenueSub =
+    tab === 'today' ? `Minggu ini: ${formatRp(summary.weekRevenue)}` :
+    tab === 'week'  ? `Bulan ini: ${formatRp(summary.monthRevenue)}` :
+    `Tahun ini: ${formatRp(summary.yearRevenue)}`;
 
   const KPI = [
     {
-      title:  tab === 'today' ? 'Penjualan Hari Ini' : 'Total Penjualan',
+      title:  revenueTitle,
       value:  formatRp(revenue),
-      sub:    `Tahun ini: ${formatRp(summary.yearRevenue)}`,
+      sub:    revenueSub,
       up:     true,
       icon:   DollarSign,
       accent: '#6366F1',
