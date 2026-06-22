@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Button from '@mui/material/Button';
 import InputBase from '@mui/material/InputBase';
@@ -60,15 +61,16 @@ export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
         padding: '0 16px', height: 64, flexShrink: 0,
       }}
     >
-      {/* Hamburger — hanya untuk mobile (membuka drawer), di desktop sidebar punya toggle sendiri */}
-      <button
-        className="flex lg:hidden"
-        onClick={onToggleMobileSidebar}
-        style={{ ...iconBtnStyle, border: '1px solid var(--border)' }}
-        onMouseEnter={hoverOn} onMouseLeave={hoverOff}
-      >
-        <MenuIcon size={17} strokeWidth={2} />
-      </button>
+      {/* Hamburger — hanya untuk mobile, disembunyikan di desktop via MUI sx */}
+      <Box sx={{ display: 'block', '@media (min-width: 1024px)': { display: 'none' }, flexShrink: 0 }}>
+        <button
+          onClick={onToggleMobileSidebar}
+          style={{ ...iconBtnStyle, border: '1px solid var(--border)' }}
+          onMouseEnter={hoverOn} onMouseLeave={hoverOff}
+        >
+          <MenuIcon size={17} strokeWidth={2} />
+        </button>
+      </Box>
 
       {/* Search */}
       <div

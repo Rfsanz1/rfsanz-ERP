@@ -184,24 +184,61 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
       background: '#fff', borderRight: '1px solid #F0F0F5', overflow: 'hidden',
     }}>
       {/* ── Logo + toggle button ────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        padding: collapsed ? '0 12px' : '0 12px 0 16px',
-        minHeight: 56, borderBottom: '1px solid #F0F0F5', flexShrink: 0,
-        gap: 8,
-      }}>
-        {/* Logo mark */}
+      {collapsed ? (
+        /* Collapsed: hanya tombol expand di tengah */
         <div style={{
-          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-          background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
+          height: 56, borderBottom: '1px solid #F0F0F5', flexShrink: 0,
+          width: '100%',
         }}>
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: 10, letterSpacing: 0.3 }}>GM</span>
+          {onToggle ? (
+            <button
+              onClick={onToggle}
+              title="Buka sidebar"
+              style={{
+                width: 36, height: 36, borderRadius: 9,
+                border: '1px solid #E5E7EB',
+                background: 'transparent', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#6366F1', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,.1)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+              }}
+            >
+              <PanelLeftOpen size={16} strokeWidth={2} />
+            </button>
+          ) : (
+            <div style={{
+              width: 32, height: 32, borderRadius: 9,
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 10 }}>GM</span>
+            </div>
+          )}
         </div>
+      ) : (
+        /* Expanded: logo + nama + tombol collapse */
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '0 12px 0 16px',
+          height: 56, borderBottom: '1px solid #F0F0F5', flexShrink: 0,
+        }}>
+          {/* Logo mark */}
+          <div style={{
+            width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
+          }}>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: 10, letterSpacing: 0.3 }}>GM</span>
+          </div>
 
-        {/* App name — hidden when collapsed */}
-        {!collapsed && (
+          {/* App name */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#1E1B4B', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden' }}>
               Gentong Mas
@@ -210,35 +247,32 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
               ERP System
             </p>
           </div>
-        )}
 
-        {/* Toggle button — burger/collapse inside sidebar */}
-        {onToggle && (
-          <button
-            onClick={onToggle}
-            title={collapsed ? 'Buka sidebar' : 'Tutup sidebar'}
-            style={{
-              width: 28, height: 28, borderRadius: 7, border: '1px solid #E5E7EB',
-              background: 'transparent', cursor: 'pointer', flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#9CA3AF', transition: 'all 0.15s',
-              marginLeft: collapsed ? 'auto' : 0,
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,.08)';
-              (e.currentTarget as HTMLElement).style.color = '#6366F1';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = 'transparent';
-              (e.currentTarget as HTMLElement).style.color = '#9CA3AF';
-            }}
-          >
-            {collapsed
-              ? <PanelLeftOpen  size={14} strokeWidth={2} />
-              : <PanelLeftClose size={14} strokeWidth={2} />}
-          </button>
-        )}
-      </div>
+          {/* Collapse button */}
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              title="Tutup sidebar"
+              style={{
+                width: 28, height: 28, borderRadius: 7, border: '1px solid #E5E7EB',
+                background: 'transparent', cursor: 'pointer', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#9CA3AF', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,.08)';
+                (e.currentTarget as HTMLElement).style.color = '#6366F1';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+                (e.currentTarget as HTMLElement).style.color = '#9CA3AF';
+              }}
+            >
+              <PanelLeftClose size={14} strokeWidth={2} />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── Nav list ───────────────────────────────────────────────── */}
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: '6px 0' }}>
