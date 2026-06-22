@@ -105,32 +105,40 @@ export async function GET() {
   }
 
   /* ── Proses invoice ─────────────────────────────────────────────────── */
+  /*
+   * Kledo field mapping (dari raw API):
+   *   status_id  : integer langsung (bukan status.id)
+   *     1 = draft, 2 = open/belum bayar, 3 = lunas, 4+ = void/lainnya
+   *   amount     : total invoice
+   *   due        : sisa yang belum dibayar (0 = sudah lunas penuh)
+   *   paid       = amount - due
+   */
   const MONTH_LABELS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   const monthBuckets: Record<string, number> = {};
   let todayRevenue = 0, weekRevenue = 0, monthRevenue = 0, yearRevenue = 0;
   let totalAR = 0, overdueCount = 0, unpaidCount = 0;
 
   for (const inv of allInvoices) {
-    const statusId  = inv.status?.id ?? inv.status_id ?? 0;
+    const statusId  = Number(inv.status_id ?? inv.status?.id ?? 0);
     const amount    = Number(inv.amount ?? inv.total ?? 0);
-    const remaining = Number(inv.amount_remaining ?? (statusId === 4 ? 0 : amount));
+    const dueAmt    = Number(inv.due ?? inv.amount_remaining ?? (statusId === 3 ? 0 : amount));
+    const paid      = Math.max(amount - dueAmt, 0);
     const transDate = (inv.trans_date ?? '').slice(0, 10);
     const dueDate   = (inv.due_date   ?? '').slice(0, 10);
     const monthKey  = transDate.slice(0, 7);
 
-    /* Revenue: lunas (4) atau partial (3) */
-    if (statusId === 4 || statusId === 3) {
-      const paid = statusId === 4 ? amount : (amount - remaining);
-      if (transDate === todayStr)                           todayRevenue += paid;
+    /* Revenue: ada pembayaran masuk (paid > 0) */
+    if (paid > 0) {
+      if (transDate === todayStr)                             todayRevenue += paid;
       if (transDate >= weekStartStr && transDate <= todayStr) weekRevenue  += paid;
-      if (transDate.startsWith(monthStr))                   monthRevenue += paid;
-      if (transDate.startsWith(yearStr))                    yearRevenue  += paid;
+      if (transDate.startsWith(monthStr))                     monthRevenue += paid;
+      if (transDate.startsWith(yearStr))                      yearRevenue  += paid;
       monthBuckets[monthKey] = (monthBuckets[monthKey] ?? 0) + paid;
     }
 
-    /* AR: belum lunas */
-    if (statusId === 2 || statusId === 3) {
-      totalAR += remaining;
+    /* AR: masih ada sisa tagihan */
+    if (dueAmt > 0) {
+      totalAR += dueAmt;
       unpaidCount++;
       if (dueDate && dueDate < todayStr) overdueCount++;
     }
@@ -159,13 +167,19 @@ export async function GET() {
     .slice(0, 10);
 
   const recentInvoices = sorted.map(inv => {
-    const sid = inv.status?.id ?? inv.status_id ?? 0;
-    const statusName = sid === 4 ? 'paid' : sid === 3 ? 'partial' : sid === 2 ? 'open' : sid === 1 ? 'draft' : 'void';
+    const sid    = Number(inv.status_id ?? inv.status?.id ?? 0);
+    const amount = Number(inv.amount ?? inv.total ?? 0);
+    const dueAmt = Number(inv.due ?? inv.amount_remaining ?? (sid === 3 ? 0 : amount));
+    /* Kledo: 1=draft, 2=open/belum bayar, 3=lunas, lainnya=void */
+    const statusName =
+      sid === 3 ? 'paid' :
+      sid === 2 ? (dueAmt < amount && amount > 0 ? 'partial' : 'open') :
+      sid === 1 ? 'draft' : 'void';
     return {
       id:         inv.id,
       ref_number: inv.ref_number ?? `INV-${inv.id}`,
       contact:    inv.contact?.name ?? inv.contact_name ?? '—',
-      amount:     Number(inv.amount ?? inv.total ?? 0),
+      amount,
       status:     statusName,
       due_date:   inv.due_date ?? '',
       trans_date: inv.trans_date ?? '',
