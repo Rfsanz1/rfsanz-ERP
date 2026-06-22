@@ -238,17 +238,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
             <span style={{ color: '#fff', fontWeight: 800, fontSize: 10, letterSpacing: 0.3 }}>GM</span>
           </div>
 
-          {/* App name */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#1E1B4B', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden' }}>
-              Gentong Mas
-            </p>
-            <p style={{ margin: 0, fontSize: 10, color: '#9CA3AF', lineHeight: 1, fontWeight: 500 }}>
-              ERP System
-            </p>
-          </div>
-
-          {/* Collapse button */}
+          {/* Collapse button — tepat setelah logo */}
           {onToggle && (
             <button
               onClick={onToggle}
@@ -271,6 +261,16 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
               <PanelLeftClose size={14} strokeWidth={2} />
             </button>
           )}
+
+          {/* App name — di sisi kanan tombol */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#1E1B4B', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+              Gentong Mas
+            </p>
+            <p style={{ margin: 0, fontSize: 10, color: '#9CA3AF', lineHeight: 1, fontWeight: 500 }}>
+              ERP System
+            </p>
+          </div>
         </div>
       )}
 
