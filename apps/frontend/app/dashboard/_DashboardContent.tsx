@@ -108,7 +108,7 @@ export default function DashboardContent() {
   const [tab, setTab] = useState<'today' | 'week' | 'month'>('month');
   const [showOrder, setShowOrder] = useState(false);
   const { data, loading, refresh } = useDashboardData();
-  const { summary, revenueChart, topProducts, lowStock, recentOrders, adminStats } = data;
+  const { summary, revenueChart, topProducts, lowStock, recentOrders, adminStats, kledoConnected, totalInvoiceCount } = data;
 
   const revenue = tab === 'today' ? summary.todayRevenue : summary.monthRevenue;
 
@@ -123,9 +123,13 @@ export default function DashboardContent() {
       light:  'rgba(99,102,241,0.10)',
     },
     {
-      title:  'Total Orders',
-      value:  recentOrders.length > 0 ? `${recentOrders.length}+` : '—',
-      sub:    `${summary.pendingPOCount} PO menunggu`,
+      title:  kledoConnected ? 'Total Invoice Kledo' : 'Total Orders',
+      value:  kledoConnected
+        ? (totalInvoiceCount > 0 ? String(totalInvoiceCount) : '—')
+        : (recentOrders.length > 0 ? `${recentOrders.length}+` : '—'),
+      sub:    kledoConnected
+        ? `${summary.pendingPOCount || 0} belum lunas`
+        : `${summary.pendingPOCount} PO menunggu`,
       up:     true,
       icon:   ShoppingCart,
       accent: '#8B5CF6',
@@ -159,11 +163,23 @@ export default function DashboardContent() {
       {/* ── Page header ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-            Dashboard
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+              Dashboard
+            </h1>
+            {kledoConnected && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: '3px 8px',
+                borderRadius: 100, background: 'rgba(16,185,129,0.12)',
+                color: '#10B981', letterSpacing: '0.04em',
+                border: '1px solid rgba(16,185,129,0.25)',
+              }}>
+                ● KLEDO
+              </span>
+            )}
+          </div>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
-            Ringkasan bisnis Anda secara real-time
+            {kledoConnected ? 'Data real-time dari Kledo Accounting' : 'Ringkasan bisnis Anda secara real-time'}
           </p>
         </div>
 
@@ -461,11 +477,20 @@ export default function DashboardContent() {
             className="flex items-center justify-between"
             style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}
           >
-            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
-              Sales Order Terbaru
-            </p>
+            <div className="flex items-center gap-2">
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+                {kledoConnected ? 'Invoice Terbaru' : 'Sales Order Terbaru'}
+              </p>
+              {kledoConnected && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 100,
+                  background: 'rgba(16,185,129,0.12)', color: '#10B981',
+                  border: '1px solid rgba(16,185,129,0.2)',
+                }}>Kledo</span>
+              )}
+            </div>
             <Link
-              href="/sales/orders"
+              href={kledoConnected ? '/invoice/list' : '/sales/orders'}
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
                 fontSize: 12, fontWeight: 600, color: '#6366F1',
@@ -516,7 +541,9 @@ export default function DashboardContent() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                          #{order.id}
+                          {String(order.id).startsWith('kledo-')
+                            ? (order as any).ref_number ?? `INV-${String(order.id).replace('kledo-', '')}`
+                            : `#${order.id}`}
                         </p>
                         <span
                           style={{
