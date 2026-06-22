@@ -24,23 +24,25 @@ export function MaterioLayout({ children }: MaterioLayoutProps) {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* Sidebar */}
+      {/* Fixed sidebar — tidak ada placeholder, murni position:fixed */}
       <MaterioSidebar
         collapsed={sidebarCollapsed}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
 
-      {/* Main content — marginLeft mengikuti lebar sidebar dengan transisi mulus */}
+      {/* Main content — marginLeft ikuti lebar sidebar, transisi mulus */}
       <Box
         component="main"
         sx={{
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
-          marginLeft: { xs: 0, lg: `${sidebarW}px` },
-          transition: 'margin-left 0.25s ease',
           minWidth: 0,
+          transition: 'margin-left 0.25s ease',
+          // Mobile: tidak ada margin (sidebar jadi drawer overlay)
+          // Desktop lg+: margin sesuai lebar sidebar
+          ml: { xs: 0, lg: `${sidebarW}px` },
         }}
       >
         <MaterioTopbar
@@ -52,18 +54,16 @@ export function MaterioLayout({ children }: MaterioLayoutProps) {
           sx={{
             flex: 1,
             p: { xs: 1.5, sm: 2.5, md: 3 },
-            overflowY: 'auto',
             paddingTop: { xs: 1.5, sm: 2.5, md: 3 },
             paddingBottom: { xs: 1.5, sm: 2.5, md: 3 },
           }}
         >
           {children}
-          {/* Spacer to always clear the fixed bottom nav on mobile */}
           <div style={{ height: 80 }} />
         </Box>
       </Box>
 
-      {/* Mobile bottom navigation — hidden on desktop */}
+      {/* Mobile bottom nav */}
       <MobileBottomNav />
     </Box>
   );

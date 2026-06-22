@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Drawer from '@mui/material/Drawer';
+import Tooltip from '@mui/material/Tooltip';
 import {
   LayoutDashboard, Users, ShoppingCart, Package, FileText,
   BarChart2, Settings, Bell, ChevronDown,
@@ -13,10 +14,10 @@ import {
 } from 'lucide-react';
 
 export const SIDEBAR_WIDTH           = 240;
-export const SIDEBAR_COLLAPSED_WIDTH = 0;
+export const SIDEBAR_COLLAPSED_WIDTH = 64;
 
 interface NavChild { href: string; label: string; }
-interface NavItem  { href?: string; label: string; icon: React.ElementType; children?: NavChild[]; badge?: string; dividerBefore?: boolean; categoryLabel?: string; }
+interface NavItem  { href?: string; label: string; icon: React.ElementType; children?: NavChild[]; badge?: string; categoryLabel?: string; }
 
 const NAV: NavItem[] = [
   { href: '/dashboard',  label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'UTAMA' },
@@ -98,14 +99,14 @@ const NAV: NavItem[] = [
   {
     label: 'Laporan', icon: BarChart2,
     children: [
-      { href: '/reports/sales',   label: 'Laporan Penjualan' },
-      { href: '/finance/reports', label: 'Laporan Keuangan'  },
-      { href: '/reports/inventory', label: 'Laporan Stok'    },
+      { href: '/reports/sales',     label: 'Laporan Penjualan' },
+      { href: '/finance/reports',   label: 'Laporan Keuangan'  },
+      { href: '/reports/inventory', label: 'Laporan Stok'      },
     ],
   },
-  { href: '/hr',      label: 'Karyawan', icon: Users,    categoryLabel: 'SDM & OPERASI' },
-  { href: '/payroll', label: 'Payroll',  icon: BookOpen },
-  { href: '/pos/orders', label: 'Point of Sale', icon: CreditCard },
+  { href: '/hr',         label: 'Karyawan',     icon: Users,      categoryLabel: 'SDM & OPERASI' },
+  { href: '/payroll',    label: 'Payroll',      icon: BookOpen },
+  { href: '/pos/orders', label: 'Point of Sale',icon: CreditCard },
   {
     label: 'CRM', icon: UserCheck,
     children: [
@@ -114,10 +115,10 @@ const NAV: NavItem[] = [
       { href: '/crm/opportunities', label: 'Opportunity'},
     ],
   },
-  { href: '/ai',        label: 'AI Assistant', icon: Brain,    badge: 'AI', categoryLabel: 'DIGITAL' },
-  { href: '/marketing', label: 'Marketing',    icon: Megaphone },
-  { href: '/website',   label: 'Website',      icon: Globe     },
-  { href: '/notifications', label: 'Notifikasi', icon: Bell, badge: '5' },
+  { href: '/ai',            label: 'AI Assistant', icon: Brain,    badge: 'AI', categoryLabel: 'DIGITAL' },
+  { href: '/marketing',     label: 'Marketing',    icon: Megaphone },
+  { href: '/website',       label: 'Website',      icon: Globe     },
+  { href: '/notifications', label: 'Notifikasi',   icon: Bell,     badge: '5'  },
   {
     label: 'Pengaturan', icon: Settings, categoryLabel: 'SISTEM',
     children: [
@@ -139,7 +140,7 @@ function saveOpen(s: Record<string, boolean>) {
 /* ══════════════════════════════════════════════════════════════════════════
    SIDEBAR CONTENT
 ══════════════════════════════════════════════════════════════════════════ */
-function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
+function SidebarContent({ collapsed, onMobileClose }: { collapsed: boolean; onMobileClose: () => void }) {
   const pathname = usePathname();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
@@ -157,6 +158,7 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
   }, [pathname]);
 
   const toggle = (label: string) => {
+    if (collapsed) return;
     setOpen(prev => {
       const next = { ...prev, [label]: !prev[label] };
       saveOpen(next);
@@ -174,8 +176,13 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
     }}>
       {/* ── Logo ───────────────────────────────────────────────────── */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '0 16px', minHeight: 56, borderBottom: '1px solid #F0F0F5', flexShrink: 0,
+        display: 'flex', alignItems: 'center',
+        gap: collapsed ? 0 : 10,
+        padding: collapsed ? '0 15px' : '0 16px',
+        minHeight: 56, borderBottom: '1px solid #F0F0F5', flexShrink: 0,
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        transition: 'all 0.25s ease',
+        overflow: 'hidden',
       }}>
         <div style={{
           width: 34, height: 34, borderRadius: 10, flexShrink: 0,
@@ -185,25 +192,73 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
         }}>
           <span style={{ color: '#fff', fontWeight: 800, fontSize: 11, letterSpacing: 0.3 }}>GM</span>
         </div>
-        <div>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#1E1B4B', lineHeight: 1.25, letterSpacing: '-0.01em' }}>
-            Gentong Mas
-          </p>
-          <p style={{ margin: 0, fontSize: 10, color: '#9CA3AF', lineHeight: 1, fontWeight: 500 }}>
-            ERP System
-          </p>
-        </div>
+        {!collapsed && (
+          <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#1E1B4B', lineHeight: 1.25, letterSpacing: '-0.01em' }}>
+              Gentong Mas
+            </p>
+            <p style={{ margin: 0, fontSize: 10, color: '#9CA3AF', lineHeight: 1, fontWeight: 500 }}>
+              ERP System
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── Nav list ───────────────────────────────────────────────── */}
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 0' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: '6px 0' }}>
         {NAV.map((item) => {
-          const Icon   = item.icon;
-          const hasCh  = !!item.children?.length;
+          const Icon    = item.icon;
+          const hasCh   = !!item.children?.length;
           const anyActive = item.children?.some(c => isActive(c.href));
-          const active = hasCh ? !!anyActive : isActive(item.href);
-          const isOpen = mounted ? (open[item.label] ?? false) : (anyActive ?? false);
+          const active  = hasCh ? !!anyActive : isActive(item.href);
+          const isOpen  = mounted ? (open[item.label] ?? false) : (anyActive ?? false);
 
+          /* ── Icon-only mode (collapsed) ─────────────────────────── */
+          if (collapsed) {
+            const IconEl = (
+              <Tooltip title={item.label} placement="right" arrow>
+                {hasCh ? (
+                  <button
+                    onClick={() => {}}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: 40, height: 40, borderRadius: 10, border: 'none',
+                      background: active ? 'rgba(99,102,241,.1)' : 'transparent',
+                      cursor: 'pointer', margin: '0 auto',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <Icon size={18} strokeWidth={active ? 2.2 : 1.8}
+                      style={{ color: active ? '#6366F1' : '#9CA3AF' }} />
+                  </button>
+                ) : (
+                  <Link href={item.href!} style={{ textDecoration: 'none' }} onClick={onMobileClose}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: 40, height: 40, borderRadius: 10,
+                      background: active ? 'rgba(99,102,241,.1)' : 'transparent',
+                      cursor: 'pointer', margin: '0 auto',
+                      transition: 'all 0.15s',
+                    }}>
+                      <Icon size={18} strokeWidth={active ? 2.2 : 1.8}
+                        style={{ color: active ? '#6366F1' : '#9CA3AF' }} />
+                    </div>
+                  </Link>
+                )}
+              </Tooltip>
+            );
+
+            return (
+              <div key={item.label} style={{ padding: '2px 12px' }}>
+                {item.categoryLabel && (
+                  <div style={{ height: 1, background: '#F3F4F6', margin: '8px 0 6px' }} />
+                )}
+                {IconEl}
+              </div>
+            );
+          }
+
+          /* ── Full mode (expanded) ───────────────────────────────── */
           return (
             <div key={item.label}>
               {/* Category label */}
@@ -221,11 +276,6 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
                   </span>
                   <div style={{ flex: 1, height: 1, background: '#F3F4F6' }} />
                 </div>
-              )}
-
-              {/* Divider sebelum grup baru (legacy — tidak dipakai lagi) */}
-              {item.dividerBefore && !item.categoryLabel && (
-                <div style={{ height: 1, background: '#F3F4F6', margin: '6px 16px' }} />
               )}
 
               {/* ── Parent item ───────────────────────────────────── */}
@@ -343,10 +393,9 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
           );
         })}
 
-        {/* Bottom padding — clears mobile bottom nav bar (≈65px) */}
+        {/* Bottom padding */}
         <div style={{ height: 72, flexShrink: 0 }} />
       </div>
-
     </div>
   );
 }
@@ -357,27 +406,22 @@ function SidebarContent({ onMobileClose }: { onMobileClose: () => void }) {
 interface SidebarProps { collapsed: boolean; mobileOpen: boolean; onMobileClose: () => void; }
 
 export function MaterioSidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) {
+  const w = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
   return (
     <>
-      {/* Desktop */}
-      <aside
+      {/* Desktop — fixed sidebar, no placeholder <aside> */}
+      <div
         suppressHydrationWarning
-        style={{
-          width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
-          flexShrink: 0,
-          transition: 'width 0.25s ease',
-          overflow: 'hidden',
-        }}
         className="hidden lg:block"
-      >
-        <div style={{
+        style={{
           position: 'fixed', top: 0, left: 0, bottom: 0,
-          width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
-          transition: 'width 0.25s ease', zIndex: 100, overflow: 'hidden',
-        }}>
-          <SidebarContent onMobileClose={() => {}} />
-        </div>
-      </aside>
+          width: w,
+          transition: 'width 0.25s ease',
+          zIndex: 100, overflow: 'hidden',
+        }}
+      >
+        <SidebarContent collapsed={collapsed} onMobileClose={() => {}} />
+      </div>
 
       {/* Mobile drawer */}
       <Drawer
@@ -390,7 +434,7 @@ export function MaterioSidebar({ collapsed, mobileOpen, onMobileClose }: Sidebar
           '& .MuiDrawer-paper': { width: SIDEBAR_WIDTH, border: 'none', background: '#fff', overflow: 'hidden', height: '100%' },
         }}
       >
-        <SidebarContent onMobileClose={onMobileClose} />
+        <SidebarContent collapsed={false} onMobileClose={onMobileClose} />
       </Drawer>
     </>
   );
