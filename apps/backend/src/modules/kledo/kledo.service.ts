@@ -207,6 +207,41 @@ export class KledoService {
     return res.data;
   }
 
+  // ── Purchase Invoices (Tagihan Pembelian dari Kledo) ─────────────────
+  async getPurchaseInvoices(query: any = {}) {
+    const token = await this.getToken();
+    if (!token) return { data: { data: [], total: 0, last_page: 1 } };
+    const { page = 1, per_page = 25, search, status } = query;
+    const params: any = { page, per_page };
+    if (search) params.search = search;
+    if (status) params.status_id = status;
+    const headers = await this.getHeaders();
+    const baseUrl = await this.getBaseUrl();
+    try {
+      const res = await firstValueFrom(this.http.get(`${baseUrl}/finance/purchase-invoices`, { headers, params }));
+      return res.data;
+    } catch {
+      return { data: { data: [], total: 0, last_page: 1 } };
+    }
+  }
+
+  // ── Expenses (Pengeluaran dari Kledo) ─────────────────────────────────
+  async getExpenses(query: any = {}) {
+    const token = await this.getToken();
+    if (!token) return { data: { data: [], total: 0, last_page: 1 } };
+    const { page = 1, per_page = 25, search } = query;
+    const params: any = { page, per_page };
+    if (search) params.search = search;
+    const headers = await this.getHeaders();
+    const baseUrl = await this.getBaseUrl();
+    try {
+      const res = await firstValueFrom(this.http.get(`${baseUrl}/finance/expenses`, { headers, params }));
+      return res.data;
+    } catch {
+      return { data: { data: [], total: 0, last_page: 1 } };
+    }
+  }
+
   async findOrCreateContact(name: string, phone?: string): Promise<number> {
     const token = await this.getToken();
     if (!token) return 0;

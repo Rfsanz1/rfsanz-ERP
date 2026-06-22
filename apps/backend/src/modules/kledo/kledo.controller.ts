@@ -106,6 +106,22 @@ export class KledoController {
     catch (e: any) { return fail(res, e?.message ?? 'Gagal menghapus kontak'); }
   }
 
+  /* ── Purchase Invoices (Tagihan Pembelian) ──────────────────────────── */
+  @Get('purchase-invoices')
+  @UseGuards(JwtAuthGuard)
+  async getPurchaseInvoices(@Query() q: any, @Res() res: Response) {
+    try { return ok(res, await this.svc.getPurchaseInvoices(q)); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil purchase invoice Kledo'); }
+  }
+
+  /* ── Expenses ───────────────────────────────────────────────────────── */
+  @Get('expenses')
+  @UseGuards(JwtAuthGuard)
+  async getExpenses(@Query() q: any, @Res() res: Response) {
+    try { return ok(res, await this.svc.getExpenses(q)); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil expenses Kledo'); }
+  }
+
   /* ── Invoice ────────────────────────────────────────────────────────── */
   @Get('invoices')
   @UseGuards(JwtAuthGuard)
