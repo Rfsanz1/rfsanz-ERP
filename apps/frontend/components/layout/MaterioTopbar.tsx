@@ -19,11 +19,10 @@ import { useThemeMode } from '../../lib/theme/ThemeContext';
 
 interface TopbarProps {
   collapsed: boolean;
-  onToggleSidebar: () => void;
   onToggleMobileSidebar: () => void;
 }
 
-export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: TopbarProps) {
+export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
   const { notifications } = useNotificationStore();
   const { mode, toggle: toggleTheme } = useThemeMode();
   const [query, setQuery]    = useState('');
@@ -61,12 +60,10 @@ export function MaterioTopbar({ onToggleSidebar, onToggleMobileSidebar }: Topbar
         padding: '0 16px', height: 64, flexShrink: 0,
       }}
     >
-      {/* Hamburger — satu tombol, handler sesuai breakpoint */}
+      {/* Hamburger — hanya untuk mobile (membuka drawer), di desktop sidebar punya toggle sendiri */}
       <button
-        onClick={() => {
-          if (window.innerWidth >= 1024) onToggleSidebar();
-          else onToggleMobileSidebar();
-        }}
+        className="flex lg:hidden"
+        onClick={onToggleMobileSidebar}
         style={{ ...iconBtnStyle, border: '1px solid var(--border)' }}
         onMouseEnter={hoverOn} onMouseLeave={hoverOff}
       >

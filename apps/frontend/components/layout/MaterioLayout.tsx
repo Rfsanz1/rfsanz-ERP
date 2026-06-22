@@ -12,9 +12,7 @@ const MaterioSidebar = dynamic(
   { ssr: false }
 );
 
-interface MaterioLayoutProps {
-  children: ReactNode;
-}
+interface MaterioLayoutProps { children: ReactNode; }
 
 export function MaterioLayout({ children }: MaterioLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -24,14 +22,15 @@ export function MaterioLayout({ children }: MaterioLayoutProps) {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* Fixed sidebar — tidak ada placeholder, murni position:fixed */}
+      {/* Fixed sidebar — burger is INSIDE the sidebar */}
       <MaterioSidebar
         collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(v => !v)}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
 
-      {/* Main content — marginLeft ikuti lebar sidebar, transisi mulus */}
+      {/* Main content — marginLeft follows sidebar width, 1024px breakpoint matches Tailwind lg */}
       <Box
         component="main"
         sx={{
@@ -39,31 +38,28 @@ export function MaterioLayout({ children }: MaterioLayoutProps) {
           flexDirection: 'column',
           minHeight: '100vh',
           minWidth: 0,
+          // Use raw media query so breakpoint matches Tailwind's lg (1024px), not MUI lg (1200px)
+          '@media (min-width: 1024px)': {
+            marginLeft: `${sidebarW}px`,
+          },
           transition: 'margin-left 0.25s ease',
-          // Mobile: tidak ada margin (sidebar jadi drawer overlay)
-          // Desktop lg+: margin sesuai lebar sidebar
-          ml: { xs: 0, lg: `${sidebarW}px` },
         }}
       >
         <MaterioTopbar
           collapsed={sidebarCollapsed}
-          onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
-          onToggleMobileSidebar={() => setMobileSidebarOpen((v) => !v)}
+          onToggleMobileSidebar={() => setMobileSidebarOpen(v => !v)}
         />
-        <Box
-          sx={{
-            flex: 1,
-            p: { xs: 1.5, sm: 2.5, md: 3 },
-            paddingTop: { xs: 1.5, sm: 2.5, md: 3 },
-            paddingBottom: { xs: 1.5, sm: 2.5, md: 3 },
-          }}
-        >
+        <Box sx={{
+          flex: 1,
+          p: { xs: 1.5, sm: 2.5, md: 3 },
+          paddingTop:    { xs: 1.5, sm: 2.5, md: 3 },
+          paddingBottom: { xs: 1.5, sm: 2.5, md: 3 },
+        }}>
           {children}
           <div style={{ height: 80 }} />
         </Box>
       </Box>
 
-      {/* Mobile bottom nav */}
       <MobileBottomNav />
     </Box>
   );
