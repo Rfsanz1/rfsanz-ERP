@@ -13,10 +13,8 @@ import Popover from '@mui/material/Popover';
 import Avatar from '@mui/material/Avatar';
 import {
   Menu as MenuIcon, Search, Bell, Settings, HelpCircle,
-  Sun, Moon,
 } from 'lucide-react';
 import { useNotificationStore } from '../../lib/store/useNotificationStore';
-import { useThemeMode } from '../../lib/theme/ThemeContext';
 
 interface TopbarProps {
   collapsed: boolean;
@@ -25,12 +23,10 @@ interface TopbarProps {
 
 export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
   const { notifications } = useNotificationStore();
-  const { mode, toggle: toggleTheme } = useThemeMode();
   const [query, setQuery]    = useState('');
   const [notifAnchor, setNA] = useState<null | HTMLElement>(null);
 
   const unread = notifications?.length ?? 0;
-  const isDark = mode === 'dark';
 
   const iconBtnStyle: React.CSSProperties = {
     width: 36, height: 36, borderRadius: 9, border: 'none',
@@ -101,18 +97,6 @@ export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
 
       {/* Right actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-
-        {/* ☀️ / 🌙 Dark/Light toggle */}
-        <button
-          onClick={toggleTheme}
-          title={isDark ? 'Mode Terang' : 'Mode Gelap'}
-          style={iconBtnStyle}
-          onMouseEnter={hoverOn} onMouseLeave={hoverOff}
-        >
-          {isDark
-            ? <Sun size={18} strokeWidth={1.8} />
-            : <Moon size={18} strokeWidth={1.8} />}
-        </button>
 
         {/* Help */}
         <button
