@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { GudangLayout } from '@/components/GudangLayout';
 import api from '@/lib/api';
 import { Search, RefreshCw } from 'lucide-react';
+import { GudangSkeletonTableRows } from '@/components/ui/Skeletons';
 
 const C = { primary: '#D97706', dark: '#78350F', border: '#FEF3C7', textMid: '#6B7280', textLight: '#9CA3AF', bg: '#FFFBEB' };
 
@@ -90,7 +91,7 @@ export default function InboundPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} style={{ padding: 48, textAlign: 'center', color: C.textLight }}>Memuat data…</td></tr>
+                <GudangSkeletonTableRows cols={7} count={6} />
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: 48, textAlign: 'center', color: C.textLight }}>Tidak ada data</td></tr>
               ) : filtered.map(r => (

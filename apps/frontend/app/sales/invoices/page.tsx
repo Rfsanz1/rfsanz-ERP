@@ -5,6 +5,7 @@ import { useAuthStore } from '../../../lib/store/useAuthStore';
 import AppShell from '../../../components/layout/AppShell';
 import { api } from '@/lib/api';
 import { Plus, Search, RefreshCw, BarChart2 } from 'lucide-react';
+import { SkeletonTableRows } from '@/components/ui/Skeletons';
 
 const STATUS: Record<string, { label: string; color: string }> = {
   draft:     { label: 'Draf',      color: '#94A3B8' },
@@ -137,7 +138,7 @@ export default function InvoicesPage() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={8} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Memuat data…</td></tr>
+                  <SkeletonTableRows cols={8} count={8} />
                 ) : data.length === 0 ? (
                   <tr><td colSpan={8} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Belum ada invoice</td></tr>
                 ) : data.map(inv => {

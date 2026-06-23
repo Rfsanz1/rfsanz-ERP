@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { GudangLayout } from '@/components/GudangLayout';
 import api from '@/lib/api';
 import { ArrowLeftRight, Plus, RefreshCw, Search } from 'lucide-react';
+import { GudangSkeletonCards } from '@/components/ui/Skeletons';
 
 const C = { primary: '#D97706', dark: '#78350F', border: '#FEF3C7', textMid: '#6B7280', textLight: '#9CA3AF', bg: '#FFFBEB' };
 
@@ -69,7 +70,7 @@ export default function TransferPage() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {loading ? <div style={{ textAlign: 'center', padding: 60, color: C.textLight }}>Memuat…</div>
+        {loading ? <GudangSkeletonCards count={5} border={C.border} accent={C.primary} />
         : filtered.map(r => (
           <div key={r.id} style={{ backgroundColor: '#fff', borderRadius: 14, border: `1.5px solid ${C.border}`, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, transition: 'all .2s', cursor: 'pointer' }}
             onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = C.primary; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 16px ${C.primary}15`; }}

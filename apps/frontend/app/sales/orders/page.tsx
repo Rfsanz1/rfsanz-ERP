@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Search, RefreshCw, Plus, Eye, Link2 } from 'lucide-react';
+import { SkeletonTableRows } from '@/components/ui/Skeletons';
 
 const C = '#00ACC1';
 const PURPLE = '#6366F1';
@@ -142,7 +143,7 @@ export default function SalesOrdersPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Memuat data…</td></tr>
+                <SkeletonTableRows cols={7} count={8} />
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Tidak ada order ditemukan</td></tr>
               ) : filtered.map(r => (

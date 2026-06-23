@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import api from '@/lib/api';
 import { ShoppingCart, FileText, Users, TrendingUp, Target, Zap, Star, Phone, BarChart2 } from 'lucide-react';
+import { SalesDashboardSkeleton } from '@/components/ui/Skeletons';
 
 interface DashStats { total_orders: number; total_revenue: number; target_pct: number; pending_followup: number; }
 const FMT = (v: number) => v >= 1e9 ? `Rp ${(v/1e9).toFixed(1)}M` : v >= 1e6 ? `Rp ${(v/1e6).toFixed(1)}Jt` : `Rp ${v.toLocaleString('id-ID')}`;
@@ -41,6 +42,8 @@ export default function SalesDashboardPage() {
     { label: 'Lihat Faktur',      href: '/sales/faktur',      icon: ShoppingCart, accent: '#EF4444' },
     { label: 'Laporan Penjualan', href: '/sales/reports',     icon: BarChart2,accent: '#3B82F6' },
   ];
+
+  if (loading) return <SalesDashboardSkeleton />;
 
   return (
     <div style={{ maxWidth: 1200 }} className="space-y-5">
