@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, ensureTables } from '@/lib/localDb';
+import { proxyToBackend } from '@/lib/backendProxy';
 
 async function getOrderById(db: any, id: string) {
   const res = await db.query(
@@ -44,6 +45,9 @@ async function getOrderById(db: any, id: string) {
 }
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  if (!process.env.DATABASE_URL) {
+    return proxyToBackend(_req, `/api/orders/${params.id}`);
+  }
   try {
     await ensureTables();
     const db = getDb();
@@ -56,6 +60,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  if (!process.env.DATABASE_URL) {
+    return proxyToBackend(req, `/api/orders/${params.id}`, { method: 'PATCH' });
+  }
   try {
     await ensureTables();
     const body = await req.json();
@@ -103,6 +110,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  if (!process.env.DATABASE_URL) {
+    return proxyToBackend(_req, `/api/orders/${params.id}`, { method: 'DELETE' });
+  }
   try {
     await ensureTables();
     const db = getDb();

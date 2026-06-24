@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, ensureTables } from '@/lib/localDb';
+import { proxyToBackend } from '@/lib/backendProxy';
 
 export async function GET(req: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return proxyToBackend(req, '/api/orders');
+  }
   try {
     await ensureTables();
     const { searchParams } = new URL(req.url);

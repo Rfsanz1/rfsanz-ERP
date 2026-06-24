@@ -168,6 +168,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return forwardToBackend(req, '/api/sales/orders');
+  }
   try {
     await ensureTables();
     const { searchParams } = new URL(req.url);

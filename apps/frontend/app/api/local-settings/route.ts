@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getLocalSetting, setLocalSetting, ensureTables } from '@/lib/localDb';
 
 export async function GET(req: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    const key = new URL(req.url).searchParams.get('key');
+    return NextResponse.json({ data: { key, value: null } });
+  }
   try {
     await ensureTables();
     const { searchParams } = new URL(req.url);
@@ -15,6 +19,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ data: { saved: false }, error: 'Local settings tidak tersedia tanpa DATABASE_URL' });
+  }
   try {
     await ensureTables();
     const body = await req.json();

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, ensureTables } from '@/lib/localDb';
 import { pushOrderToKledo } from '@/lib/kledoSync';
+import { proxyToBackend } from '@/lib/backendProxy';
 
 export async function POST(req: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return proxyToBackend(req, '/api/sales/invoices/resync', { method: 'POST' });
+  }
   try {
     await ensureTables();
     const { orderId } = await req.json();

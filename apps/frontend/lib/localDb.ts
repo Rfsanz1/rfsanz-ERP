@@ -3,7 +3,15 @@ import { Pool } from 'pg';
 let pool: Pool | null = null;
 let tablesEnsured = false;
 
+/** Cek apakah local DB tersedia (DATABASE_URL dikonfigurasi). */
+export function hasLocalDb(): boolean {
+  return Boolean(process.env.DATABASE_URL);
+}
+
 export function getDb(): Pool {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL tidak dikonfigurasi — gunakan backend langsung');
+  }
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,

@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, ensureTables } from '@/lib/localDb';
 import { pushOrderToKledo } from '@/lib/kledoSync';
 import { sendAllOrderNotifications } from '@/lib/server/waServer';
+import { proxyToBackend } from '@/lib/backendProxy';
 
 export async function GET(req: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return proxyToBackend(req, '/api/sales/invoices');
+  }
   try {
     await ensureTables();
     const db = getDb();
@@ -61,6 +65,9 @@ function generateInvNumber(): string {
 }
 
 export async function POST(req: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return proxyToBackend(req, '/api/sales/invoices', { method: 'POST' });
+  }
   try {
     await ensureTables();
     const body = await req.json();
