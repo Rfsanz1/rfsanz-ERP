@@ -254,6 +254,7 @@ export async function pushOrderToKledo(
         name: it.nama,
         qty,
         rate,
+        price: rate,
       };
       if (it.diskon) item.discount = Number(it.diskon);
       if (it.kledoProductId) item.product_id = Number(it.kledoProductId);
@@ -266,6 +267,7 @@ export async function pushOrderToKledo(
         name: 'Biaya Pengiriman',
         qty: 1,
         rate: order.ongkir,
+        price: order.ongkir,
       });
     }
 
