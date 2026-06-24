@@ -145,6 +145,7 @@ export default function CreateOrderModal({
   const [kledoStatus, setKledoStatus]         = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle');
   const [error, setError]                     = useState('');
   const [unitOverride, setUnitOverride]       = useState(false);
+  const [savedOrderId, setSavedOrderId]       = useState<number | null>(null);
 
   /* Auto-deteksi unit dari nama produk yang dipilih */
   const autoUnit = useMemo(() => {
@@ -237,11 +238,35 @@ export default function CreateOrderModal({
   const removeItem = (id: number) => setItems(prev => prev.filter(it => it.id !== id));
 
   const handleSubmit = async () => {
-    if (!namaCustomer.trim()) { setError('Nama konsumen wajib diisi.'); return; }
-    if (items.some(it => !it.nama.trim())) { setError('Semua produk harus diisi.'); return; }
     setError('');
     setSaving(true);
     setKledoStatus('syncing');
+
+    /* ── RETRY MODE: order sudah tersimpan lokal, cukup kirim ulang ke Kledo ── */
+    if (savedOrderId !== null) {
+      try {
+        const res = await api.post('/sales/orders/kledo-retry', { orderId: savedOrderId });
+        const kledoResult = (res.data as any)?.kledo;
+        if (kledoResult?.ok) {
+          setKledoStatus('ok');
+          setTimeout(onSuccess, 800);
+        } else {
+          setKledoStatus('error');
+          const kledoErr = kledoResult?.error ?? 'Kledo tidak merespons';
+          setError(`Retry gagal: ${kledoErr}. Coba lagi atau tutup modal.`);
+        }
+      } catch (e: any) {
+        setError(e?.response?.data?.message ?? 'Gagal retry ke Kledo.');
+        setKledoStatus('error');
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    /* ── SAVE BARU ── */
+    if (!namaCustomer.trim()) { setError('Nama konsumen wajib diisi.'); setSaving(false); setKledoStatus('idle'); return; }
+    if (items.some(it => !it.nama.trim())) { setError('Semua produk harus diisi.'); setSaving(false); setKledoStatus('idle'); return; }
 
     const payload = {
       namaCustomer: namaCustomer.trim(),
@@ -273,13 +298,17 @@ export default function CreateOrderModal({
 
     try {
       const res = await api.post('/sales/orders', payload);
+      const savedId = (res.data as any)?.data?.id ?? null;
       const kledoResult = (res.data as any)?.kledo;
       if (kledoResult?.ok) {
         setKledoStatus('ok');
+        onSuccess();
       } else {
+        setSavedOrderId(savedId);
         setKledoStatus('error');
+        const kledoErr = kledoResult?.error ?? 'Kledo tidak merespons';
+        setError(`Order tersimpan lokal ✓ — Gagal sync ke Kledo: ${kledoErr}. Klik "Coba Ulang" untuk kirim ulang ke Kledo.`);
       }
-      onSuccess();
     } catch (e: any) {
       setError(e?.response?.data?.message ?? e?.response?.data?.error ?? 'Gagal menyimpan order.');
       setKledoStatus('idle');
@@ -934,7 +963,11 @@ export default function CreateOrderModal({
           <button onClick={handleSubmit} disabled={saving}
             className="px-7 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
             style={{ background: COLOR, boxShadow: `0 4px 16px ${COLOR}50` }}>
-            {saving ? 'Menyimpan…' : '💾 Simpan & Kirim ke Kledo'}
+            {saving
+              ? 'Menyimpan…'
+              : savedOrderId !== null
+                ? '🔄 Coba Ulang ke Kledo'
+                : '💾 Simpan & Kirim ke Kledo'}
           </button>
         </div>
       </div>
