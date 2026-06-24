@@ -38,6 +38,8 @@ export async function setLocalSetting(key: string, value: string): Promise<void>
 export async function ensureTables(): Promise<void> {
   if (tablesEnsured) return;
   const db = getDb();
+
+  // Create tables if they don't exist
   await db.query(`
     CREATE TABLE IF NOT EXISTS local_settings (
       key         VARCHAR(100) PRIMARY KEY,
@@ -86,7 +88,36 @@ export async function ensureTables(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_local_orders_status   ON local_orders(status);
     CREATE INDEX IF NOT EXISTS idx_local_order_items_ord ON local_order_items(order_id);
   `);
+
+  // Migrate: add columns that may not exist in older DB instances
+  const migrations = [
+    `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS kledo_contact_id VARCHAR(100)`,
+    `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS kledo_invoice_id  VARCHAR(100)`,
+    `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS kledo_synced      BOOLEAN DEFAULT FALSE`,
+    `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS uang_muka         NUMERIC(14,2) DEFAULT 0`,
+    `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS status_pengiriman VARCHAR(50) DEFAULT 'belum_dikirim'`,
+    `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS updated_at        TIMESTAMPTZ DEFAULT NOW()`,
+    `ALTER TABLE local_order_items ADD COLUMN IF NOT EXISTS kledo_product_id VARCHAR(100)`,
+    `ALTER TABLE local_order_items ADD COLUMN IF NOT EXISTS diskon           NUMERIC(14,2) DEFAULT 0`,
+    `ALTER TABLE local_order_items ADD COLUMN IF NOT EXISTS unit             VARCHAR(50)`,
+  ];
+
+  for (const sql of migrations) {
+    try { await db.query(sql); } catch { /* column already exists, ignore */ }
+  }
+
   tablesEnsured = true;
+}
+
+export function getOrderById(db: Pool, id: number) {
+  return db.query(
+    `SELECT o.*, COALESCE(json_agg(i.* ORDER BY i.id) FILTER (WHERE i.id IS NOT NULL), '[]') AS items
+       FROM local_orders o
+       LEFT JOIN local_order_items i ON i.order_id = o.id
+      WHERE o.id = $1
+      GROUP BY o.id`,
+    [id],
+  ).then(r => r.rows[0] ?? null);
 }
 
 export function generateSoNumber(): string {
