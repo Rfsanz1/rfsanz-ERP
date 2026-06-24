@@ -14,7 +14,10 @@ async function forwardToBackend(req: NextRequest, path: string, body?: unknown):
   try {
     const r = await fetch(`${BACKEND}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {}),
+      },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(25000),
     });

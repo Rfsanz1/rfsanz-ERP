@@ -29,6 +29,19 @@ interface AuthState {
 
 const TOKEN_KEY = 'gm_auth_token';
 
+/** Decode JWT payload dan cek apakah masih valid (belum expired + 60 detik buffer) */
+function isTokenValid(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (!payload.exp) return true; // no expiry → valid
+    return payload.exp * 1000 > Date.now() + 60_000;
+  } catch {
+    return false;
+  }
+}
+
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@rfsanz.com';
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'root';
 
@@ -63,8 +76,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const existing = localStorage.getItem(TOKEN_KEY);
     if (existing) {
-      set({ token: existing, user: STATIC_USER, initialized: true, authReady: true });
-      return;
+      /* Periksa apakah token belum expired sebelum dipakai */
+      const valid = isTokenValid(existing);
+      if (valid) {
+        set({ token: existing, user: STATIC_USER, initialized: true, authReady: true });
+        return;
+      }
+      /* Token expired — hapus dan login ulang */
+      localStorage.removeItem(TOKEN_KEY);
     }
 
     set({ loading: true, error: null });

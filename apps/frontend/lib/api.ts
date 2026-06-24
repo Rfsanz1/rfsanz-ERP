@@ -33,10 +33,37 @@ api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
 
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
-    if (err?.response?.status === 401 && typeof window !== 'undefined') {
+  async (err) => {
+    const status = err?.response?.status;
+    if ((status === 401 || status === 403) && typeof window !== 'undefined') {
       _serverUrlCache = null;
       localStorage.removeItem(TOKEN_KEY);
+      /* Token expired atau invalid — coba auto-login ulang otomatis */
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@rfsanz.com',
+            password: process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'root',
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const newToken: string = data.token ?? data.access_token ?? data.accessToken ?? '';
+          if (newToken) {
+            localStorage.setItem(TOKEN_KEY, newToken);
+            /* Retry request asli dengan token baru */
+            if (err.config && !err.config.__retried) {
+              err.config.__retried = true;
+              err.config.headers['Authorization'] = `Bearer ${newToken}`;
+              return api.request(err.config);
+            }
+          }
+        }
+      } catch {
+        /* auto-login retry gagal — teruskan error asli */
+      }
     }
     return Promise.reject(err);
   },

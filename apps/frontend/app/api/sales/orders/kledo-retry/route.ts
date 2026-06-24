@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     try {
       const r = await fetch(`${BACKEND}/api/sales/orders/${orderId}/kledo-retry`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+        headers: { 'Content-Type': 'application/json', ...(authHeader ? { Authorization: authHeader } : {}) },
         signal: AbortSignal.timeout(25000),
       });
       const data = await r.json().catch(() => ({ data: null, error: 'Respons tidak valid' }));
