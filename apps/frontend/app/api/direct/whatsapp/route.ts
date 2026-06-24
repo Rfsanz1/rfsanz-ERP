@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getLocalSetting, ensureTables } from '@/lib/localDb';
 
 function formatPhone(raw: string): string {
   if (raw.includes('@')) return raw;
@@ -10,7 +11,20 @@ function formatPhone(raw: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { token, target, message } = await req.json();
+    const body = await req.json();
+    let { token, target, message } = body;
+
+    if (!token) {
+      try {
+        await ensureTables();
+        const dbToken = await getLocalSetting('fonnte_token');
+        if (dbToken) token = dbToken;
+      } catch {}
+    }
+
+    if (!token) {
+      token = process.env.FONNTE_TOKEN ?? '';
+    }
 
     if (!token) {
       return NextResponse.json(

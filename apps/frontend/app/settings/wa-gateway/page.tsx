@@ -115,34 +115,34 @@ export default function WaGatewayPage() {
 
     const load = async () => {
       try {
-        const d = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+        const local = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
 
-        // Jika token belum tersimpan di localStorage, coba ambil dari server env (FONNTE_TOKEN secret)
-        let fonnteFromEnv = '';
-        if (!d.token) {
-          try {
-            const r = await fetch('/api/direct/app-config');
-            if (r.ok) {
-              const cfg = await r.json();
-              fonnteFromEnv = cfg.fonnte_token ?? '';
-            }
-          } catch {}
-        }
+        // Selalu coba ambil dari server DB/env — lebih andal dari localStorage
+        let serverCfg: Record<string, string> = {};
+        try {
+          const r = await fetch('/api/direct/app-config');
+          if (r.ok) serverCfg = await r.json();
+        } catch {}
 
-        setFonnteToken(d.token ?? fonnteFromEnv);
+        // Prioritas: localStorage → server DB/env
+        const resolvedToken = local.token || serverCfg.fonnte_token || '';
+        const resolvedGroupInvoice = local.groupInvoice || serverCfg.fonnte_group_invoice || '';
+        const resolvedGroupPayment = local.groupBuktiTf || serverCfg.fonnte_group_payment || '';
+
+        setFonnteToken(resolvedToken);
         setOrder(s => ({
           ...s,
-          groupId: d.groupInvoice ?? '',
-          template: d.templateOrder ?? d.template_order ?? DEFAULT_TEMPLATE_ORDER,
+          groupId: resolvedGroupInvoice,
+          template: local.templateOrder ?? DEFAULT_TEMPLATE_ORDER,
         }));
         setPayment(s => ({
           ...s,
-          groupId: d.groupBuktiTf ?? '',
-          template: d.templatePayment ?? d.template_payment ?? DEFAULT_TEMPLATE_PAYMENT,
+          groupId: resolvedGroupPayment,
+          template: local.templatePayment ?? DEFAULT_TEMPLATE_PAYMENT,
         }));
         setKonsumen(s => ({
           ...s,
-          template: d.templateKonsumen ?? d.template_invoice ?? DEFAULT_TEMPLATE_KONSUMEN,
+          template: local.templateKonsumen ?? DEFAULT_TEMPLATE_KONSUMEN,
         }));
       } catch {}
       setMounted(true);
@@ -151,17 +151,40 @@ export default function WaGatewayPage() {
     load();
   }, [token]);
 
-  const save = useCallback(() => {
+  const save = useCallback(async () => {
     setSaving(true);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      const cfg = {
         token: fonnteToken.trim(),
         groupInvoice: order.groupId.trim(),
         groupBuktiTf: payment.groupId.trim(),
         templateOrder: order.template,
         templatePayment: payment.template,
         templateKonsumen: konsumen.template,
-      }));
+      };
+
+      // 1. Simpan ke localStorage (cepat, untuk browser ini)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+
+      // 2. Simpan ke database server (persisten lintas browser & perangkat)
+      const dbEntries: Array<[string, string]> = [
+        ['fonnte_token',         cfg.token],
+        ['fonnte_group_invoice', cfg.groupInvoice],
+        ['fonnte_group_payment', cfg.groupBuktiTf],
+        ['fonnte_template_order',    cfg.templateOrder],
+        ['fonnte_template_payment',  cfg.templatePayment],
+        ['fonnte_template_konsumen', cfg.templateKonsumen],
+      ];
+      await Promise.all(
+        dbEntries.map(([key, value]) =>
+          fetch('/api/local-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, value }),
+          }),
+        ),
+      );
+
       setSavedMsg('✅ Konfigurasi WA Gateway berhasil disimpan!');
       setTimeout(() => setSavedMsg(''), 4000);
     } catch { setSavedMsg('❌ Gagal menyimpan.'); }

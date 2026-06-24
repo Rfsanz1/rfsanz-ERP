@@ -1,4 +1,4 @@
-const KLEDO_BASE = 'https://api.kledo.com/api/v1';
+import { getLocalSetting } from '@/lib/localDb';
 
 function formatPhone(raw: string): string {
   if (!raw) return '';
@@ -18,9 +18,36 @@ const nowStr = () =>
     hour: '2-digit', minute: '2-digit',
   });
 
+async function getFonnteToken(): Promise<string> {
+  if (process.env.FONNTE_TOKEN) return process.env.FONNTE_TOKEN;
+  try {
+    const dbToken = await getLocalSetting('fonnte_token');
+    if (dbToken) return dbToken;
+  } catch {}
+  return '';
+}
+
+async function getFonnteGroupInvoice(): Promise<string> {
+  if (process.env.FONNTE_GROUP_INVOICE) return process.env.FONNTE_GROUP_INVOICE;
+  try {
+    const v = await getLocalSetting('fonnte_group_invoice');
+    if (v) return v;
+  } catch {}
+  return '';
+}
+
+async function getFonnteGroupPayment(): Promise<string> {
+  if (process.env.FONNTE_GROUP_PAYMENT) return process.env.FONNTE_GROUP_PAYMENT;
+  try {
+    const v = await getLocalSetting('fonnte_group_payment');
+    if (v) return v;
+  } catch {}
+  return '';
+}
+
 async function sendWa(target: string, message: string): Promise<{ ok: boolean; reason?: string }> {
-  const token = process.env.FONNTE_TOKEN;
-  if (!token) return { ok: false, reason: 'FONNTE_TOKEN tidak dikonfigurasi' };
+  const token = await getFonnteToken();
+  if (!token) return { ok: false, reason: 'FONNTE_TOKEN tidak dikonfigurasi. Atur di Settings → WA Gateway.' };
   if (!target) return { ok: false, reason: 'Target WA kosong' };
 
   const formatted = formatPhone(target);
@@ -90,8 +117,10 @@ export async function sendAllOrderNotifications(order: WaOrderVars): Promise<{
   grupPayment: { ok: boolean; reason?: string };
   konsumen: { ok: boolean; reason?: string };
 }> {
-  const grupInvoice = process.env.FONNTE_GROUP_INVOICE ?? '';
-  const grupPayment = process.env.FONNTE_GROUP_PAYMENT ?? '';
+  const [grupInvoice, grupPayment] = await Promise.all([
+    getFonnteGroupInvoice(),
+    getFonnteGroupPayment(),
+  ]);
 
   const itemsStr = (order.items ?? [])
     .map(it => `  • ${it.nama} ×${it.qty} = ${fmt(Number(it.harga) * Number(it.qty))}`)
@@ -106,7 +135,6 @@ export async function sendAllOrderNotifications(order: WaOrderVars): Promise<{
 
   const datetime = nowStr();
 
-  // Build messages
   const msgOrder = apply(TEMPLATE_ORDER, {
     order_no: order.soNumber,
     customer_name: order.namaCustomer,
@@ -139,10 +167,9 @@ export async function sendAllOrderNotifications(order: WaOrderVars): Promise<{
     datetime,
   });
 
-  // Kirim paralel ke semua tujuan
   const [grupOrderRes, grupPaymentRes, konsumenRes] = await Promise.all([
-    grupInvoice ? sendWa(grupInvoice, msgOrder) : Promise.resolve({ ok: false, reason: 'FONNTE_GROUP_INVOICE tidak dikonfigurasi' }),
-    grupPayment ? sendWa(grupPayment, msgPayment) : Promise.resolve({ ok: false, reason: 'FONNTE_GROUP_PAYMENT tidak dikonfigurasi' }),
+    grupInvoice ? sendWa(grupInvoice, msgOrder) : Promise.resolve({ ok: false, reason: 'Group ID Notif Order belum dikonfigurasi di Settings → WA Gateway' }),
+    grupPayment ? sendWa(grupPayment, msgPayment) : Promise.resolve({ ok: false, reason: 'Group ID Payment belum dikonfigurasi di Settings → WA Gateway' }),
     order.noHp ? sendWa(order.noHp, msgKonsumen) : Promise.resolve({ ok: false, reason: 'Nomor HP konsumen tidak tersedia' }),
   ]);
 
