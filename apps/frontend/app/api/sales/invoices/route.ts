@@ -3,6 +3,54 @@ import { getDb, ensureTables } from '@/lib/localDb';
 import { pushOrderToKledo } from '@/lib/kledoSync';
 import { sendAllOrderNotifications } from '@/lib/server/waServer';
 
+export async function GET(req: NextRequest) {
+  try {
+    await ensureTables();
+    const db = getDb();
+    const { searchParams } = new URL(req.url);
+    const page   = Math.max(1, Number(searchParams.get('page') ?? 1));
+    const limit  = Math.min(100, Math.max(1, Number(searchParams.get('limit') ?? 30)));
+    const search = (searchParams.get('search') ?? '').trim();
+    const offset = (page - 1) * limit;
+
+    const conds: string[] = [`o.so_number LIKE 'INV-%'`];
+    const vals: any[] = [];
+    let vi = 1;
+    if (search) {
+      conds.push(`(o.so_number ILIKE $${vi} OR o.nama_customer ILIKE $${vi} OR o.sales_name ILIKE $${vi})`);
+      vals.push(`%${search}%`); vi++;
+    }
+
+    const where = conds.join(' AND ');
+
+    const countRes = await db.query(
+      `SELECT COUNT(*) FROM local_orders o WHERE ${where}`,
+      vals,
+    );
+    const total = Number(countRes.rows[0].count);
+
+    const rows = await db.query(
+      `SELECT o.*,
+              COALESCE(json_agg(i.* ORDER BY i.id) FILTER (WHERE i.id IS NOT NULL), '[]') AS items
+         FROM local_orders o
+         LEFT JOIN local_order_items i ON i.order_id = o.id
+        WHERE ${where}
+        GROUP BY o.id
+        ORDER BY o.created_at DESC
+        LIMIT $${vi} OFFSET $${vi + 1}`,
+      [...vals, limit, offset],
+    );
+
+    return NextResponse.json({
+      data: rows.rows,
+      meta: { total, page, limit, pages: Math.ceil(total / limit) },
+      error: null,
+    });
+  } catch (e: any) {
+    return NextResponse.json({ data: [], meta: { total: 0, page: 1, limit: 30, pages: 0 }, error: e.message }, { status: 500 });
+  }
+}
+
 function generateInvNumber(): string {
   const now = new Date();
   const yy  = now.getFullYear().toString().slice(2);
