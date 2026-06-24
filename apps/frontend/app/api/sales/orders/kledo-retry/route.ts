@@ -3,14 +3,35 @@ import { getDb } from '@/lib/localDb';
 import { pushOrderToKledo } from '@/lib/kledoSync';
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { orderId } = body;
+  const body = await req.json();
+  const { orderId } = body;
 
-    if (!orderId) {
-      return NextResponse.json({ data: null, error: 'orderId wajib diisi' }, { status: 400 });
+  if (!orderId) {
+    return NextResponse.json({ data: null, error: 'orderId wajib diisi' }, { status: 400 });
+  }
+
+  /* Jika tidak ada local DB, forward retry ke backend */
+  if (!process.env.DATABASE_URL) {
+    const BACKEND = process.env.BACKEND_URL ?? '';
+    if (!BACKEND) {
+      return NextResponse.json({ data: null, error: 'BACKEND_URL tidak dikonfigurasi' }, { status: 500 });
     }
+    const authHeader = req.headers.get('authorization') ?? '';
+    try {
+      const r = await fetch(`${BACKEND}/api/sales/orders/${orderId}/kledo-retry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+        signal: AbortSignal.timeout(25000),
+      });
+      const data = await r.json().catch(() => ({ data: null, error: 'Respons tidak valid' }));
+      return NextResponse.json(data, { status: r.status });
+    } catch (e: any) {
+      const msg = e?.name === 'TimeoutError' ? 'Backend timeout' : (e.message ?? 'Gagal menghubungi backend');
+      return NextResponse.json({ data: null, error: msg }, { status: 502 });
+    }
+  }
 
+  try {
     const db = getDb();
 
     const orderRes = await db.query(

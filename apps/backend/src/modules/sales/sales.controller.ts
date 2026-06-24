@@ -20,6 +20,7 @@ export class SalesController {
   @Get('orders')                getOrders(@Query() q: any)                { return this.svc.getOrders(q); }
   @Get('orders/:id')            getOrder(@Param('id') id: string)         { return this.svc.getOrder(Number(id)); }
   @Post('orders')               createOrder(@Body() dto: any)             { return this.svc.createOrder(dto); }
+  @Post('orders/:id/kledo-retry') kledoRetry(@Param('id') id: string)    { return this.svc.kledoRetry(Number(id)); }
   @Put('orders/:id')            updateOrder(@Param('id') id: string, @Body() dto: any) { return this.svc.updateOrder(Number(id), dto); }
   @Delete('orders/:id')         deleteOrder(@Param('id') id: string)     { return this.svc.deleteOrder(Number(id)); }
   @Patch('orders/:id/pengiriman') updatePengiriman(@Param('id') id: string, @Body() dto: any) { return this.svc.updatePengiriman(Number(id), dto); }

@@ -111,6 +111,16 @@ export class SalesService {
     return result;
   }
 
+  async kledoRetry(id: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { orderItems: { include: { product: true } } },
+    });
+    if (!order) return { data: null, kledo: { ok: false, error: 'Order tidak ditemukan' } };
+    const result = await this.pushInvoiceToKledo(order, order.orderItems);
+    return { data: { orderId: id }, kledo: { ok: result.success, error: result.message } };
+  }
+
   async updateOrder(id: number, dto: any) { return this.prisma.order.update({ where: { id }, data: dto }); }
   async deleteOrder(id: number) { return this.prisma.order.update({ where: { id }, data: { status: 'cancelled' } }); }
   async updatePengiriman(id: number, dto: any) { return this.prisma.order.update({ where: { id }, data: dto }); }

@@ -3,7 +3,36 @@ import { getDb, generateSoNumber, ensureTables } from '@/lib/localDb';
 import { pushOrderToKledo } from '@/lib/kledoSync';
 import { sendAllOrderNotifications } from '@/lib/server/waServer';
 
+/** Jika DATABASE_URL tidak dikonfigurasi (mis. CasaOS tanpa local DB di frontend),
+ *  forward langsung ke backend yang sudah punya semua logic (Kledo, WA, dsb). */
+async function forwardToBackend(req: NextRequest, path: string, body?: unknown): Promise<NextResponse> {
+  const BACKEND = process.env.BACKEND_URL ?? '';
+  if (!BACKEND) {
+    return NextResponse.json({ data: null, error: 'BACKEND_URL tidak dikonfigurasi' }, { status: 500 });
+  }
+  const authHeader = req.headers.get('authorization') ?? '';
+  try {
+    const r = await fetch(`${BACKEND}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(25000),
+    });
+    const data = await r.json().catch(() => ({ data: null, error: 'Respons tidak valid dari backend' }));
+    return NextResponse.json(data, { status: r.status });
+  } catch (e: any) {
+    const msg = e?.name === 'TimeoutError' ? 'Backend timeout (25 detik)' : (e.message ?? 'Gagal menghubungi backend');
+    return NextResponse.json({ data: null, error: msg }, { status: 502 });
+  }
+}
+
 export async function POST(req: NextRequest) {
+  /* Jika tidak ada local DB, pakai backend langsung */
+  if (!process.env.DATABASE_URL) {
+    const body = await req.json();
+    return forwardToBackend(req, '/api/sales/orders', body);
+  }
+
   try {
     await ensureTables();
     const body = await req.json();
