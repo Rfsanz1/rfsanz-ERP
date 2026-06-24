@@ -55,12 +55,29 @@ export class InvoiceService {
     return { data, message: 'success' };
   }
 
+  private toDate(v: any): Date | undefined {
+    if (!v) return undefined;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? undefined : d;
+  }
+
   async create(dto: any) {
     if (!dto.customerId) throw new BadRequestException('customerId harus diisi');
     const noInvoice = dto.noInvoice ?? dto.nomorInvoice ?? await this.generateNumber();
-    const { items, nomorInvoice, ...rest } = dto;
+    const { items, nomorInvoice, tenantId: _tid, tanggal, dueDate, jatuhTempo, ...rest } = dto;
+    const tid = 'default';
     const data = await this.prisma.invoice.create({
-      data: { ...rest, noInvoice, status: rest.status ?? 'draft', items: items?.length ? { create: items } : undefined },
+      data: {
+        ...rest,
+        tenantId: tid,
+        noInvoice,
+        tanggal: this.toDate(tanggal) ?? new Date(),
+        dueDate: this.toDate(dueDate ?? jatuhTempo),
+        status: rest.status ?? 'draft',
+        items: items?.length
+          ? { create: items.map((it: any) => ({ ...it, tenantId: tid })) }
+          : undefined,
+      },
       include: { items: true, customer: { select: { id: true, name: true } } },
     });
     this.notif.notifyGrupInvoice({
@@ -103,7 +120,7 @@ export class InvoiceService {
     });
     if (!inv) throw new NotFoundException('Invoice tidak ditemukan');
     const payment = await this.prisma.invoicePayment.create({
-      data: { invoiceId, amount: dto.amount, method: dto.method ?? 'transfer', referensi: dto.reference ?? dto.referensi, notes: dto.note ?? dto.notes } as any,
+      data: { invoiceId, tenantId: 'default', amount: dto.amount, method: dto.method ?? 'transfer', referensi: dto.reference ?? dto.referensi, notes: dto.note ?? dto.notes } as any,
     });
     const agg = await this.prisma.invoicePayment.aggregate({ where: { invoiceId }, _sum: { amount: true } });
     const paid = Number(agg._sum.amount ?? 0);
@@ -129,7 +146,7 @@ export class InvoiceService {
     await this.findOne(invoiceId);
     const counter = await this.prisma.creditNote.count();
     const noCreditNote = dto.nomor ?? dto.noCreditNote ?? `CN-${new Date().getFullYear()}-${String(counter + 1).padStart(4, '0')}`;
-    const data = await this.prisma.creditNote.create({ data: { invoiceId, noCreditNote, amount: dto.amount, reason: dto.reason ?? '', status: 'issued' } as any });
+    const data = await this.prisma.creditNote.create({ data: { invoiceId, tenantId: 'default', noCreditNote, amount: dto.amount, reason: dto.reason ?? '', status: 'issued' } as any });
     return { data, message: 'Credit note berhasil diterbitkan' };
   }
 
