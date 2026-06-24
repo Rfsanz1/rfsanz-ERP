@@ -1,0 +1,128 @@
+# =====================================================
+# Gentong Mas ERP — CasaOS Deployment
+# =====================================================
+# Cara deploy ke CasaOS:
+#   1. Pastikan Docker & CasaOS sudah terinstall
+#   2. Copy file ini ke server CasaOS
+#   3. Copy .env.example → .env lalu isi nilainya
+#   4. Jalankan: docker compose -f docker-compose.casaos.yml up -d --build
+# =====================================================
+
+name: gentong-mas-erp
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: frontend
+  author: rfsanz
+  category: Business
+  description:
+    en_us: |
+      Gentong Mas ERP — Sistem ERP modern berbasis web untuk manajemen bisnis multi-modul:
+      Sales, Inventory, POS, Finance, Manufacturing, dan HRM.
+      Dibangun dengan Next.js (frontend) dan NestJS (backend) dengan database PostgreSQL.
+  developer: Gentong Mas
+  icon: https://cdn-icons-png.flaticon.com/512/2618/2618257.png
+  index: /
+  is_uncontrolled: false
+  port_map: "${FRONTEND_PORT:-5000}"
+  tagline:
+    en_us: ERP Modern untuk Bisnis Anda
+  title:
+    en_us: Gentong Mas ERP
+
+services:
+
+  # ─── PostgreSQL Database ──────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: gentong-mas-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: erp_db
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-erp_password_aman}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - erp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_user -d erp_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      icon: https://cdn-icons-png.flaticon.com/512/5968/5968342.png
+
+  # ─── NestJS Backend ───────────────────────────────
+  backend:
+    build:
+      context: apps/backend
+      dockerfile: Dockerfile
+    container_name: gentong-mas-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://erp_user:${POSTGRES_PASSWORD:-erp_password_aman}@postgres:5432/erp_db
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@rfsanz.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-root}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrator}
+      COMPANY_NAME: ${COMPANY_NAME:-Gentong Mas}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://${SERVER_IP:-localhost}:${FRONTEND_PORT:-5000}}
+    networks:
+      - erp-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      icon: https://cdn-icons-png.flaticon.com/512/5968/5968322.png
+
+  # ─── Next.js Frontend ─────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        APP_DIR: frontend
+        PORT: 5000
+        BACKEND_URL: http://backend:3000
+    container_name: gentong-mas-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5000}:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      BACKEND_URL: http://backend:3000
+      NEXT_PUBLIC_API_URL: http://${SERVER_IP:-localhost}:${BACKEND_PORT:-3000}
+      NEXT_PUBLIC_APP_NAME: ${COMPANY_NAME:-Gentong Mas} ERP
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@rfsanz.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-root}
+    networks:
+      - erp-network
+    labels:
+      icon: https://cdn-icons-png.flaticon.com/512/2618/2618257.png
+
+networks:
+  erp-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
