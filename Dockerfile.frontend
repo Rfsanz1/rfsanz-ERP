@@ -4,15 +4,21 @@
 ARG APP_DIR=frontend
 ARG PORT=5000
 ARG BACKEND_URL=http://127.0.0.1:6000
+ARG NEXT_PUBLIC_ADMIN_EMAIL=admin@rfsanz.com
+ARG NEXT_PUBLIC_ADMIN_PASSWORD=root
 
 # ── Stage 1: Builder ──────────────────────────────────────────────
 FROM node:20-alpine AS builder
 ARG APP_DIR
 ARG PORT
 ARG BACKEND_URL
+ARG NEXT_PUBLIC_ADMIN_EMAIL
+ARG NEXT_PUBLIC_ADMIN_PASSWORD
 
-# Expose ke ENV agar next.config.js bisa baca saat build
+# Expose ke ENV agar next.config.js & kode client bisa baca saat build
 ENV BACKEND_URL=${BACKEND_URL}
+ENV NEXT_PUBLIC_ADMIN_EMAIL=${NEXT_PUBLIC_ADMIN_EMAIL}
+ENV NEXT_PUBLIC_ADMIN_PASSWORD=${NEXT_PUBLIC_ADMIN_PASSWORD}
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
