@@ -3,24 +3,63 @@ import { getDb, generateSoNumber, ensureTables } from '@/lib/localDb';
 import { pushOrderToKledo } from '@/lib/kledoSync';
 import { sendAllOrderNotifications } from '@/lib/server/waServer';
 
+/* ── Server-side token cache (shared di module ini) ── */
+let _fwdCachedToken = '';
+let _fwdCachedTokenExp = 0;
+
+async function getForwardToken(backend: string): Promise<string> {
+  if (_fwdCachedToken && Date.now() < _fwdCachedTokenExp - 60_000) return _fwdCachedToken;
+  try {
+    const r = await fetch(`${backend}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: process.env.ADMIN_EMAIL || 'admin@rfsanz.com',
+        password: process.env.ADMIN_PASSWORD || 'root',
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (r.ok) {
+      const d = await r.json();
+      const token: string = d.token ?? d.access_token ?? d.accessToken ?? '';
+      if (token) {
+        try {
+          const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+          _fwdCachedTokenExp = (payload.exp ? payload.exp * 1000 : 0) || Date.now() + 23 * 3600 * 1000;
+        } catch { _fwdCachedTokenExp = Date.now() + 23 * 3600 * 1000; }
+        _fwdCachedToken = token;
+        return token;
+      }
+    }
+  } catch { /* backend tidak terjangkau */ }
+  return '';
+}
+
 /** Jika DATABASE_URL tidak dikonfigurasi (mis. CasaOS tanpa local DB di frontend),
- *  forward langsung ke backend yang sudah punya semua logic (Kledo, WA, dsb). */
+ *  forward langsung ke backend yang sudah punya semua logic (Kledo, WA, dsb).
+ *  Otomatis menambahkan server-side JWT jika client tidak mengirim Authorization. */
 async function forwardToBackend(req: NextRequest, path: string, body?: unknown): Promise<NextResponse> {
   const BACKEND = process.env.BACKEND_URL ?? '';
   if (!BACKEND) {
     return NextResponse.json({ data: null, error: 'BACKEND_URL tidak dikonfigurasi' }, { status: 500 });
   }
-  const authHeader = req.headers.get('authorization') ?? '';
+  const clientAuth = req.headers.get('authorization') ?? '';
+  const effectiveAuth = clientAuth || `Bearer ${await getForwardToken(BACKEND)}`;
+
+  const doFetch = (auth: string) => fetch(`${BACKEND}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(auth ? { Authorization: auth } : {}) },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(25000),
+  });
+
   try {
-    const r = await fetch(`${BACKEND}${path}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authHeader ? { Authorization: authHeader } : {}),
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(25000),
-    });
+    let r = await doFetch(effectiveAuth);
+    if ((r.status === 401 || r.status === 403) && !clientAuth) {
+      _fwdCachedToken = ''; _fwdCachedTokenExp = 0;
+      const fresh = await getForwardToken(BACKEND);
+      if (fresh) r = await doFetch(`Bearer ${fresh}`);
+    }
     const data = await r.json().catch(() => ({ data: null, error: 'Respons tidak valid dari backend' }));
     return NextResponse.json(data, { status: r.status });
   } catch (e: any) {
