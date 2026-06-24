@@ -45,7 +45,22 @@ export class SalesService {
       data: { ...orderData, items: items ?? [], orderItems: dbItems.length ? { create: dbItems } : undefined },
       include: { orderItems: { include: { product: true } } },
     });
-    this.pushInvoiceToKledo(order, items ?? []).catch((e) => this.logger.warn('Kledo push gagal: ' + e.message));
+
+    /* ── Push ke Kledo secara SYNCHRONOUS agar frontend tahu hasilnya ── */
+    let kledoResult: { ok: boolean; error?: string } = { ok: false, error: 'Tidak dicoba' };
+    try {
+      const result = await this.pushInvoiceToKledo(order, items ?? []);
+      kledoResult = { ok: result.success, error: result.success ? undefined : (result.message ?? 'Gagal kirim ke Kledo') };
+      if (result.success && result.kledoInvoiceId) {
+        this.logger.log(`Kledo invoice dibuat: #${result.kledoInvoiceId} untuk order #${order.id}`);
+      } else {
+        this.logger.warn(`Kledo push gagal untuk order #${order.id}: ${result.message}`);
+      }
+    } catch (e: any) {
+      kledoResult = { ok: false, error: e.message ?? 'Error tidak diketahui' };
+      this.logger.warn(`Kledo push exception untuk order #${order.id}: ${e.message}`);
+    }
+
     const notifItems = (order.orderItems ?? dbItems).map((it: any) => ({
       nama: it.nama ?? it.name ?? '',
       qty: Number(it.qty) || 1,
@@ -76,7 +91,9 @@ export class SalesService {
         lokasiToken: order.lokasiToken ?? null,
       }).catch((e) => this.logger.warn('Notif customer gagal: ' + e.message));
     }
-    return order;
+
+    /* Kembalikan order + hasil kledo agar frontend bisa tampilkan status akurat */
+    return { data: order, kledo: kledoResult };
   }
 
   private async pushInvoiceToKledo(order: any, items: any[]) {
