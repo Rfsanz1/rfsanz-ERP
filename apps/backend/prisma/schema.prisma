@@ -3204,3 +3204,53 @@ model TmsUserNotification {
   entityId   String?
   createdAt  DateTime @default(now())
 }
+
+
+model LocalOrder {
+  id                Int              @id @default(autoincrement())
+  soNumber          String           @unique @map("so_number") @db.VarChar(50)
+  namaCustomer      String           @map("nama_customer") @db.VarChar(255)
+  noHp              String?          @map("no_hp") @db.VarChar(50)
+  alamat            String?          @db.Text
+  catatan           String?          @db.Text
+  salesName         String?          @map("sales_name") @db.VarChar(100)
+  tanggal           DateTime         @db.Date
+  diskonTotal       Decimal          @default(0) @map("diskon_total") @db.Decimal(14, 2)
+  pajak             Decimal          @default(0) @db.Decimal(14, 2)
+  ongkir            Decimal          @default(0) @db.Decimal(14, 2)
+  totalHarga        Decimal          @default(0) @map("total_harga") @db.Decimal(14, 2)
+  uangMuka          Decimal          @default(0) @map("uang_muka") @db.Decimal(14, 2)
+  metodePembayaran  String           @default("transfer") @map("metode_pembayaran") @db.VarChar(50)
+  status            String           @default("pending") @db.VarChar(50)
+  statusPengiriman  String           @default("belum_dikirim") @map("status_pengiriman") @db.VarChar(50)
+  customerId        String?          @map("customer_id") @db.VarChar(100)
+  kledoContactId    String?          @map("kledo_contact_id") @db.VarChar(100)
+  kledoInvoiceId    String?          @map("kledo_invoice_id") @db.VarChar(100)
+  kledoSynced       Boolean          @default(false) @map("kledo_synced")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at")
+  items             LocalOrderItem[]
+
+  @@index([soNumber])
+  @@index([namaCustomer])
+  @@index([status])
+  @@map("local_orders")
+}
+
+model LocalOrderItem {
+  id             Int        @id @default(autoincrement())
+  orderId        Int        @map("order_id")
+  order          LocalOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  nama           String     @db.VarChar(255)
+  qty            Decimal    @default(1) @db.Decimal(10, 2)
+  harga          Decimal    @default(0) @db.Decimal(14, 2)
+  subtotal       Decimal    @default(0) @db.Decimal(14, 2)
+  diskon         Decimal    @default(0) @db.Decimal(14, 2)
+  unit           String?    @db.VarChar(50)
+  productId      String?    @map("product_id") @db.VarChar(100)
+  kledoProductId String?    @map("kledo_product_id") @db.VarChar(100)
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("local_order_items")
+}
