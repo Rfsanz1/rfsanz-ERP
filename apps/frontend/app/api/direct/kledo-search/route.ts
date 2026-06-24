@@ -9,9 +9,13 @@ let cachedKledoBase = 'https://api.kledo.com/api/v1';
 
 const contactsCache: { data: any[]; ts: number } = { data: [], ts: 0 };
 const productsCache: { data: any[]; ts: number } = { data: [], ts: 0 };
-const CACHE_TTL = 30 * 60 * 1000; // 30 menit
-const PER_PAGE = 100;
-const CONCURRENCY = 3; // maks 3 halaman paralel (hindari 429 rate limit)
+let contactsLoading = false;
+let productsLoading = false;
+
+const CACHE_TTL   = 30 * 60 * 1000;
+const PER_PAGE    = 500;   // Kledo max — fewer requests
+const CONCURRENCY = 3;
+const MAX_PAGES   = 20;    // cap at 10 000 contacts / 10 000 products; avoids rate-limit 403
 
 async function getKledoToken(): Promise<string | null> {
   if (cachedKledoToken) return cachedKledoToken;
@@ -24,6 +28,7 @@ async function getKledoToken(): Promise<string | null> {
   try {
     const r = await fetch(`${BACKEND}/api/settings`, {
       headers: { 'ngrok-skip-browser-warning': '1' },
+      signal: AbortSignal.timeout(3000),
     });
     if (r.ok) {
       const d = await r.json();
@@ -38,37 +43,48 @@ async function getKledoToken(): Promise<string | null> {
   return cachedKledoToken;
 }
 
-/** Ambil satu halaman dari Kledo API */
-async function fetchPage(token: string, endpoint: string, page: number): Promise<{ items: any[]; lastPage: number }> {
-  const url = `${cachedKledoBase}/${endpoint}?per_page=${PER_PAGE}&page=${page}`;
-  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!r.ok) return { items: [], lastPage: 1 };
-  const d = await r.json();
-  const items: any[] = d?.data?.data ?? [];
-  const lastPage: number = d?.data?.last_page ?? 1;
-  return { items, lastPage };
+async function fetchPage(
+  token: string,
+  endpoint: string,
+  page: number,
+): Promise<{ items: any[]; lastPage: number; ok: boolean }> {
+  try {
+    const url = `${cachedKledoBase}/${endpoint}?per_page=${PER_PAGE}&page=${page}`;
+    const r = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!r.ok) return { items: [], lastPage: 1, ok: false };
+    const d = await r.json();
+    const items: any[]    = d?.data?.data ?? [];
+    const lastPage: number = d?.data?.last_page ?? 1;
+    return { items, lastPage, ok: true };
+  } catch {
+    return { items: [], lastPage: 1, ok: false };
+  }
 }
 
-/** Ambil semua halaman secara paralel dengan batching */
 async function fetchAllPages(token: string, endpoint: string): Promise<any[]> {
-  // Halaman 1 dulu untuk tahu total halaman
   const first = await fetchPage(token, endpoint, 1);
   const results: any[] = [...first.items];
-  const totalPages = first.lastPage;
+  if (!first.ok || first.lastPage <= 1) return results;
 
-  if (totalPages <= 1) return results;
-
-  // Ambil sisa halaman secara paralel, batch per CONCURRENCY
-  const remaining = Array.from({ length: totalPages - 1 }, (_, i) => i + 2); // [2,3,4,...,totalPages]
+  const totalPages = Math.min(first.lastPage, MAX_PAGES);
+  const remaining  = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
 
   for (let i = 0; i < remaining.length; i += CONCURRENCY) {
-    const batch = remaining.slice(i, i + CONCURRENCY);
+    const batch   = remaining.slice(i, i + CONCURRENCY);
     const settled = await Promise.allSettled(
-      batch.map(page => fetchPage(token, endpoint, page))
+      batch.map(page => fetchPage(token, endpoint, page)),
     );
+    let anyOk = false;
     for (const res of settled) {
-      if (res.status === 'fulfilled') results.push(...res.value.items);
+      if (res.status === 'fulfilled' && res.value.ok) {
+        results.push(...res.value.items);
+        anyOk = true;
+      }
     }
+    if (!anyOk) break;  // stop on rate-limit / auth failure
   }
 
   return results;
@@ -83,7 +99,7 @@ function textMatch(text: string, query: string): boolean {
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const type = searchParams.get('type') ?? 'contacts';
-  const q = (searchParams.get('q') ?? '').trim();
+  const q    = (searchParams.get('q') ?? '').trim();
 
   const token = await getKledoToken();
   if (!token) {
@@ -93,26 +109,33 @@ export async function GET(req: NextRequest) {
   const now = Date.now();
 
   if (type === 'products') {
-    if (now - productsCache.ts > CACHE_TTL || productsCache.data.length === 0) {
-      const raw = await fetchAllPages(token, 'finance/products');
-      productsCache.data = raw.map((p: any) => {
-        const hargaJual  = Number(p.price          ?? p.sell_price      ?? 0);
-        const hargaBeli  = Number(p.base_price      ?? p.buy_price       ?? p.purchase_price ?? 0);
-        const hpp        = Number(p.avg_base_price  ?? p.hpp             ?? p.cost_price     ?? p.cogs ?? 0);
-        const hargaTertinggi = Math.max(hargaJual, hargaBeli, hpp);
-        return {
-          id: `kledo-${p.id}`,
-          kledoId: p.id,
-          name: p.name ?? '',
-          sku: p.code ?? '',
-          price: hargaTertinggi,
-          hargaJual,
-          hargaBeli,
-          hpp,
-          unit: p.unit ? (typeof p.unit === 'string' ? p.unit : (p.unit?.name ?? '')) : '',
-        };
-      });
-      productsCache.ts = now;
+    if (!productsLoading && (now - productsCache.ts > CACHE_TTL || productsCache.data.length === 0)) {
+      productsLoading = true;
+      try {
+        const raw = await fetchAllPages(token, 'finance/products');
+        productsCache.data = raw.map((p: any) => {
+          const hargaJual      = Number(p.price         ?? p.sell_price      ?? 0);
+          const hargaBeli      = Number(p.base_price     ?? p.buy_price       ?? p.purchase_price ?? 0);
+          const hpp            = Number(p.avg_base_price ?? p.hpp             ?? p.cost_price     ?? p.cogs ?? 0);
+          const hargaTertinggi = Math.max(hargaJual, hargaBeli, hpp);
+          return {
+            id:          `kledo-${p.id}`,
+            kledoId:     p.id,
+            name:        p.name ?? '',
+            sku:         p.code ?? '',
+            price:       hargaTertinggi,
+            hargaJual,
+            hargaBeli,
+            hpp,
+            unit: p.unit
+              ? (typeof p.unit === 'string' ? p.unit : (p.unit?.name ?? ''))
+              : '',
+          };
+        });
+        productsCache.ts = now;
+      } finally {
+        productsLoading = false;
+      }
     }
 
     const filtered = q
@@ -123,22 +146,26 @@ export async function GET(req: NextRequest) {
   }
 
   // contacts
-  if (now - contactsCache.ts > CACHE_TTL || contactsCache.data.length === 0) {
-    const raw = await fetchAllPages(token, 'finance/contacts');
-    contactsCache.data = raw.map((c: any) => ({
-      id: `kledo-${c.id}`,
-      kledoId: c.id,
-      name: c.name ?? '',
-      phone: c.phone ?? '',
-      email: c.email ?? '',
-    }));
-    contactsCache.ts = now;
+  if (!contactsLoading && (now - contactsCache.ts > CACHE_TTL || contactsCache.data.length === 0)) {
+    contactsLoading = true;
+    try {
+      const raw = await fetchAllPages(token, 'finance/contacts');
+      contactsCache.data = raw.map((c: any) => ({
+        id:      `kledo-${c.id}`,
+        kledoId: c.id,
+        name:    c.name  ?? '',
+        phone:   c.phone ?? '',
+        email:   c.email ?? '',
+      }));
+      contactsCache.ts = now;
+    } finally {
+      contactsLoading = false;
+    }
   }
 
   const filtered = q
     ? contactsCache.data.filter(c =>
-        textMatch(c.name, q) ||
-        (c.phone && c.phone.includes(q)),
+        textMatch(c.name, q) || (c.phone && c.phone.includes(q)),
       )
     : contactsCache.data;
 
@@ -148,6 +175,6 @@ export async function GET(req: NextRequest) {
 export async function DELETE() {
   contactsCache.data = []; contactsCache.ts = 0;
   productsCache.data = []; productsCache.ts = 0;
-  cachedKledoToken = null;
+  cachedKledoToken   = null;
   return NextResponse.json({ success: true, message: 'Cache cleared' });
 }
