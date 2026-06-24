@@ -247,30 +247,37 @@ export class KledoService {
     if (!token) return 0;
     const headers = await this.getHeaders();
     const baseUrl = await this.getBaseUrl();
+    const TIMEOUT = 8000; // 8 detik max per request
+
     try {
-      let page = 1;
-      let totalPages = 1;
-      while (page <= totalPages) {
-        const res = await firstValueFrom(
-          this.http.get(`${baseUrl}/finance/contacts`, { headers, params: { per_page: 500, page } }),
-        );
-        const body = res.data?.data ?? res.data;
-        const contacts: any[] = body?.data ?? [];
-        totalPages = body?.last_page ?? 1;
-        const found = contacts.find(
-          (c: any) =>
-            c.name?.toLowerCase() === name?.toLowerCase() ||
-            (phone && c.phone && c.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')),
-        );
-        if (found) return found.id;
-        page++;
-      }
+      /* Gunakan ?search= (bukan ?keyword= yang tidak bekerja) untuk cari cepat */
+      const res = await firstValueFrom(
+        this.http.get(`${baseUrl}/finance/contacts`, {
+          headers,
+          params: { search: name, per_page: 10, page: 1 },
+          timeout: TIMEOUT,
+        }),
+      );
+      const body = res.data?.data ?? res.data;
+      const contacts: any[] = body?.data ?? body ?? [];
+      const found = contacts.find(
+        (c: any) =>
+          c.name?.toLowerCase() === name?.toLowerCase() ||
+          (phone && c.phone && c.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')),
+      );
+      if (found) return found.id;
     } catch (e) {
       this.logger.warn('Gagal cari contact Kledo: ' + e);
     }
+
+    /* Buat kontak baru jika tidak ditemukan */
     try {
       const createRes = await firstValueFrom(
-        this.http.post(`${baseUrl}/finance/contacts`, { name, phone: phone ?? null, type_id: 4, is_customer: 1 }, { headers }),
+        this.http.post(
+          `${baseUrl}/finance/contacts`,
+          { name, phone: phone ?? null, type_id: 4, is_customer: 1 },
+          { headers, timeout: TIMEOUT },
+        ),
       );
       const newId = createRes.data?.data?.id;
       if (newId) return newId;
@@ -308,11 +315,14 @@ export class KledoService {
         memo: dto.memo ?? (dto.orderId ? `Order #${dto.orderId} - ${dto.namaCustomer}` : dto.namaCustomer),
         items,
       };
-      const res = await firstValueFrom(this.http.post(`${baseUrl}/finance/invoices`, payload, { headers }));
+      const res = await firstValueFrom(
+        this.http.post(`${baseUrl}/finance/invoices`, payload, { headers, timeout: 10000 }),
+      );
       const kledoId = res.data?.id ?? res.data?.data?.id;
       return { success: true, kledoInvoiceId: kledoId, message: res.data?.message ?? 'Tagihan berhasil dibuat' };
     } catch (e: any) {
-      return { success: false, message: e.response?.data?.message ?? e.message };
+      const msg = e.code === 'ECONNABORTED' ? 'Kledo timeout (10 detik)' : (e.response?.data?.message ?? e.message);
+      return { success: false, message: msg };
     }
   }
 
