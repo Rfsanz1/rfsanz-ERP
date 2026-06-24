@@ -43,16 +43,12 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/backend && pnpm exec prisma db push --accept-data-loss && pnpm run start:dev"
+args = "pnpm install && apps/backend/node_modules/.bin/prisma db push --accept-data-loss --schema=apps/backend/prisma/schema.prisma && cd apps/backend && pnpm run start:dev"
 waitForPort = 3000
 
 [[ports]]
 localPort = 3000
 externalPort = 3000
-
-[[ports]]
-localPort = 5000
-externalPort = 80
 
 [userenv]
 
