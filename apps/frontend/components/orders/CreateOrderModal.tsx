@@ -298,19 +298,33 @@ export default function CreateOrderModal({
 
     try {
       const res = await api.post('/sales/orders', payload);
-      const savedId = (res.data as any)?.data?.id ?? null;
+      /* Backend mengembalikan order langsung (bukan { data, kledo })
+         Kledo push dilakukan async di backend — anggap berhasil jika 2xx */
+      const orderId = (res.data as any)?.id ?? (res.data as any)?.data?.id ?? null;
       const kledoResult = (res.data as any)?.kledo;
-      if (kledoResult?.ok) {
+
+      if (kledoResult !== undefined) {
+        /* Backend versi lama yang memang kembalikan { kledo } */
+        if (kledoResult?.ok) {
+          setKledoStatus('ok');
+          onSuccess();
+        } else {
+          setSavedOrderId(orderId);
+          setKledoStatus('error');
+          const kledoErr = kledoResult?.error ?? 'Kledo tidak merespons';
+          setError(`Order tersimpan ✓ — Kledo: ${kledoErr}. Klik "Coba Ulang" untuk kirim ulang.`);
+        }
+      } else {
+        /* Backend mengembalikan order langsung — Kledo dipush async di server */
         setKledoStatus('ok');
         onSuccess();
-      } else {
-        setSavedOrderId(savedId);
-        setKledoStatus('error');
-        const kledoErr = kledoResult?.error ?? 'Kledo tidak merespons';
-        setError(`Order tersimpan lokal ✓ — Gagal sync ke Kledo: ${kledoErr}. Klik "Coba Ulang" untuk kirim ulang ke Kledo.`);
       }
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? e?.response?.data?.error ?? 'Gagal menyimpan order.');
+      const msg = e?.response?.data?.message
+        ?? e?.response?.data?.error
+        ?? e?.message
+        ?? 'Gagal menyimpan order. Periksa koneksi ke server.';
+      setError(msg);
       setKledoStatus('idle');
     } finally {
       setSaving(false);
@@ -962,23 +976,43 @@ export default function CreateOrderModal({
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex items-center justify-end gap-3 px-7 py-5" style={{ borderTop: '1.5px solid var(--border)' }}>
-          <button onClick={onClose}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-            style={{ color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-            Batal
-          </button>
-          <button onClick={handleSubmit} disabled={saving}
-            className="px-7 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
-            style={{ background: COLOR, boxShadow: `0 4px 16px ${COLOR}50` }}>
-            {saving
-              ? 'Menyimpan…'
-              : savedOrderId !== null
-                ? '🔄 Coba Ulang ke Kledo'
-                : '💾 Simpan & Kirim ke Kledo'}
-          </button>
+        <div className="flex flex-col gap-2 px-7 py-5" style={{ borderTop: '1.5px solid var(--border)', flexShrink: 0 }}>
+          {/* Error banner di footer agar selalu terlihat di mobile */}
+          {error && (
+            <div className="rounded-xl px-4 py-2.5 text-sm flex items-start gap-2 w-full"
+              style={{ background: 'var(--danger-light,#fef2f2)', color: 'var(--danger,#dc2626)', border: '1.5px solid rgba(239,68,68,.2)' }}>
+              <span style={{ fontSize: 15, lineHeight: 1.4, flexShrink: 0 }}>⚠</span>
+              <span style={{ flex: 1, lineHeight: 1.4 }}>{error}</span>
+              <button type="button" onClick={() => setError('')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: 16, lineHeight: 1, padding: 0, flexShrink: 0 }}>×</button>
+            </div>
+          )}
+          {kledoStatus === 'syncing' && (
+            <div className="rounded-xl px-4 py-2.5 text-sm flex items-center gap-2 w-full"
+              style={{ background: `${COLOR}0A`, border: `1.5px solid ${COLOR}25`, color: COLOR }}>
+              <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin flex-shrink-0"
+                style={{ borderColor: `${COLOR}40`, borderTopColor: COLOR }} />
+              Menyimpan & mengirim ke Kledo…
+            </div>
+          )}
+          <div className="flex items-center justify-end gap-3">
+            <button type="button" onClick={onClose}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+              style={{ color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+              Batal
+            </button>
+            <button type="button" onClick={handleSubmit} disabled={saving}
+              className="px-7 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
+              style={{ background: COLOR, boxShadow: `0 4px 16px ${COLOR}50` }}>
+              {saving
+                ? '⏳ Menyimpan…'
+                : savedOrderId !== null
+                  ? '🔄 Coba Ulang ke Kledo'
+                  : '💾 Simpan & Kirim ke Kledo'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
