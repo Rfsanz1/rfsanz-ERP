@@ -4,22 +4,35 @@ const BACKEND = BACKEND_RAW && !BACKEND_RAW.startsWith('http')
   : BACKEND_RAW;
 
 export async function getKledoCfg(authHeader: string): Promise<{ token: string; baseUrl: string } | null> {
-  // 1. Baca dari env langsung (paling reliable di Replit)
+  const BASE = 'https://api.kledo.com/api/v1';
+
+  // 1. Env var (Replit / Docker env)
   if (process.env.KLEDO_TOKEN) {
-    return { token: process.env.KLEDO_TOKEN, baseUrl: 'https://api.kledo.com/api/v1' };
+    return { token: process.env.KLEDO_TOKEN, baseUrl: BASE };
   }
 
-  // 2. Fallback: ambil dari backend settings
+  // 2. Local DB (paling reliable di CasaOS / self-hosted — dikonfigurasi via halaman Pengaturan Kledo)
   try {
-    const r = await fetch(`${BACKEND}/api/settings`, {
-      headers: { Authorization: authHeader, 'ngrok-skip-browser-warning': '1' },
-    });
-    if (r.ok) {
-      const d = await r.json();
-      const token = d?.data?.kledo_token ?? '';
-      if (token) return { token, baseUrl: 'https://api.kledo.com/api/v1' };
+    const { getLocalSetting, ensureTables } = await import('./localDb');
+    await ensureTables();
+    const dbToken = await getLocalSetting('kledo_token');
+    if (dbToken) return { token: dbToken, baseUrl: BASE };
+  } catch {}
+
+  // 3. Fallback: ambil dari backend settings API
+  try {
+    if (BACKEND) {
+      const r = await fetch(`${BACKEND}/api/settings`, {
+        headers: { Authorization: authHeader, 'ngrok-skip-browser-warning': '1' },
+      });
+      if (r.ok) {
+        const d = await r.json();
+        const token = d?.data?.kledo_token ?? '';
+        if (token) return { token, baseUrl: BASE };
+      }
     }
   } catch {}
+
   return null;
 }
 

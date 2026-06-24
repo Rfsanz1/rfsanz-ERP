@@ -3254,3 +3254,11 @@ model LocalOrderItem {
   @@index([orderId])
   @@map("local_order_items")
 }
+
+model LocalSettings {
+  key       String   @id @db.VarChar(100)
+  value     String   @db.Text
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("local_settings")
+}

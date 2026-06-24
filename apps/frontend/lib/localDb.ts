@@ -15,11 +15,35 @@ export function getDb(): Pool {
   return pool;
 }
 
+/** Baca setting dari local_settings table */
+export async function getLocalSetting(key: string): Promise<string | null> {
+  try {
+    const db = getDb();
+    const r = await db.query(`SELECT value FROM local_settings WHERE key=$1`, [key]);
+    return r.rows[0]?.value ?? null;
+  } catch { return null; }
+}
+
+/** Simpan setting ke local_settings table */
+export async function setLocalSetting(key: string, value: string): Promise<void> {
+  const db = getDb();
+  await db.query(
+    `INSERT INTO local_settings(key,value) VALUES($1,$2)
+     ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value, updated_at=NOW()`,
+    [key, value],
+  );
+}
+
 /** Pastikan tabel local_orders & local_order_items ada — dipanggil sekali */
 export async function ensureTables(): Promise<void> {
   if (tablesEnsured) return;
   const db = getDb();
   await db.query(`
+    CREATE TABLE IF NOT EXISTS local_settings (
+      key         VARCHAR(100) PRIMARY KEY,
+      value       TEXT NOT NULL,
+      updated_at  TIMESTAMPTZ DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS local_orders (
       id                  SERIAL PRIMARY KEY,
       so_number           VARCHAR(50) UNIQUE NOT NULL,
