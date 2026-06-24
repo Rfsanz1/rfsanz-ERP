@@ -47,23 +47,17 @@ export default function AccountingSettingsPage() {
   };
 
   const handleTest = async () => {
-    if (!kledoToken.trim()) { setMsg('Simpan token dulu sebelum test.'); setStatus('error'); return; }
     setTesting(true); setStatus('idle'); setMsg('');
     try {
-      const r = await axios.get('https://api.kledo.com/api/v1/finance/products?per_page=1', {
-        headers: { Authorization: `Bearer ${kledoToken.trim()}` },
-      });
-      if (r.status === 200) {
-        setStatus('ok');
-        setMsg('Koneksi ke Kledo berhasil ✓ — Token valid.');
-      } else {
-        setStatus('error');
-        setMsg(`Kledo merespons dengan status ${r.status}.`);
-      }
+      const r = await axios.get('/api/kledo-test');
+      const steps: { step: string; ok: boolean; detail: string }[] = r.data?.steps ?? [];
+      const allOk = r.data?.ok === true;
+      const details = steps.map(s => `${s.ok ? '✓' : '✗'} ${s.step}: ${s.detail}`).join('\n');
+      setStatus(allOk ? 'ok' : 'error');
+      setMsg(details || (allOk ? 'Semua langkah berhasil.' : 'Ada langkah yang gagal.'));
     } catch (e: any) {
       setStatus('error');
-      const errMsg = e?.response?.data?.message ?? e?.response?.statusText ?? e.message;
-      setMsg(`Koneksi gagal: ${errMsg}`);
+      setMsg(e?.response?.data?.error ?? e.message ?? 'Gagal menghubungi server.');
     } finally { setTesting(false); }
   };
 
@@ -117,10 +111,10 @@ export default function AccountingSettingsPage() {
               background: status === 'ok' ? 'var(--success-light,#f0fdf4)' : 'var(--danger-light,#fef2f2)',
               border: `1px solid ${status === 'ok' ? 'rgba(16,185,129,.25)' : 'rgba(239,68,68,.25)'}`,
               color: status === 'ok' ? 'var(--success,#16a34a)' : 'var(--danger,#dc2626)',
-              fontSize: 13,
+              fontSize: 12,
             }}>
               {status === 'ok' ? <CheckCircle2 size={15} style={{ flexShrink: 0, marginTop: 1 }} /> : <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />}
-              {msg}
+              <pre style={{ margin: 0, fontFamily: 'inherit', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg}</pre>
             </div>
           )}
 

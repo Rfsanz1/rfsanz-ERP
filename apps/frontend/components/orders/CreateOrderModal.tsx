@@ -350,6 +350,16 @@ export default function CreateOrderModal({
           </button>
         </div>
 
+        {/* ── Error Banner (sticky di atas body) ── */}
+        {error && (
+          <div className="px-7 py-3 flex items-start gap-2 text-sm"
+            style={{ background: 'var(--danger-light,#fef2f2)', borderBottom: '1.5px solid rgba(239,68,68,.2)', color: 'var(--danger,#dc2626)', flexShrink: 0 }}>
+            <span style={{ fontSize: 16, lineHeight: 1 }}>⚠</span>
+            <span style={{ flex: 1 }}>{error}</span>
+            <button onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>
+          </div>
+        )}
+
         {/* ── Body ── */}
         <div className="overflow-y-auto px-7 py-6 flex-1 space-y-6">
 
