@@ -247,16 +247,19 @@ export async function pushOrderToKledo(
     }
 
     const kledoItems = order.items.map(it => {
-      const qty  = Number(it.qty ?? 1);
-      const rate = Number(it.harga ?? 0);
+      const qty    = Number(it.qty ?? 1);
+      const rate   = Number(it.harga ?? 0);
+      const diskon = Number(it.diskon ?? 0);
+      const amount = Math.max(0, qty * rate - diskon);
       const item: any = {
         finance_account_id: defaultAccountId,
         name: it.nama,
         qty,
         rate,
         price: rate,
+        amount,
       };
-      if (it.diskon) item.discount = Number(it.diskon);
+      if (diskon > 0) item.discount = diskon;
       if (it.kledoProductId) item.product_id = Number(it.kledoProductId);
       return item;
     });
@@ -268,6 +271,7 @@ export async function pushOrderToKledo(
         qty: 1,
         rate: order.ongkir,
         price: order.ongkir,
+        amount: order.ongkir,
       });
     }
 
