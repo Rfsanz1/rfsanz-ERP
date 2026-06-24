@@ -102,7 +102,7 @@ export default function CustomerSearchDropdown({
   const [loading, setLoading] = useState(false);
   const [catalogueReady, setCatalogueReady] = useState(false);
   const [selected, setSelected] = useState<CustomerOption | null>(null);
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 });
+  const [dropPos, setDropPos] = useState({ top: 0, inputTop: 0, left: 0, width: 0, openUpward: false });
   const [refreshing, setRefreshing] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -132,7 +132,9 @@ export default function CustomerSearchDropdown({
   const updatePos = useCallback(() => {
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
-    setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    const spaceBelow = window.innerHeight - r.bottom;
+    const openUpward = spaceBelow < 320;
+    setDropPos({ top: r.bottom + 4, inputTop: r.top, left: r.left, width: r.width, openUpward });
   }, []);
 
   useEffect(() => {
@@ -271,7 +273,9 @@ export default function CustomerSearchDropdown({
           ref={dropdownRef}
           style={{
             position: 'fixed',
-            top: dropPos.top,
+            ...(dropPos.openUpward
+              ? { bottom: window.innerHeight - dropPos.inputTop + 4 }
+              : { top: dropPos.top }),
             left: dropPos.left,
             width: dropPos.width,
             zIndex: 99999,
