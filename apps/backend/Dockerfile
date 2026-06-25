@@ -9,6 +9,8 @@ RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
+
+ENV NODE_ENV=development
 RUN pnpm install --no-frozen-lockfile --shamefully-hoist
 
 COPY . .
