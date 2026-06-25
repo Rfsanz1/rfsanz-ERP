@@ -4,17 +4,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
-
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json ./
 
-RUN NODE_ENV=development pnpm install --no-frozen-lockfile --shamefully-hoist
+RUN npm install --include=dev
 
 COPY . .
 
-RUN node_modules/.bin/prisma generate && pnpm build
+RUN npx prisma generate && npm run build
 
 
 FROM node:20-slim AS runner
@@ -23,8 +21,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     wget \
     && rm -rf /var/lib/apt/lists/*
-
-RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
 
 WORKDIR /app
 
