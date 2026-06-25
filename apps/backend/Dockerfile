@@ -10,7 +10,7 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install --no-frozen-lockfile --shamefully-hoist --prod=false
+RUN NODE_ENV=development pnpm install --no-frozen-lockfile --shamefully-hoist
 
 COPY . .
 
