@@ -23,9 +23,25 @@ export class OrdersV1Controller {
   @Post()
   @HttpCode(201)
   async create(@Body() body: any, @Request() req: any) {
-    const { items, ...rest } = body;
+    const { items, orderItems, ...rest } = body;
+    if (!rest.namaCustomer) {
+      throw new (await import('@nestjs/common')).BadRequestException('namaCustomer wajib diisi');
+    }
+    const dbItems = (items ?? []).map((it: any) => ({
+      nama: it.nama ?? it.name ?? '',
+      qty: Number(it.qty) || 1,
+      harga: it.harga ?? it.price ?? 0,
+      subtotal: it.subtotal ?? (Number(it.qty || 1) * Number(it.harga ?? it.price ?? 0)),
+      ...(it.productId ? { productId: it.productId } : {}),
+    }));
     const order = await this.prisma.order.create({
-      data: { ...rest, tenantId: rest.tenantId ?? 'default', items: items ?? [] },
+      data: {
+        ...rest,
+        tenantId: rest.tenantId ?? 'default',
+        items: items ?? [],
+        ...(dbItems.length ? { orderItems: { create: dbItems } } : {}),
+      },
+      include: { orderItems: { include: { product: true } } },
     });
     return order;
   }
