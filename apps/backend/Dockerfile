@@ -10,8 +10,7 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
 
-ENV NODE_ENV=development
-RUN pnpm install --no-frozen-lockfile --shamefully-hoist
+RUN pnpm install --no-frozen-lockfile --shamefully-hoist --prod=false
 
 COPY . .
 
@@ -28,6 +27,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
 
 WORKDIR /app
+
+ENV NODE_ENV=production
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
