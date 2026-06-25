@@ -9,11 +9,11 @@ RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --no-frozen-lockfile --shamefully-hoist
 
 COPY . .
 
-RUN pnpm prisma:generate && pnpm build
+RUN node_modules/.bin/prisma generate && pnpm build
 
 
 FROM node:20-slim AS runner
