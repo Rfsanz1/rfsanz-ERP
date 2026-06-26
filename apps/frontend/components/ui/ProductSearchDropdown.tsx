@@ -249,32 +249,31 @@ export default function ProductSearchDropdown({
               key={p.id}
               type="button"
               onClick={() => handleSelect(p)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors"
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors"
               style={{ borderBottom: '1px solid var(--border)', minHeight: ITEM_HEIGHT }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               <div
-                className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0"
+                className="flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0"
                 style={{ background: `linear-gradient(135deg,#6366F1,#8B5CF6)` }}
               >
-                <Package className="h-4 w-4 text-white" />
+                <Package className="h-3.5 w-3.5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{p.name}</p>
-                  <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                <div className="flex items-center gap-1 flex-wrap">
+                  <p className="text-sm font-semibold truncate max-w-full" style={{ color: 'var(--text-primary)' }}>{p.name}</p>
+                  <span className="flex-shrink-0 text-[8px] font-bold px-1 py-0.5 rounded-full leading-none"
                     style={{ background: 'rgba(99,102,241,.12)', color: '#6366F1' }}>Kledo</span>
                 </div>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  SKU: {p.sku || '-'}{p.unit?.name ? ` · ${p.unit.name}` : ''}
-                </p>
-              </div>
-              <div className="text-right flex-shrink-0 pl-2">
-                <p className="text-sm font-bold" style={{ color: p.hargaJual > 0 ? accentColor : 'var(--text-muted)' }}>
-                  {p.hargaJual > 0 ? fmtRp(p.hargaJual) : 'Cek harga'}
-                </p>
-                <p className="text-[11px] font-semibold mt-0.5" style={{ color: '#6366F1' }}>Dari Kledo</p>
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    {p.sku || '-'}{p.unit?.name ? ` · ${p.unit.name}` : ''}
+                  </p>
+                  <span className="text-[11px] font-bold" style={{ color: p.hargaJual > 0 ? accentColor : 'var(--text-muted)' }}>
+                    {p.hargaJual > 0 ? fmtRp(p.hargaJual) : '—'}
+                  </span>
+                </div>
               </div>
             </button>
           ))}

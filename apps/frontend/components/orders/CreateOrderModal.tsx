@@ -333,15 +333,15 @@ export default function CreateOrderModal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 flex items-center justify-center p-4"
+      className="fixed inset-0 flex items-center justify-center p-2 sm:p-4"
       style={{ backgroundColor: 'rgba(0,0,0,.55)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
     >
       <div
         className="rounded-2xl w-full flex flex-col"
-        style={{ background: 'var(--surface)', maxWidth: 820, maxHeight: '92vh', boxShadow: 'var(--shadow-lg)' }}
+        style={{ background: 'var(--surface)', maxWidth: 820, maxHeight: '96vh', boxShadow: 'var(--shadow-lg)' }}
       >
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-7 py-5" style={{ borderBottom: '1.5px solid var(--border)' }}>
+        <div className="flex items-center justify-between px-4 sm:px-7 py-4 sm:py-5" style={{ borderBottom: '1.5px solid var(--border)' }}>
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${COLOR}18` }}>
               <ShoppingCart className="h-5 w-5" style={{ color: COLOR }} />
@@ -366,7 +366,7 @@ export default function CreateOrderModal({
 
         {/* ── Error Banner (sticky di atas body) ── */}
         {error && (
-          <div className="px-7 py-3 flex items-start gap-2 text-sm"
+          <div className="px-4 sm:px-7 py-3 flex items-start gap-2 text-sm"
             style={{ background: 'var(--danger-light,#fef2f2)', borderBottom: '1.5px solid rgba(239,68,68,.2)', color: 'var(--danger,#dc2626)', flexShrink: 0 }}>
             <span style={{ fontSize: 16, lineHeight: 1 }}>⚠</span>
             <span style={{ flex: 1 }}>{error}</span>
@@ -375,7 +375,7 @@ export default function CreateOrderModal({
         )}
 
         {/* ── Body ── */}
-        <div className="overflow-y-auto px-7 py-6 flex-1 space-y-6">
+        <div className="overflow-y-auto px-4 sm:px-7 py-4 sm:py-6 flex-1 space-y-5 sm:space-y-6">
 
           {/* SEKSI 1: Info Konsumen */}
           <section className="space-y-4">
@@ -398,7 +398,7 @@ export default function CreateOrderModal({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <Label optional>No. HP / WhatsApp</Label>
                 <input className={inputCls} style={inputSt} placeholder="081234567890"
@@ -409,7 +409,7 @@ export default function CreateOrderModal({
                 <Label>Nama Sales</Label>
                 <SalesDropdown value={salesName} onChange={setSalesName} accentColor={COLOR} placeholder="Pilih atau ketik nama sales..." />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Label optional>Alamat Pengiriman</Label>
                 <input className={inputCls} style={inputSt} placeholder="Jl. contoh No. 1, Kota..."
                   value={alamat} onChange={e => setAlamat(e.target.value)}
@@ -501,22 +501,22 @@ export default function CreateOrderModal({
 
                   <div className="grid grid-cols-3 gap-2">
                     <div className="flex flex-col">
-                      <label className="block text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Qty</label>
+                      <label className="block text-[11px] sm:text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Qty</label>
                       <input type="number" min={1} className={`${inputCls} text-center`} style={inputSt}
                         value={item.qty}
                         onChange={e => updateItem(item.id, 'qty', Number(e.target.value) || 1)}
                         onFocus={focusColor} onBlur={blurColor} />
                     </div>
                     <div className="flex flex-col">
-                      <label className="block text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Harga (Rp)</label>
+                      <label className="block text-[11px] sm:text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Harga (Rp)</label>
                       <input type="number" min={0} className={`${inputCls} text-right`} style={inputSt}
                         value={item.harga}
                         onChange={e => updateItem(item.id, 'harga', Number(e.target.value) || 0)}
                         onFocus={focusColor} onBlur={blurColor} />
                     </div>
                     <div className="flex flex-col">
-                      <label className="block text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Subtotal</label>
-                      <div className="w-full rounded-xl px-2 py-2.5 text-xs text-right font-bold flex items-center justify-end overflow-hidden"
+                      <label className="block text-[11px] sm:text-xs font-semibold mb-1.5 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Subtotal</label>
+                      <div className="w-full rounded-xl px-2 py-2.5 text-[11px] sm:text-xs text-right font-bold flex items-center justify-end overflow-hidden"
                         style={{ background: `${COLOR}0D`, color: COLOR, border: `1.5px solid ${COLOR}30`, minWidth: 0 }}>
                         <span className="truncate">{fmtRp(item.subtotal)}</span>
                       </div>
@@ -976,7 +976,7 @@ export default function CreateOrderModal({
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex flex-col gap-2 px-7 py-5" style={{ borderTop: '1.5px solid var(--border)', flexShrink: 0 }}>
+        <div className="flex flex-col gap-2 px-4 sm:px-7 py-4 sm:py-5" style={{ borderTop: '1.5px solid var(--border)', flexShrink: 0 }}>
           {/* Error banner di footer agar selalu terlihat di mobile */}
           {error && (
             <div className="rounded-xl px-4 py-2.5 text-sm flex items-start gap-2 w-full"
