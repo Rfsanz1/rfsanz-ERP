@@ -82,6 +82,10 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@rfsanz.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-root}
       NEXT_PUBLIC_APP_NAME: "Gentong Mas ERP"
+      KLEDO_TOKEN: ${KLEDO_TOKEN}
+      FONNTE_TOKEN: ${FONNTE_TOKEN}
+      FONNTE_GROUP_INVOICE: ${FONNTE_GROUP_INVOICE}
+      FONNTE_GROUP_BUKTI_TF: ${FONNTE_GROUP_BUKTI_TF}
 
 volumes:
   postgres_data:
