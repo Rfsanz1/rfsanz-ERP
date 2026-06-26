@@ -11,7 +11,7 @@ export async function getKledoCfg(authHeader: string): Promise<{ token: string; 
     return { token: process.env.KLEDO_TOKEN, baseUrl: BASE };
   }
 
-  // 2. Local DB (paling reliable di CasaOS / self-hosted — dikonfigurasi via halaman Pengaturan Kledo)
+  // 2a. Tabel local_settings (frontend-managed settings)
   try {
     const { getLocalSetting, ensureTables } = await import('./localDb');
     await ensureTables();
@@ -19,19 +19,40 @@ export async function getKledoCfg(authHeader: string): Promise<{ token: string; 
     if (dbToken) return { token: dbToken, baseUrl: BASE };
   } catch {}
 
-  // 3. Fallback: ambil dari backend settings API
-  try {
-    if (BACKEND) {
-      const r = await fetch(`${BACKEND}/api/settings`, {
+  // 2b. Tabel "AppSetting" (Prisma/NestJS backend — dipakai di aaPanel/self-hosted)
+  //     Backend menyimpan kledo_token di sini via halaman Pengaturan
+  if (process.env.DATABASE_URL) {
+    try {
+      const { getDb } = await import('./localDb');
+      const db = getDb();
+      const r = await db.query(
+        `SELECT value FROM "AppSetting" WHERE key = 'kledo_token' LIMIT 1`,
+      );
+      const token = r.rows[0]?.value;
+      if (token) return { token, baseUrl: BASE };
+    } catch {}
+  }
+
+  // 3. Fallback: ambil dari backend API (coba port 3000 dulu, lalu BACKEND_URL)
+  const backendCandidates = [
+    'http://127.0.0.1:3000',
+    'http://localhost:3000',
+    BACKEND,
+  ].filter(Boolean);
+
+  for (const base of backendCandidates) {
+    try {
+      const r = await fetch(`${base}/api/settings`, {
         headers: { Authorization: authHeader, 'ngrok-skip-browser-warning': '1' },
+        signal: AbortSignal.timeout(3000),
       });
       if (r.ok) {
         const d = await r.json();
         const token = d?.data?.kledo_token ?? '';
         if (token) return { token, baseUrl: BASE };
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
   return null;
 }
