@@ -6,11 +6,25 @@ import { NotificationService } from '../notification/notification.service.js';
 @Injectable()
 export class SalesService {
   private readonly logger = new Logger(SalesService.name);
+  private cachedTenantId: string | null = null;
+
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(KledoService) private readonly kledo: KledoService,
     @Inject(NotificationService) private readonly notif: NotificationService,
   ) {}
+
+  private async getDefaultTenantId(): Promise<string> {
+    if (this.cachedTenantId) return this.cachedTenantId;
+    let tenant = await this.prisma.tenant.findFirst();
+    if (!tenant) {
+      tenant = await this.prisma.tenant.create({
+        data: { name: process.env.COMPANY_NAME ?? 'Gentong Mas', slug: 'gentong-mas', plan: 'trial', isActive: true },
+      });
+    }
+    this.cachedTenantId = tenant.id;
+    return tenant.id;
+  }
 
   async getOrders(query: any) {
     const { search, status, salesName, page = 1, limit = 20 } = query;
@@ -33,16 +47,18 @@ export class SalesService {
   }
 
   async createOrder(dto: any) {
-    const { items, ...orderData } = dto;
+    const { items, orderItems: _orderItems, ...orderData } = dto;
+    const tenantId = orderData.tenantId ?? await this.getDefaultTenantId();
     const dbItems = (items ?? []).map((it: any) => ({
+      tenantId,
       nama: it.nama ?? it.name ?? '',
       qty: Number(it.qty) || 1,
       harga: it.harga ?? it.price ?? 0,
-      subtotal: it.subtotal ?? (it.qty * (it.harga ?? it.price ?? 0)),
-      ...(it.productId ? { productId: it.productId } : {}),
+      subtotal: it.subtotal ?? (Number(it.qty || 1) * Number(it.harga ?? it.price ?? 0)),
+      ...(it.productId && !String(it.productId).startsWith('kledo-') ? { productId: it.productId } : {}),
     }));
     const order = await this.prisma.order.create({
-      data: { ...orderData, items: items ?? [], orderItems: dbItems.length ? { create: dbItems } : undefined },
+      data: { ...orderData, tenantId, items: items ?? [], orderItems: dbItems.length ? { create: dbItems } : undefined },
       include: { orderItems: { include: { product: true } } },
     });
 
