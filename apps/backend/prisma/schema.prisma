@@ -625,7 +625,12 @@ model Order {
   lokasiLng        String?
   lokasiUpdatedAt  DateTime?
   kledoInvoiceId   String?     @unique
+  kledoContactId   String?
   kledoSynced      Boolean     @default(false)
+  tanggal          DateTime?
+  metodePembayaran String?
+  bankPilihan      String?
+  pembayaranAwal   Decimal?    @db.Decimal(15, 2)
   items            Json        @default("[]")
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt

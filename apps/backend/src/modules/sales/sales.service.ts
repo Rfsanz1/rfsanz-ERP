@@ -47,8 +47,8 @@ export class SalesService {
   }
 
   async createOrder(dto: any) {
-    const { items, orderItems: _orderItems, ...orderData } = dto;
-    const tenantId = orderData.tenantId ?? await this.getDefaultTenantId();
+    const { items, orderItems: _orderItems, tenantId: _dtoTenantId, ...orderData } = dto;
+    const tenantId = await this.getDefaultTenantId();
     const dbItems = (items ?? []).map((it: any) => ({
       tenantId,
       nama: it.nama ?? it.name ?? '',
@@ -58,7 +58,14 @@ export class SalesService {
       ...(it.productId && !String(it.productId).startsWith('kledo-') ? { productId: it.productId } : {}),
     }));
     const order = await this.prisma.order.create({
-      data: { ...orderData, tenantId, items: items ?? [], orderItems: dbItems.length ? { create: dbItems } : undefined },
+      data: {
+        ...orderData,
+        tenantId,
+        tanggal: orderData.tanggal ? new Date(orderData.tanggal) : undefined,
+        pembayaranAwal: orderData.pembayaranAwal != null ? Number(orderData.pembayaranAwal) : undefined,
+        items: items ?? [],
+        orderItems: dbItems.length ? { create: dbItems } : undefined,
+      },
       include: { orderItems: { include: { product: true } } },
     });
 
