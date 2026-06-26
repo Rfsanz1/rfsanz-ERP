@@ -51,8 +51,8 @@ services:
       FONNTE_TOKEN: ${FONNTE_TOKEN}
       FONNTE_GROUP_INVOICE: ${FONNTE_GROUP_INVOICE}
       FONNTE_GROUP_BUKTI_TF: ${FONNTE_GROUP_BUKTI_TF}
-      APP_URL: ${APP_URL:-https://erp.gentongmaselektronik.my.id}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://erp.gentongmaselektronik.my.id}
+      APP_URL: ${APP_URL:-https://gentongmaselektronik.my.id}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://gentongmaselektronik.my.id}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
       interval: 30s
