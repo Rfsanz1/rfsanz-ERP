@@ -14,7 +14,7 @@ module.exports = {
       args: "start -p 5000",
       cwd: "/var/www/erp/apps/frontend",
       instances: 1,
-      env: { NODE_ENV: "production" },
+      env: { NODE_ENV: "production", PORT: 5000, BACKEND_URL: "http://127.0.0.1:3000" },
     },
   ],
 };
