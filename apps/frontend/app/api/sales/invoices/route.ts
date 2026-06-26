@@ -147,6 +147,7 @@ export async function POST(req: NextRequest) {
       const kledoResult = await pushOrderToKledo(authHeader, {
         soNumber:          invNo,
         tanggal:           tanggalFinal,
+        dueDate:           dueDate ?? null,
         catatan:           notes ?? undefined,
         contactId:         kledoContactId ? Number(kledoContactId) : null,
         contactName:       namaCustomer.trim(),
@@ -165,6 +166,7 @@ export async function POST(req: NextRequest) {
           kledoProductId: it.kledoProductId ?? null,
         })),
       });
+      console.log('[Invoice Kledo result]', JSON.stringify(kledoResult));
 
       kledoOk         = kledoResult.ok;
       kledoInvoiceId  = kledoResult.kledoInvoiceId;

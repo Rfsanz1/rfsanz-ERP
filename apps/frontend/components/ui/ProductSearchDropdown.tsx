@@ -8,6 +8,8 @@ export interface ProductOption {
   name: string;
   sku: string;
   hargaJual: number;
+  hargaBeli: number;
+  hargaTertinggi: number;
   stok: number;
   kledoProductId?: string | null;
   unit?: { name: string } | null;
@@ -45,13 +47,16 @@ async function searchProducts(q: string): Promise<ProductOption[]> {
     const res = await fetch(url).then(r => r.json());
     if (res?.success && Array.isArray(res.data)) {
       const mapped: ProductOption[] = res.data.map((p: any) => {
-        // Server calculates hargaTertinggi, client just reads it
-        const hargaJual = Number(p.hargaJual ?? p.price ?? 0);
+        const hargaJual     = Number(p.hargaJual ?? 0);
+        const hargaBeli     = Number(p.hargaBeli ?? 0);
+        const hargaTertinggi = Number(p.price ?? p.hargaTertinggi ?? Math.max(hargaJual, hargaBeli));
         return {
           id:             String(p.id ?? p.kledoId ?? ''),
           name:           p.name ?? '',
           sku:            p.sku ?? '',
           hargaJual,
+          hargaBeli,
+          hargaTertinggi,
           stok:           Number(p.stok ?? 0),
           kledoProductId: p.kledoId ? String(p.kledoId) : (p.id?.startsWith?.('kledo-') ? p.id.replace('kledo-', '') : null),
           unit:           p.unit ? { name: String(p.unit) } : null,
@@ -270,9 +275,19 @@ export default function ProductSearchDropdown({
                   <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                     {p.sku || '-'}{p.unit?.name ? ` · ${p.unit.name}` : ''}
                   </p>
-                  <span className="text-[11px] font-bold" style={{ color: p.hargaJual > 0 ? accentColor : 'var(--text-muted)' }}>
-                    {p.hargaJual > 0 ? fmtRp(p.hargaJual) : '—'}
-                  </span>
+                  {p.hargaJual > 0 && (
+                    <span className="text-[11px] font-bold" style={{ color: accentColor }}>
+                      Jual: {fmtRp(p.hargaJual)}
+                    </span>
+                  )}
+                  {p.hargaBeli > 0 && (
+                    <span className="text-[11px] font-semibold" style={{ color: '#F59E0B' }}>
+                      Beli: {fmtRp(p.hargaBeli)}
+                    </span>
+                  )}
+                  {p.hargaJual === 0 && p.hargaBeli === 0 && (
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>—</span>
+                  )}
                 </div>
               </div>
             </button>

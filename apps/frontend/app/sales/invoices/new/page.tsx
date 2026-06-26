@@ -139,7 +139,8 @@ export default function NewInvoicePage() {
   const handleProductSelect = (itemId: number, p: ProductOption) => {
     setItems(prev => prev.map(it => {
       if (it.id !== itemId) return it;
-      const updated = { ...it, nama: p.name, productId: p.id, kledoProductId: p.kledoProductId ?? null, harga: p.hargaJual, unit: p.unit?.name, diskonItem: 0 };
+      const harga = p.hargaJual > 0 ? p.hargaJual : (p.hargaTertinggi > 0 ? p.hargaTertinggi : p.hargaBeli);
+      const updated = { ...it, nama: p.name, productId: p.id, kledoProductId: p.kledoProductId ?? null, harga, unit: p.unit?.name, diskonItem: 0 };
       updated.subtotal = calcSub(updated);
       return updated;
     }));

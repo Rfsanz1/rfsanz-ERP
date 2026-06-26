@@ -216,6 +216,7 @@ export async function markKledoInvoicePaid(
 interface KledoOrderInput {
   soNumber?: string;
   tanggal: string;
+  dueDate?: string | null;
   catatan?: string;
   contactId?: number | null;
   contactName?: string;
@@ -288,10 +289,10 @@ export async function pushOrderToKledo(
       });
     }
 
-    // due_date wajib di Kledo — pakai tanggal yang sama dengan trans_date
+    // due_date wajib di Kledo — pakai dueDate jika ada, fallback ke trans_date
     const payload: any = {
       trans_date: order.tanggal,
-      due_date: order.tanggal,
+      due_date: order.dueDate ?? order.tanggal,
       include_tax: (order.pajak ?? 0) > 0 ? 1 : 0,
       items: kledoItems,
     };
