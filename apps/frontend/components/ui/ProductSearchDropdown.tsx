@@ -33,23 +33,26 @@ const _searchCache = new Map<string, ProductOption[]>();
 const _searchCacheTs = new Map<string, number>();
 const SEARCH_TTL = 5 * 60 * 1000;
 
-async function searchProducts(q: string): Promise<ProductOption[]> {
+async function searchProducts(q: string): Promise<{ results: ProductOption[]; error?: string }> {
   const key = q.trim().toLowerCase();
   const ts  = _searchCacheTs.get(key) ?? 0;
   if (Date.now() - ts < SEARCH_TTL && _searchCache.has(key)) {
-    return _searchCache.get(key)!;
+    return { results: _searchCache.get(key)! };
   }
 
   try {
-    const url = q.trim()
-      ? `/api/direct/kledo-search?type=products&q=${encodeURIComponent(q)}`
-      : '/api/direct/kledo-search?type=products&q=';
+    const url = `/api/direct/kledo-search?type=products&q=${encodeURIComponent(q.trim())}`;
     const res = await fetch(url).then(r => r.json());
-    if (res?.success && Array.isArray(res.data)) {
+
+    if (!res?.success) {
+      return { results: [], error: res?.message ?? 'Pencarian produk gagal' };
+    }
+
+    if (Array.isArray(res.data)) {
       const mapped: ProductOption[] = res.data.map((p: any) => {
-        const hargaJual     = Number(p.hargaJual ?? 0);
-        const hargaBeli     = Number(p.hargaBeli ?? 0);
-        const hargaTertinggi = Number(p.price ?? p.hargaTertinggi ?? Math.max(hargaJual, hargaBeli));
+        const hargaJual      = Number(p.hargaJual ?? 0);
+        const hargaBeli      = Number(p.hargaBeli ?? 0);
+        const hargaTertinggi = Number(p.hargaTertinggi ?? p.price ?? Math.max(hargaJual, hargaBeli));
         return {
           id:             String(p.id ?? p.kledoId ?? ''),
           name:           p.name ?? '',
@@ -58,17 +61,21 @@ async function searchProducts(q: string): Promise<ProductOption[]> {
           hargaBeli,
           hargaTertinggi,
           stok:           Number(p.stok ?? 0),
-          kledoProductId: p.kledoId ? String(p.kledoId) : (p.id?.startsWith?.('kledo-') ? p.id.replace('kledo-', '') : null),
+          kledoProductId: p.kledoId
+            ? String(p.kledoId)
+            : (p.id?.startsWith?.('kledo-') ? p.id.replace('kledo-', '') : null),
           unit:           p.unit ? { name: String(p.unit) } : null,
           source:         'kledo' as const,
         };
       });
       _searchCache.set(key, mapped);
       _searchCacheTs.set(key, Date.now());
-      return mapped;
+      return { results: mapped };
     }
-  } catch { /* ignore */ }
-  return [];
+  } catch (e: any) {
+    return { results: [], error: e.message };
+  }
+  return { results: [] };
 }
 
 export default function ProductSearchDropdown({
@@ -80,6 +87,7 @@ export default function ProductSearchDropdown({
   disabled = false,
 }: Props) {
   const [suggestions, setSuggestions] = useState<ProductOption[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [open, setOpen]               = useState(false);
   const [searching, setSearching]     = useState(false);
   const [dropPos, setDropPos]         = useState({ top: 0, inputTop: 0, left: 0, width: 0, openUpward: false });
@@ -127,6 +135,7 @@ export default function ProductSearchDropdown({
     const trimmed = q.trim();
     if (trimmed.length === 0) {
       setSuggestions([]);
+      setSearchError(null);
       setOpen(false);
       setSearching(false);
       return;
@@ -134,16 +143,18 @@ export default function ProductSearchDropdown({
 
     const seq = ++seqRef.current;
     setSearching(true);
+    setSearchError(null);
     setOpen(true);
 
     // Show cached results instantly while re-fetching
     const cached = _searchCache.get(trimmed.toLowerCase());
     if (cached) setSuggestions(cached);
 
-    const results = await searchProducts(trimmed);
+    const { results, error } = await searchProducts(trimmed);
     if (seq !== seqRef.current) return; // outdated
     setSuggestions(results);
-    setOpen(results.length > 0 || trimmed.length > 0);
+    setSearchError(error ?? null);
+    setOpen(results.length > 0 || !!error || trimmed.length > 0);
     setSearching(false);
   }, []);
 
@@ -241,11 +252,17 @@ export default function ProductSearchDropdown({
           )}
 
           {!searching && suggestions.length === 0 && value.trim().length > 0 && (
-            <div className="flex flex-col items-center justify-center py-6 gap-2">
+            <div className="flex flex-col items-center justify-center py-6 gap-2 px-4">
               <Package className="w-8 h-8" style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Produk &quot;{value}&quot; tidak ditemukan
-              </p>
+              {searchError ? (
+                <p className="text-xs text-center" style={{ color: '#EF4444' }}>
+                  ⚠ {searchError}
+                </p>
+              ) : (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Produk &quot;{value}&quot; tidak ditemukan
+                </p>
+              )}
             </div>
           )}
 

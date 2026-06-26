@@ -5,51 +5,51 @@ const BACKEND_RAW = process.env.BACKEND_URL || '';
 const BACKEND = BACKEND_RAW && !BACKEND_RAW.startsWith('http')
   ? `https://${BACKEND_RAW}` : BACKEND_RAW;
 
-let cachedKledoToken: string | null = null;
-const cachedKledoBase = 'https://api.kledo.com/api/v1';
-
+// ── PostgreSQL pool (shared) ──────────────────────────────────────────────────
 let _pgPool: Pool | null = null;
-function getPg(): Pool {
-  if (!_pgPool && process.env.DATABASE_URL) {
+function getPg(): Pool | null {
+  if (!process.env.DATABASE_URL) return null;
+  if (!_pgPool) {
     _pgPool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.DATABASE_URL.includes('sslmode=disable')
         ? false : { rejectUnauthorized: false },
     });
   }
-  return _pgPool!;
+  return _pgPool;
 }
 
+// ── Kledo token (lazy, multi-source) ─────────────────────────────────────────
+let _cachedToken: string | null = null;
+const KLEDO_BASE = 'https://api.kledo.com/api/v1';
+
 async function getKledoToken(): Promise<string | null> {
-  if (cachedKledoToken) return cachedKledoToken;
+  if (_cachedToken) return _cachedToken;
 
   // 1. Env var
   if (process.env.KLEDO_TOKEN) {
-    cachedKledoToken = process.env.KLEDO_TOKEN;
-    return cachedKledoToken;
+    _cachedToken = process.env.KLEDO_TOKEN;
+    return _cachedToken;
   }
 
-  // 2a. Tabel local_settings (frontend-managed)
-  if (process.env.DATABASE_URL) {
+  const db = getPg();
+  if (db) {
+    // 2a. local_settings table
     try {
-      const db = getPg();
       const r = await db.query(`SELECT value FROM local_settings WHERE key='kledo_token' LIMIT 1`);
       const t = r.rows[0]?.value;
-      if (t) { cachedKledoToken = t; return t; }
+      if (t) { _cachedToken = t; return t; }
     } catch {}
-  }
 
-  // 2b. Tabel "AppSetting" (Prisma/NestJS backend — dipakai di aaPanel/self-hosted)
-  if (process.env.DATABASE_URL) {
+    // 2b. AppSetting table (Prisma/NestJS — token disimpan via halaman Pengaturan)
     try {
-      const db = getPg();
       const r = await db.query(`SELECT value FROM "AppSetting" WHERE key='kledo_token' LIMIT 1`);
       const t = r.rows[0]?.value;
-      if (t) { cachedKledoToken = t; return t; }
+      if (t) { _cachedToken = t; return t; }
     } catch {}
   }
 
-  // 3. Backend API — coba port 3000 dulu lalu BACKEND_URL
+  // 3. Backend API (port 3000 / BACKEND_URL)
   const candidates = ['http://127.0.0.1:3000', 'http://localhost:3000', BACKEND].filter(Boolean);
   for (const base of candidates) {
     try {
@@ -60,7 +60,7 @@ async function getKledoToken(): Promise<string | null> {
       if (r.ok) {
         const d = await r.json();
         const t = d?.data?.kledo_token ?? null;
-        if (t) { cachedKledoToken = t; return t; }
+        if (t) { _cachedToken = t; return t; }
       }
     } catch {}
   }
@@ -68,103 +68,80 @@ async function getKledoToken(): Promise<string | null> {
   return null;
 }
 
-const productsCache: { data: any[]; ts: number } = { data: [], ts: 0 };
-let productsLoading = false;
-
-const CACHE_TTL   = 30 * 60 * 1000;
-const PER_PAGE    = 500;
-const CONCURRENCY = 5;
-const MAX_PAGES   = 60; // 30.000 produk max (naik dari 20)
-
-async function fetchPage(
-  token: string,
-  endpoint: string,
-  page: number,
-  extraParams = '',
-): Promise<{ items: any[]; lastPage: number; ok: boolean }> {
+// ── Search produk dari tabel "Product" (PostgreSQL lokal, hasil sync Kledo) ──
+async function searchProductsFromDb(q: string, limit = 50): Promise<any[]> {
+  const db = getPg();
+  if (!db) return [];
   try {
-    const url = `${cachedKledoBase}/${endpoint}?per_page=${PER_PAGE}&page=${page}${extraParams}`;
+    const like = `%${q}%`;
+    const r = await db.query(
+      `SELECT
+         p.id,
+         p.sku,
+         p.name,
+         p."hargaBeli",
+         p."hargaJual",
+         p."hargaKledo",
+         p."kledoProductId",
+         p.stok,
+         u.name AS unit_name
+       FROM "Product" p
+       LEFT JOIN "ProductUnit" u ON u.id = p."unitId"
+       WHERE p.active = true
+         AND (p.name ILIKE $1 OR p.sku ILIKE $2)
+       ORDER BY p.name
+       LIMIT $3`,
+      [like, like, limit],
+    );
+    return r.rows;
+  } catch (e: any) {
+    console.error('[kledo-search] DB error:', e.message);
+    return [];
+  }
+}
+
+function mapDbProduct(p: any) {
+  const hargaJual      = Number(p.hargaJual ?? p.hargaKledo ?? 0);
+  const hargaBeli      = Number(p.hargaBeli ?? 0);
+  const hargaKledo     = Number(p.hargaKledo ?? 0);
+  const hargaTertinggi = Math.max(hargaJual, hargaBeli, hargaKledo);
+  return {
+    id:              p.kledoProductId ? `kledo-${p.kledoProductId}` : `local-${p.id}`,
+    kledoId:         p.kledoProductId ?? null,
+    name:            p.name ?? '',
+    sku:             p.sku ?? '',
+    price:           hargaTertinggi,
+    hargaJual,
+    hargaBeli,
+    hargaTertinggi,
+    hpp:             hargaBeli,
+    stok:            Number(p.stok ?? 0),
+    unit:            p.unit_name ?? '',
+    source:          'local_db',
+  };
+}
+
+// ── Kledo direct search (fallback jika DB kosong) ────────────────────────────
+async function searchProductsKledo(token: string, q: string): Promise<any[]> {
+  try {
+    const url = `${KLEDO_BASE}/finance/products?name=${encodeURIComponent(q)}&per_page=50&page=1`;
     const r = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(10_000),
     });
-    if (!r.ok) return { items: [], lastPage: 1, ok: false };
+    if (!r.ok) return [];
     const d = await r.json();
-    const items: any[]     = d?.data?.data ?? [];
-    const lastPage: number = d?.data?.last_page ?? 1;
-    return { items, lastPage, ok: true };
+    return d?.data?.data ?? [];
   } catch {
-    return { items: [], lastPage: 1, ok: false };
+    return [];
   }
 }
 
-async function fetchAllPages(token: string, endpoint: string, maxPages = MAX_PAGES): Promise<any[]> {
-  const first = await fetchPage(token, endpoint, 1);
-  const results: any[] = [...first.items];
-  if (!first.ok || first.lastPage <= 1) return results;
-
-  const totalPages = Math.min(first.lastPage, maxPages);
-  const remaining  = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
-
-  for (let i = 0; i < remaining.length; i += CONCURRENCY) {
-    const batch   = remaining.slice(i, i + CONCURRENCY);
-    const settled = await Promise.allSettled(
-      batch.map(page => fetchPage(token, endpoint, page)),
-    );
-    let anyOk = false;
-    for (const res of settled) {
-      if (res.status === 'fulfilled' && res.value.ok) {
-        results.push(...res.value.items);
-        anyOk = true;
-      }
-    }
-    if (!anyOk) break;
-  }
-
-  return results;
-}
-
-/** Cari produk langsung via Kledo ?name= — untuk query yang tidak ada di cache */
-async function searchProductsDirect(token: string, q: string): Promise<any[]> {
-  const results: any[] = [];
-  const first = await fetchPage(token, 'finance/products', 1, `&name=${encodeURIComponent(q)}`);
-  results.push(...first.items);
-  if (first.ok && first.lastPage > 1) {
-    const cap = Math.min(first.lastPage, 4);
-    for (let p = 2; p <= cap; p++) {
-      const page = await fetchPage(token, 'finance/products', p, `&name=${encodeURIComponent(q)}`);
-      if (page.ok) results.push(...page.items);
-    }
-  }
-  return results;
-}
-
-async function searchContactsDirect(token: string, q: string): Promise<any[]> {
-  const results: any[] = [];
-  const first = await fetchPage(token, 'finance/contacts', 1, `&search=${encodeURIComponent(q)}`);
-  results.push(...first.items);
-  if (first.ok && first.lastPage > 1) {
-    const cap = Math.min(first.lastPage, 5);
-    for (let p = 2; p <= cap; p++) {
-      const page = await fetchPage(token, 'finance/contacts', p, `&search=${encodeURIComponent(q)}`);
-      if (page.ok) results.push(...page.items);
-    }
-  }
-  return results;
-}
-
-function textMatch(text: string, query: string): boolean {
-  const terms = query.toLowerCase().trim().split(/\s+/);
-  const t = text.toLowerCase();
-  return terms.every(term => t.includes(term));
-}
-
-function mapProduct(p: any) {
-  const fromSells      = Number(p.sells?.[0]?.price ?? p.sells?.[0]?.unit_price ?? 0);
-  const hargaJual      = Number(p.price ?? p.sell_price ?? p.sales_price ?? 0) || fromSells;
-  const hargaBeli      = Number(p.base_price ?? p.buy_price ?? p.purchase_price ?? p.buying_price ?? 0);
-  const hpp            = Number(p.avg_base_price ?? p.hpp ?? p.cost_price ?? p.cogs ?? 0);
-  const hargaTertinggi = Math.max(hargaJual, hargaBeli, hpp);
+function mapKledoProduct(p: any) {
+  const fromSells      = Number(p.sells?.[0]?.price ?? 0);
+  const hargaJual      = Number(p.price ?? p.sell_price ?? 0) || fromSells;
+  const hargaBeli      = Number(p.base_price ?? p.buy_price ?? 0);
+  const hargaTertinggi = Math.max(hargaJual, hargaBeli);
   return {
     id:              `kledo-${p.id}`,
     kledoId:         p.id,
@@ -173,28 +150,83 @@ function mapProduct(p: any) {
     price:           hargaTertinggi,
     hargaJual,
     hargaBeli,
-    hpp,
     hargaTertinggi,
-    unit: p.unit
-      ? (typeof p.unit === 'string' ? p.unit : (p.unit?.name ?? ''))
-      : '',
+    hpp:             hargaBeli,
+    stok:            0,
+    unit:            typeof p.unit === 'string' ? p.unit : (p.unit?.name ?? ''),
+    source:          'kledo_api',
   };
 }
 
-function mapContact(c: any) {
-  return {
-    id:      `kledo-${c.id}`,
-    kledoId: c.id,
-    name:    c.name  ?? '',
-    phone:   c.phone ?? '',
-    email:   c.email ?? '',
-  };
+// ── Contacts ─────────────────────────────────────────────────────────────────
+async function searchContactsKledo(token: string, q: string): Promise<any[]> {
+  const results: any[] = [];
+  try {
+    const r = await fetch(
+      `${KLEDO_BASE}/finance/contacts?search=${encodeURIComponent(q)}&per_page=500&page=1`,
+      { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) },
+    );
+    if (!r.ok) return results;
+    const d = await r.json();
+    const items: any[] = d?.data?.data ?? [];
+    results.push(...items);
+
+    const lastPage = d?.data?.last_page ?? 1;
+    const cap = Math.min(lastPage, 5);
+    for (let p = 2; p <= cap; p++) {
+      const r2 = await fetch(
+        `${KLEDO_BASE}/finance/contacts?search=${encodeURIComponent(q)}&per_page=500&page=${p}`,
+        { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) },
+      );
+      if (r2.ok) {
+        const d2 = await r2.json();
+        results.push(...(d2?.data?.data ?? []));
+      }
+    }
+  } catch {}
+  return results;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const type = searchParams.get('type') ?? 'contacts';
   const q    = (searchParams.get('q') ?? '').trim();
+
+  // ── PRODUCTS ───────────────────────────────────────────────────────────────
+  if (type === 'products') {
+    if (!q) {
+      return NextResponse.json({ success: true, data: [], total: 0 });
+    }
+
+    // 1. Query dari tabel Product lokal (cepat, tidak perlu token)
+    const dbRows = await searchProductsFromDb(q, 50);
+    if (dbRows.length > 0) {
+      const data = dbRows.map(mapDbProduct);
+      return NextResponse.json({ success: true, data, total: data.length, source: 'local_db' });
+    }
+
+    // 2. Fallback ke Kledo API langsung
+    const token = await getKledoToken();
+    if (!token) {
+      return NextResponse.json({
+        success: false, data: [], source: 'none',
+        message: 'Produk tidak ditemukan di database lokal dan token Kledo tidak tersedia. Pastikan backend sudah sync produk dari Kledo.',
+      });
+    }
+    const kledoRows = await searchProductsKledo(token, q);
+    if (kledoRows.length > 0) {
+      const data = kledoRows.map(mapKledoProduct);
+      return NextResponse.json({ success: true, data, total: data.length, source: 'kledo_api' });
+    }
+
+    return NextResponse.json({ success: true, data: [], total: 0, source: 'none' });
+  }
+
+  // ── CONTACTS ───────────────────────────────────────────────────────────────
+  if (!q) {
+    return NextResponse.json({ success: true, data: [], total: 0 });
+  }
 
   const token = await getKledoToken();
   if (!token) {
@@ -204,78 +236,22 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const now = Date.now();
-
-  // ── PRODUCTS ─────────────────────────────────────────────────────────────
-  if (type === 'products') {
-    // Muat semua produk ke cache (background jika sudah loading)
-    if (!productsLoading && (now - productsCache.ts > CACHE_TTL || productsCache.data.length === 0)) {
-      productsLoading = true;
-      fetchAllPages(token, 'finance/products', MAX_PAGES)
-        .then(raw => {
-          productsCache.data = raw.map(mapProduct);
-          productsCache.ts   = Date.now();
-        })
-        .catch(() => {})
-        .finally(() => { productsLoading = false; });
-    }
-
-    // Jika cache sudah ada — filter lokal
-    if (productsCache.data.length > 0 && q) {
-      const fromCache = productsCache.data.filter(
-        p => textMatch(p.name, q) || textMatch(p.sku, q),
-      );
-      // Jika dari cache ada hasil, kembalikan langsung
-      if (fromCache.length > 0) {
-        return NextResponse.json({ success: true, data: fromCache, total: productsCache.data.length, source: 'cache' });
-      }
-      // Tidak ada di cache → cari langsung ke Kledo (produk baru / di luar 30k)
-      try {
-        const raw  = await searchProductsDirect(token, q);
-        const data = raw.map(mapProduct);
-        // Merge ke cache supaya pencarian berikutnya lebih cepat
-        const existingIds = new Set(productsCache.data.map(p => p.id));
-        for (const p of data) { if (!existingIds.has(p.id)) productsCache.data.push(p); }
-        return NextResponse.json({ success: true, data, total: productsCache.data.length, source: 'direct' });
-      } catch {
-        return NextResponse.json({ success: true, data: [], total: 0, source: 'none' });
-      }
-    }
-
-    // Cache belum siap dan ada query → cari langsung ke Kledo
-    if (q && productsCache.data.length === 0) {
-      try {
-        const raw  = await searchProductsDirect(token, q);
-        const data = raw.map(mapProduct);
-        return NextResponse.json({ success: true, data, total: data.length, source: 'direct' });
-      } catch {
-        return NextResponse.json({ success: true, data: [], total: 0, source: 'none' });
-      }
-    }
-
-    const filtered = q
-      ? productsCache.data.filter(p => textMatch(p.name, q) || textMatch(p.sku, q))
-      : productsCache.data.slice(0, 50);
-
-    return NextResponse.json({ success: true, data: filtered, total: productsCache.data.length, source: 'cache' });
+  try {
+    const raw = await searchContactsKledo(token, q);
+    const data = raw.map((c: any) => ({
+      id:      `kledo-${c.id}`,
+      kledoId: c.id,
+      name:    c.name  ?? '',
+      phone:   c.phone ?? '',
+      email:   c.email ?? '',
+    }));
+    return NextResponse.json({ success: true, data, total: data.length });
+  } catch (e: any) {
+    return NextResponse.json({ success: false, data: [], message: e.message });
   }
-
-  // ── CONTACTS ─────────────────────────────────────────────────────────────
-  if (q) {
-    try {
-      const raw     = await searchContactsDirect(token, q);
-      const results = raw.map(mapContact);
-      return NextResponse.json({ success: true, data: results, total: results.length });
-    } catch (e: any) {
-      return NextResponse.json({ success: false, data: [], message: e.message });
-    }
-  }
-
-  return NextResponse.json({ success: true, data: [], total: 0 });
 }
 
 export async function DELETE() {
-  productsCache.data = []; productsCache.ts = 0;
-  cachedKledoToken   = null;
-  return NextResponse.json({ success: true, message: 'Cache cleared' });
+  _cachedToken = null;
+  return NextResponse.json({ success: true, message: 'Token cache cleared' });
 }
