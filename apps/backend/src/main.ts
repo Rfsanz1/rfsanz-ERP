@@ -50,7 +50,9 @@ async function bootstrap() {
         origin.endsWith('.ngrok-free.app') ||
         origin.endsWith('.ngrok-free.dev') ||
         origin.endsWith('.ngrok.io') ||
+        origin.endsWith('.my.id') ||
         origin === 'https://briskly-underpaid-shucking.ngrok-free.dev' ||
+        origin === 'https://gentongmaselektronik.my.id' ||
         /^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin) ||
         /^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin) ||
         /^https?:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?$/.test(origin) ||
