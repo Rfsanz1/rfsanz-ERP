@@ -70,16 +70,35 @@ export class InvoiceService {
     const noInvoice = dto.noInvoice ?? dto.nomorInvoice ?? await this.generateNumber();
     const { items, nomorInvoice, tenantId: _tid, tanggal, dueDate, jatuhTempo, ...rest } = dto;
     const tid = 'default';
+
+    // Ambil hanya field yang valid untuk Invoice (hindari "Unknown argument" Prisma)
+    const {
+      metodePembayaran: _mp, bankPilihan: _bp, ongkir: _ok,
+      noHp: _nh, kledoContactId: _kci, ...invoiceRest
+    } = rest;
+    void _mp; void _bp; void _ok; void _nh; void _kci;
+
     const data = await this.prisma.invoice.create({
       data: {
-        ...rest,
+        ...invoiceRest,
         tenantId: tid,
         noInvoice,
         tanggal: this.toDate(tanggal) ?? new Date(),
         dueDate: this.toDate(dueDate ?? jatuhTempo),
-        status: rest.status ?? 'draft',
+        status: invoiceRest.status ?? 'draft',
         items: items?.length
-          ? { create: items.map((it: any) => ({ ...it, tenantId: tid })) }
+          ? {
+              create: items.map((it: any) => ({
+                tenantId: tid,
+                productId:      it.productId      ?? null,
+                kledoProductId: it.kledoProductId ?? null,
+                nama:           it.nama           ?? '',
+                qty:            Number(it.qty)    || 1,
+                harga:          Number(it.harga)  || 0,
+                diskonItem:     Number(it.diskonItem) || 0,
+                subtotal:       Number(it.subtotal)   || 0,
+              })),
+            }
           : undefined,
       },
       include: {

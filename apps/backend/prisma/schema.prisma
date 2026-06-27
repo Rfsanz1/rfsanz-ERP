@@ -2257,42 +2257,46 @@ model PasswordResetToken {
 // ==================== INVOICE ====================
 
 model Invoice {
-  id          String           @id @default(uuid())
-  tenantId    String
-  tenant      Tenant           @relation(fields: [tenantId], references: [id])
-  noInvoice   String           @unique
-  customerId  String?
-  customer    Customer?        @relation(fields: [customerId], references: [id])
-  orderId     Int?
-  salesName   String?
-  tanggal     DateTime         @default(now())
-  dueDate     DateTime?
-  subtotal    Decimal          @default(0) @db.Decimal(15, 2)
-  diskon      Decimal          @default(0) @db.Decimal(15, 2)
-  pajak       Decimal          @default(0) @db.Decimal(15, 2)
-  grandTotal  Decimal          @default(0) @db.Decimal(15, 2)
-  paidAmount  Decimal          @default(0) @db.Decimal(15, 2)
-  status      String           @default("draft")
-  notes       String?
-  sentAt      DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  items       InvoiceItem[]
-  payments    InvoicePayment[]
-  creditNotes CreditNote[]
+  id             String           @id @default(uuid())
+  tenantId       String
+  tenant         Tenant           @relation(fields: [tenantId], references: [id])
+  noInvoice      String           @unique
+  customerId     String?
+  customer       Customer?        @relation(fields: [customerId], references: [id])
+  orderId        Int?
+  salesName      String?
+  tanggal        DateTime         @default(now())
+  dueDate        DateTime?
+  subtotal       Decimal          @default(0) @db.Decimal(15, 2)
+  diskon         Decimal          @default(0) @db.Decimal(15, 2)
+  pajak          Decimal          @default(0) @db.Decimal(15, 2)
+  grandTotal     Decimal          @default(0) @db.Decimal(15, 2)
+  paidAmount     Decimal          @default(0) @db.Decimal(15, 2)
+  status         String           @default("draft")
+  notes          String?
+  sentAt         DateTime?
+  kledoInvoiceId String?          @unique
+  kledoSynced    Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  items          InvoiceItem[]
+  payments       InvoicePayment[]
+  creditNotes    CreditNote[]
 }
 
 model InvoiceItem {
-  id        String  @id @default(uuid())
-  tenantId  String
-  tenant    Tenant  @relation(fields: [tenantId], references: [id])
-  invoiceId String
-  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  productId String?
-  nama      String
-  qty       Int
-  harga     Decimal @db.Decimal(15, 2)
-  subtotal  Decimal @db.Decimal(15, 2)
+  id             String  @id @default(uuid())
+  tenantId       String
+  tenant         Tenant  @relation(fields: [tenantId], references: [id])
+  invoiceId      String
+  invoice        Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId      String?
+  kledoProductId String?
+  nama           String
+  qty            Int
+  harga          Decimal @db.Decimal(15, 2)
+  diskonItem     Decimal @default(0) @db.Decimal(15, 2)
+  subtotal       Decimal @db.Decimal(15, 2)
 }
 
 model InvoicePayment {
