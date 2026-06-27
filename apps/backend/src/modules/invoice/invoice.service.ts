@@ -1,13 +1,17 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { NotificationService } from '../notification/notification.service.js';
+import { KledoService } from '../kledo/kledo.service.js';
 import { randomBytes } from 'crypto';
 
 @Injectable()
 export class InvoiceService {
+  private readonly logger = new Logger(InvoiceService.name);
+
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(NotificationService) private readonly notif: NotificationService,
+    @Inject(KledoService) private readonly kledo: KledoService,
   ) {}
 
   private async generateNumber() {
@@ -78,8 +82,13 @@ export class InvoiceService {
           ? { create: items.map((it: any) => ({ ...it, tenantId: tid })) }
           : undefined,
       },
-      include: { items: true, customer: { select: { id: true, name: true } } },
+      include: {
+        items: true,
+        customer: { select: { id: true, name: true, phone: true } },
+      },
     });
+
+    // Notifikasi WhatsApp (fire & forget)
     this.notif.notifyGrupInvoice({
       orderId: data.id,
       noInvoice: data.noInvoice,
@@ -87,7 +96,55 @@ export class InvoiceService {
       totalHarga: Number((data as any).grandTotal ?? 0),
       items: [],
     }).catch(() => null);
+
+    // Push ke Kledo secara otomatis (fire & forget, tidak memblokir response)
+    this.pushToKledo(data).catch(() => null);
+
     return { data, message: 'Invoice berhasil dibuat' };
+  }
+
+  private async pushToKledo(invoice: any) {
+    try {
+      const kledoStatus = await this.kledo.getStatus();
+      if (!kledoStatus.connected) {
+        this.logger.warn(`[Kledo] Tidak terhubung — invoice ${invoice.noInvoice} tidak di-push: ${kledoStatus.message}`);
+        return;
+      }
+
+      const itemsForKledo = (invoice.items ?? []).map((it: any) => ({
+        kledoProductId: it.kledoProductId ?? it.kledoId ?? null,
+        nama: it.nama ?? it.name ?? it.productName ?? 'Item',
+        qty: Number(it.qty ?? it.quantity ?? 1),
+        harga: Number(it.harga ?? it.price ?? it.unitPrice ?? 0),
+        unitId: it.unitId ?? 1,
+      }));
+
+      const result = await this.kledo.createInvoice({
+        namaCustomer: invoice.customer?.name ?? 'Customer ERP',
+        noHp: invoice.customer?.phone ?? undefined,
+        memo: `${invoice.noInvoice} - ${invoice.customer?.name ?? ''}`,
+        orderId: invoice.id,
+        items: itemsForKledo,
+        dueDays: invoice.dueDate
+          ? Math.max(0, Math.ceil((new Date(invoice.dueDate).getTime() - Date.now()) / 86400000))
+          : 30,
+      });
+
+      if (result.success && result.kledoInvoiceId) {
+        await this.prisma.invoice.update({
+          where: { id: invoice.id },
+          data: {
+            kledoInvoiceId: String(result.kledoInvoiceId),
+            kledoSynced: true,
+          } as any,
+        }).catch(() => null);
+        this.logger.log(`[Kledo] Invoice ${invoice.noInvoice} berhasil di-push → Kledo ID ${result.kledoInvoiceId}`);
+      } else {
+        this.logger.warn(`[Kledo] Invoice ${invoice.noInvoice} gagal di-push: ${result.message}`);
+      }
+    } catch (e: any) {
+      this.logger.error(`[Kledo] Error push invoice ${invoice.noInvoice}: ${e?.message}`);
+    }
   }
 
   async update(id: string, dto: any) {

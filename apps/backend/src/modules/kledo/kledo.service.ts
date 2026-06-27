@@ -287,6 +287,30 @@ export class KledoService {
     return 0;
   }
 
+  /**
+   * Cari finance_account_id Kledo berdasarkan nama produk.
+   * Digunakan sebagai fallback ketika kledoProductId tidak tersedia.
+   */
+  private async findKledoAccountIdByName(nama: string, headers: any, baseUrl: string): Promise<number | null> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get(`${baseUrl}/finance/products`, {
+          headers,
+          params: { name: nama, per_page: 5, page: 1 },
+          timeout: 5000,
+        }),
+      );
+      const body = res.data?.data ?? res.data;
+      const list: any[] = body?.data ?? body ?? [];
+      const found = list.find(
+        (p: any) => p.name?.toLowerCase().trim() === nama?.toLowerCase().trim(),
+      ) ?? list[0];
+      return found?.id ? Number(found.id) : null;
+    } catch {
+      return null;
+    }
+  }
+
   async createInvoice(dto: {
     namaCustomer: string; noHp?: string; memo?: string; orderId?: number | string;
     items: Array<{ kledoProductId?: string | null; nama: string; qty: number; harga: number; unitId?: number }>;
@@ -301,19 +325,52 @@ export class KledoService {
       const today = new Date();
       const transDate = today.toISOString().split('T')[0];
       const dueDate = new Date(today.getTime() + (dto.dueDays ?? 30) * 86400000).toISOString().split('T')[0];
-      const items = dto.items
-        .filter((it) => it.kledoProductId)
-        .map((it) => ({
-          finance_account_id: Number(it.kledoProductId),
-          qty: it.qty, price: it.harga, amount: it.qty * it.harga,
-          discount_percent: 0, unit_id: it.unitId ?? 1, desc: it.nama,
-        }));
-      if (items.length === 0) return { success: false, message: 'Tidak ada produk dengan Kledo Product ID' };
+
+      // Resolusi finance_account_id untuk setiap item
+      const resolvedItems: any[] = [];
+      for (const it of dto.items) {
+        let accountId = it.kledoProductId ? Number(it.kledoProductId) : null;
+
+        // Fallback: cari by nama di Kledo jika ID tidak tersedia
+        if (!accountId && it.nama) {
+          accountId = await this.findKledoAccountIdByName(it.nama, headers, baseUrl);
+          if (accountId) {
+            this.logger.log(`[Kledo] Item "${it.nama}" ditemukan by nama → account_id ${accountId}`);
+          }
+        }
+
+        if (!accountId) {
+          this.logger.warn(`[Kledo] Item "${it.nama}" tidak memiliki Kledo Product ID dan tidak ditemukan by nama — item dilewati`);
+          continue;
+        }
+
+        resolvedItems.push({
+          finance_account_id: accountId,
+          qty: it.qty,
+          price: it.harga,
+          amount: it.qty * it.harga,
+          discount_percent: 0,
+          unit_id: it.unitId ?? 1,
+          desc: it.nama,
+        });
+      }
+
+      if (resolvedItems.length === 0) {
+        return {
+          success: false,
+          message: 'Tidak ada produk yang dapat dipetakan ke Kledo. Pastikan produk sudah memiliki Kledo Product ID atau nama produk sesuai dengan Kledo.',
+        };
+      }
+
       const payload = {
-        trans_date: transDate, due_date: dueDate, contact_id: contactId,
-        status_id: 3, term_id: 1, include_tax: 0,
+        trans_date: transDate,
+        due_date: dueDate,
+        contact_id: contactId,
+        status_id: 3,
+        term_id: 1,
+        include_tax: 0,
         memo: dto.memo ?? (dto.orderId ? `Order #${dto.orderId} - ${dto.namaCustomer}` : dto.namaCustomer),
-        items,
+        items: resolvedItems,
       };
       const res = await firstValueFrom(
         this.http.post(`${baseUrl}/finance/invoices`, payload, { headers, timeout: 10000 }),
