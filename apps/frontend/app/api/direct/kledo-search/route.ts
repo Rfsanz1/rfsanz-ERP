@@ -69,11 +69,33 @@ async function getKledoToken(): Promise<string | null> {
 }
 
 // ── Search produk dari tabel "Product" (PostgreSQL lokal, hasil sync Kledo) ──
-async function searchProductsFromDb(q: string, limit = 50): Promise<any[]> {
+async function searchProductsFromDb(q: string, limit = 100): Promise<any[]> {
   const db = getPg();
   if (!db) return [];
   try {
-    const like = `%${q}%`;
+    if (q.trim() === '') {
+      // Tanpa query → kembalikan semua produk aktif (max limit)
+      const r = await db.query(
+        `SELECT
+           p.id,
+           p.sku,
+           p.name,
+           p."hargaBeli",
+           p."hargaJual",
+           p."hargaKledo",
+           p."kledoProductId",
+           p.stok,
+           u.name AS unit_name
+         FROM "Product" p
+         LEFT JOIN "ProductUnit" u ON u.id = p."unitId"
+         WHERE p.active = true
+         ORDER BY p.name
+         LIMIT $1`,
+        [limit],
+      );
+      return r.rows;
+    }
+    const like = `%${q.trim()}%`;
     const r = await db.query(
       `SELECT
          p.id,
@@ -124,10 +146,13 @@ function mapDbProduct(p: any) {
 // ── Kledo direct search (fallback jika DB kosong) ────────────────────────────
 async function searchProductsKledo(token: string, q: string): Promise<any[]> {
   try {
-    const url = `${KLEDO_BASE}/finance/products?name=${encodeURIComponent(q)}&per_page=50&page=1`;
+    // q kosong → ambil semua produk (tanpa filter name)
+    const params = new URLSearchParams({ per_page: '100', page: '1' });
+    if (q.trim()) params.set('name', q.trim());
+    const url = `${KLEDO_BASE}/finance/products?${params.toString()}`;
     const r = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!r.ok) return [];
     const d = await r.json();
@@ -195,26 +220,25 @@ export async function GET(req: NextRequest) {
 
   // ── PRODUCTS ───────────────────────────────────────────────────────────────
   if (type === 'products') {
-    if (!q) {
-      return NextResponse.json({ success: true, data: [], total: 0 });
-    }
-
-    // 1. Query dari tabel Product lokal (cepat, tidak perlu token)
-    const dbRows = await searchProductsFromDb(q, 50);
+    // 1. Query dari tabel Product lokal (q kosong → semua produk, q ada → filter)
+    const dbRows = await searchProductsFromDb(q, 100);
     if (dbRows.length > 0) {
       const data = dbRows.map(mapDbProduct);
       return NextResponse.json({ success: true, data, total: data.length, source: 'local_db' });
     }
 
-    // 2. Fallback ke Kledo API langsung
+    // 2. Jika DB lokal kosong, fallback ke Kledo API langsung
     const token = await getKledoToken();
     if (!token) {
       return NextResponse.json({
         success: false, data: [], source: 'none',
-        message: 'Produk tidak ditemukan di database lokal dan token Kledo tidak tersedia. Pastikan backend sudah sync produk dari Kledo.',
+        message: 'Database produk lokal kosong. Lakukan import produk dari Kledo di menu Integrasi terlebih dahulu.',
       });
     }
-    const kledoRows = await searchProductsKledo(token, q);
+
+    // Untuk q kosong, ambil halaman pertama produk dari Kledo
+    const searchQ = q || '';
+    const kledoRows = await searchProductsKledo(token, searchQ);
     if (kledoRows.length > 0) {
       const data = kledoRows.map(mapKledoProduct);
       return NextResponse.json({ success: true, data, total: data.length, source: 'kledo_api' });

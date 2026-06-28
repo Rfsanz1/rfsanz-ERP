@@ -41,6 +41,7 @@ async function searchProducts(q: string): Promise<{ results: ProductOption[]; er
   }
 
   try {
+    // q kosong → tetap ambil semua produk dari server (backend handle empty q)
     const url = `/api/direct/kledo-search?type=products&q=${encodeURIComponent(q.trim())}`;
     const res = await fetch(url).then(r => r.json());
 
@@ -133,28 +134,22 @@ export default function ProductSearchDropdown({
 
   const doSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
-    if (trimmed.length === 0) {
-      setSuggestions([]);
-      setSearchError(null);
-      setOpen(false);
-      setSearching(false);
-      return;
-    }
+    const cacheKey = trimmed.toLowerCase();
 
     const seq = ++seqRef.current;
     setSearching(true);
     setSearchError(null);
     setOpen(true);
 
-    // Show cached results instantly while re-fetching
-    const cached = _searchCache.get(trimmed.toLowerCase());
-    if (cached) setSuggestions(cached);
+    // Tampilkan cache lama sementara fetch berjalan
+    const cached = _searchCache.get(cacheKey);
+    if (cached && cached.length > 0) setSuggestions(cached);
 
     const { results, error } = await searchProducts(trimmed);
     if (seq !== seqRef.current) return; // outdated
     setSuggestions(results);
     setSearchError(error ?? null);
-    setOpen(results.length > 0 || !!error || trimmed.length > 0);
+    setOpen(true);
     setSearching(false);
   }, []);
 
@@ -163,15 +158,6 @@ export default function ProductSearchDropdown({
     onChange?.(q);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    if (!q.trim()) {
-      setSuggestions([]);
-      setOpen(false);
-      setSearching(false);
-      seqRef.current++;
-      return;
-    }
-
     setSearching(true);
     setOpen(true);
     debounceRef.current = setTimeout(() => doSearch(q), 350);
@@ -179,7 +165,8 @@ export default function ProductSearchDropdown({
 
   const handleFocus = () => {
     updatePos();
-    if (value.trim().length > 0) doSearch(value);
+    // Selalu load produk saat focus — kosong = semua produk
+    doSearch(value);
   };
 
   const handleSelect = (p: ProductOption) => {

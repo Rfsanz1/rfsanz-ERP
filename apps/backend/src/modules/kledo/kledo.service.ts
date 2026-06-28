@@ -344,41 +344,54 @@ export class KledoService {
           continue;
         }
 
-        resolvedItems.push({
+        // unit_id TIDAK di-hardcode — hanya kirim jika tersedia dari data produk
+        const itemPayload: any = {
           finance_account_id: accountId,
           qty: it.qty,
           price: it.harga,
           amount: it.qty * it.harga,
           discount_percent: 0,
-          unit_id: it.unitId ?? 1,
           desc: it.nama,
-        });
+        };
+        if (it.unitId && it.unitId > 0) itemPayload.unit_id = it.unitId;
+
+        resolvedItems.push(itemPayload);
       }
 
       if (resolvedItems.length === 0) {
         return {
           success: false,
-          message: 'Tidak ada produk yang dapat dipetakan ke Kledo. Pastikan produk sudah memiliki Kledo Product ID atau nama produk sesuai dengan Kledo.',
+          message: 'Tidak ada produk yang dapat dipetakan ke Kledo. Pastikan produk dipilih dari dropdown (bukan diketik manual) agar Kledo Product ID tersimpan.',
         };
       }
 
-      const payload = {
+      // contact_id hanya dikirim jika valid (bukan 0)
+      const payload: any = {
         trans_date: transDate,
         due_date: dueDate,
-        contact_id: contactId,
         status_id: 3,
-        term_id: 1,
         include_tax: 0,
         memo: dto.memo ?? (dto.orderId ? `Order #${dto.orderId} - ${dto.namaCustomer}` : dto.namaCustomer),
         items: resolvedItems,
       };
+      if (contactId && contactId > 0) payload.contact_id = contactId;
+
+      this.logger.log(`[Kledo] Mengirim invoice — contact_id=${contactId}, items=${resolvedItems.length}`);
+      this.logger.debug(`[Kledo] Payload: ${JSON.stringify(payload)}`);
+
       const res = await firstValueFrom(
-        this.http.post(`${baseUrl}/finance/invoices`, payload, { headers, timeout: 10000 }),
+        this.http.post(`${baseUrl}/finance/invoices`, payload, { headers, timeout: 15000 }),
       );
-      const kledoId = res.data?.id ?? res.data?.data?.id;
-      return { success: true, kledoInvoiceId: kledoId, message: res.data?.message ?? 'Tagihan berhasil dibuat' };
+      // Kledo mengembalikan: { data: { id: ... } } atau { id: ... }
+      const kledoId = res.data?.data?.id ?? res.data?.id;
+      this.logger.log(`[Kledo] Response: ${JSON.stringify(res.data)}`);
+      return { success: true, kledoInvoiceId: kledoId, message: res.data?.message ?? 'Tagihan berhasil dibuat di Kledo' };
     } catch (e: any) {
-      const msg = e.code === 'ECONNABORTED' ? 'Kledo timeout (10 detik)' : (e.response?.data?.message ?? e.message);
+      const apiMsg = e.response?.data?.message ?? JSON.stringify(e.response?.data) ?? '';
+      const msg = e.code === 'ECONNABORTED'
+        ? 'Kledo timeout (15 detik)'
+        : (apiMsg || e.message);
+      this.logger.error(`[Kledo] createInvoice error: status=${e.response?.status} msg=${msg}`);
       return { success: false, message: msg };
     }
   }
