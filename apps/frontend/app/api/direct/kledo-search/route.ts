@@ -88,7 +88,7 @@ async function searchProductsFromDb(q: string, limit = 100): Promise<any[]> {
            u.name AS unit_name
          FROM "Product" p
          LEFT JOIN "ProductUnit" u ON u.id = p."unitId"
-         WHERE p.active = true
+         WHERE p.active IS NOT FALSE
          ORDER BY p.name
          LIMIT $1`,
         [limit],
@@ -96,6 +96,9 @@ async function searchProductsFromDb(q: string, limit = 100): Promise<any[]> {
       return r.rows;
     }
     const like = `%${q.trim()}%`;
+    const words = q.trim().split(/\s+/).filter(Boolean);
+    const wordConditions = words.map((_, i) => `p.name ILIKE $${i + 3}`).join(' AND ');
+    const params: any[] = [like, like, ...words.map(w => `%${w}%`)];
     const r = await db.query(
       `SELECT
          p.id,
@@ -109,11 +112,17 @@ async function searchProductsFromDb(q: string, limit = 100): Promise<any[]> {
          u.name AS unit_name
        FROM "Product" p
        LEFT JOIN "ProductUnit" u ON u.id = p."unitId"
-       WHERE p.active = true
-         AND (p.name ILIKE $1 OR p.sku ILIKE $2)
-       ORDER BY p.name
-       LIMIT $3`,
-      [like, like, limit],
+       WHERE p.active IS NOT FALSE
+         AND (
+           p.name ILIKE $1
+           OR p.sku ILIKE $2
+           ${wordConditions ? `OR (${wordConditions})` : ''}
+         )
+       ORDER BY
+         CASE WHEN p.name ILIKE $1 THEN 0 ELSE 1 END,
+         p.name
+       LIMIT ${limit}`,
+      params,
     );
     return r.rows;
   } catch (e: any) {
@@ -227,7 +236,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data, total: data.length, source: 'local_db' });
     }
 
-    // 2. Jika DB lokal kosong, fallback ke Kledo API langsung
+    // 2. Cek apakah DB lokal memang benar-benar kosong (tidak ada produk sama sekali)
+    //    Jika DB punya produk tapi tidak ada yang cocok → kembalikan kosong tanpa fallback ke Kledo
+    const db = getPg();
+    if (db) {
+      try {
+        const countResult = await db.query(`SELECT COUNT(*) FROM "Product" WHERE active IS NOT FALSE`);
+        const totalProducts = Number(countResult.rows[0]?.count ?? 0);
+        if (totalProducts > 0) {
+          // DB punya produk tapi tidak ada yang cocok dengan query ini
+          return NextResponse.json({ success: true, data: [], total: 0, source: 'local_db' });
+        }
+      } catch { /* skip — lanjut ke Kledo fallback */ }
+    }
+
+    // 3. DB lokal benar-benar kosong → fallback ke Kledo API langsung
     const token = await getKledoToken();
     if (!token) {
       return NextResponse.json({

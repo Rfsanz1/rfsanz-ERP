@@ -31,7 +31,7 @@ const fmtRp = (v: number) =>
 // Module-level search cache (shared across instances)
 const _searchCache = new Map<string, ProductOption[]>();
 const _searchCacheTs = new Map<string, number>();
-const SEARCH_TTL = 5 * 60 * 1000;
+const SEARCH_TTL = 60 * 1000;
 
 async function searchProducts(q: string): Promise<{ results: ProductOption[]; error?: string }> {
   const key = q.trim().toLowerCase();
