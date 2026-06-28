@@ -21,6 +21,7 @@ const nextConfig = {
   transpilePackages: ['@gm/ui', '@gm/utils', '@gm/types'],
   reactStrictMode: true,
   allowedDevOrigins,
+  compress: true,
 
   typescript: {
     ignoreBuildErrors: true,
