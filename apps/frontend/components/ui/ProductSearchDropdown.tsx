@@ -28,6 +28,14 @@ interface Props {
 const fmtRp = (v: number) =>
   v.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
+const TOKEN_KEY = 'gm_auth_token';
+
+function getAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 // Module-level search cache (shared across instances)
 const _searchCache = new Map<string, ProductOption[]>();
 const _searchCacheTs = new Map<string, number>();
@@ -41,7 +49,60 @@ async function searchProducts(q: string): Promise<{ results: ProductOption[]; er
   }
 
   try {
-    // q kosong → tetap ambil semua produk dari server (backend handle empty q)
+    // Call backend inventory API directly — works on aaPanel & Replit
+    // Next.js rewrites /api/* → backend, token sent from localStorage
+    const params = new URLSearchParams({ limit: '100' });
+    if (q.trim()) params.set('search', q.trim());
+    const url = `/api/inventory/products?${params.toString()}`;
+
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+    });
+
+    if (!res.ok) {
+      // If backend auth fails or unavailable, fall back to kledo-search route
+      return await searchViaFallbackRoute(q);
+    }
+
+    const json = await res.json();
+    const rawData = json?.data?.data ?? json?.data ?? [];
+
+    if (Array.isArray(rawData) && rawData.length > 0) {
+      const mapped: ProductOption[] = rawData.map((p: any) => {
+        const hargaJual      = Number(p.hargaJual ?? 0);
+        const hargaBeli      = Number(p.hargaBeli ?? 0);
+        const hargaKledo     = Number(p.hargaKledo ?? 0);
+        const hargaTertinggi = Math.max(hargaJual, hargaBeli, hargaKledo);
+        return {
+          id:             p.id ? String(p.id) : (p.kledoProductId ? `kledo-${p.kledoProductId}` : String(p.id ?? '')),
+          name:           p.name ?? '',
+          sku:            p.sku ?? '',
+          hargaJual,
+          hargaBeli,
+          hargaTertinggi,
+          stok:           Number(p.stok ?? 0),
+          kledoProductId: p.kledoProductId ? String(p.kledoProductId) : null,
+          unit:           p.unit?.name ? { name: String(p.unit.name) } : null,
+          source:         'local' as const,
+        };
+      });
+      _searchCache.set(key, mapped);
+      _searchCacheTs.set(key, Date.now());
+      return { results: mapped };
+    }
+
+    // Backend returned empty — no results for this query
+    _searchCache.set(key, []);
+    _searchCacheTs.set(key, Date.now());
+    return { results: [] };
+  } catch (e: any) {
+    // Network/server error — try fallback route
+    return await searchViaFallbackRoute(q);
+  }
+}
+
+async function searchViaFallbackRoute(q: string): Promise<{ results: ProductOption[]; error?: string }> {
+  try {
     const url = `/api/direct/kledo-search?type=products&q=${encodeURIComponent(q.trim())}`;
     const res = await fetch(url).then(r => r.json());
 
@@ -69,8 +130,6 @@ async function searchProducts(q: string): Promise<{ results: ProductOption[]; er
           source:         'kledo' as const,
         };
       });
-      _searchCache.set(key, mapped);
-      _searchCacheTs.set(key, Date.now());
       return { results: mapped };
     }
   } catch (e: any) {
@@ -141,7 +200,7 @@ export default function ProductSearchDropdown({
     setSearchError(null);
     setOpen(true);
 
-    // Tampilkan cache lama sementara fetch berjalan
+    // Show stale cache while fetching
     const cached = _searchCache.get(cacheKey);
     if (cached && cached.length > 0) setSuggestions(cached);
 
@@ -165,7 +224,6 @@ export default function ProductSearchDropdown({
 
   const handleFocus = () => {
     updatePos();
-    // Selalu load produk saat focus — kosong = semua produk
     doSearch(value);
   };
 
@@ -230,7 +288,6 @@ export default function ProductSearchDropdown({
             touchAction: 'pan-y',
           }}
         >
-          {/* Searching spinner */}
           {searching && suggestions.length === 0 && (
             <div className="flex flex-col items-center justify-center py-6 gap-2">
               <Loader2 className="w-6 h-6 animate-spin" style={{ color: accentColor }} />
@@ -272,8 +329,10 @@ export default function ProductSearchDropdown({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 flex-wrap">
                   <p className="text-sm font-semibold truncate max-w-full" style={{ color: 'var(--text-primary)' }}>{p.name}</p>
-                  <span className="flex-shrink-0 text-[8px] font-bold px-1 py-0.5 rounded-full leading-none"
-                    style={{ background: 'rgba(99,102,241,.12)', color: '#6366F1' }}>Kledo</span>
+                  {p.stok <= 0 && (
+                    <span className="flex-shrink-0 text-[8px] font-bold px-1 py-0.5 rounded-full leading-none"
+                      style={{ background: 'rgba(239,68,68,.12)', color: '#EF4444' }}>Habis</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                   <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
@@ -297,9 +356,9 @@ export default function ProductSearchDropdown({
             </button>
           ))}
 
-          {suggestions.length >= 80 && (
+          {suggestions.length >= 100 && (
             <div className="py-2 text-center text-[10px]" style={{ color: 'var(--text-muted)' }}>
-              Menampilkan 80 hasil pertama · ketik lebih spesifik
+              Menampilkan 100 hasil pertama · ketik lebih spesifik
             </div>
           )}
         </div>
