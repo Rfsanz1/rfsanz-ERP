@@ -66,6 +66,21 @@ const nextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
         ],
       },
+      // Asset statis Next.js: cache 1 tahun di browser & Cloudflare
+      // (nama file sudah include hash, aman di-cache permanen)
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      // Gambar, font, icon di folder public: cache 7 hari
+      {
+        source: '/icons/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' },
+        ],
+      },
       {
         source: '/sw.js',
         headers: [
