@@ -142,6 +142,7 @@ export class InvoiceService {
       const result = await this.kledo.createInvoice({
         namaCustomer: invoice.customer?.name ?? 'Customer ERP',
         noHp: invoice.customer?.phone ?? undefined,
+        noInvoice: invoice.noInvoice,
         memo: `${invoice.noInvoice} - ${invoice.customer?.name ?? ''}`,
         orderId: invoice.id,
         items: itemsForKledo,
