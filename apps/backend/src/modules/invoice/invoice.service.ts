@@ -135,7 +135,8 @@ export class InvoiceService {
         nama: it.nama ?? it.name ?? it.productName ?? 'Item',
         qty: Number(it.qty ?? it.quantity ?? 1),
         harga: Number(it.harga ?? it.price ?? it.unitPrice ?? 0),
-        unitId: it.unitId ?? 1,
+        // unitId TIDAK punya default — biarkan Kledo pakai satuan milik produknya sendiri
+        unitId: it.unitId ?? null,
       }));
 
       const result = await this.kledo.createInvoice({

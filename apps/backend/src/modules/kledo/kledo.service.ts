@@ -344,7 +344,7 @@ export class KledoService {
           continue;
         }
 
-        // unit_id TIDAK di-hardcode — hanya kirim jika tersedia dari data produk
+        // unit_id TIDAK dikirim sama sekali — Kledo akan pakai satuan default produk
         const itemPayload: any = {
           finance_account_id: accountId,
           qty: it.qty,
@@ -353,7 +353,7 @@ export class KledoService {
           discount_percent: 0,
           desc: it.nama,
         };
-        if (it.unitId && it.unitId > 0) itemPayload.unit_id = it.unitId;
+        // Jangan tambah unit_id — biarkan Kledo pakai satuan milik produknya sendiri
 
         resolvedItems.push(itemPayload);
       }

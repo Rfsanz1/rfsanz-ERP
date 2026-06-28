@@ -79,6 +79,7 @@ services:
       NODE_ENV: production
       PORT: 5000
       BACKEND_URL: http://backend:3000
+      DATABASE_URL: postgresql://erp_user:${POSTGRES_PASSWORD:-erp_password_aman}@postgres:5432/erp_db
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@rfsanz.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-root}
       NEXT_PUBLIC_APP_NAME: "Gentong Mas ERP"
