@@ -157,12 +157,28 @@ export default function ProductSearchDropdown({
   const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seqRef       = useRef(0);
 
+  // Gunakan visualViewport agar benar saat keyboard mobile muncul
+  const getViewportHeight = () => {
+    if (typeof window === 'undefined') return 600;
+    return window.visualViewport?.height ?? window.innerHeight;
+  };
+
   const updatePos = useCallback(() => {
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - r.bottom;
-    const openUpward = spaceBelow < 360;
-    setDropPos({ top: r.bottom + 4, inputTop: r.top, left: r.left, width: r.width, openUpward });
+    const vh = getViewportHeight();
+    // Kompensasi scroll visualViewport (keyboard push-up effect)
+    const vvOffsetTop = window.visualViewport?.offsetTop ?? 0;
+    const adjustedBottom = r.bottom - vvOffsetTop;
+    const spaceBelow = vh - adjustedBottom;
+    const openUpward = spaceBelow < 280;
+    setDropPos({
+      top: adjustedBottom + 4,
+      inputTop: r.top - vvOffsetTop,
+      left: r.left,
+      width: r.width,
+      openUpward,
+    });
   }, []);
 
   useEffect(() => {
@@ -170,9 +186,14 @@ export default function ProductSearchDropdown({
     updatePos();
     window.addEventListener('resize', updatePos);
     window.addEventListener('scroll', updatePos, true);
+    // Keyboard mobile: visualViewport resize
+    window.visualViewport?.addEventListener('resize', updatePos);
+    window.visualViewport?.addEventListener('scroll', updatePos);
     return () => {
       window.removeEventListener('resize', updatePos);
       window.removeEventListener('scroll', updatePos, true);
+      window.visualViewport?.removeEventListener('resize', updatePos);
+      window.visualViewport?.removeEventListener('scroll', updatePos);
     };
   }, [open, updatePos]);
 
@@ -184,10 +205,11 @@ export default function ProductSearchDropdown({
       }
     };
     document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler);
+    // touchend bukan touchstart agar item masih bisa di-tap sebelum dropdown menutup
+    document.addEventListener('touchend', handler);
     return () => {
       document.removeEventListener('mousedown', handler);
-      document.removeEventListener('touchstart', handler);
+      document.removeEventListener('touchend', handler);
     };
   }, []);
 
@@ -272,7 +294,7 @@ export default function ProductSearchDropdown({
           style={{
             position: 'fixed',
             ...(dropPos.openUpward
-              ? { bottom: window.innerHeight - dropPos.inputTop + 4 }
+              ? { bottom: getViewportHeight() - dropPos.inputTop + 4 }
               : { top: dropPos.top }),
             left: dropPos.left,
             width: dropPos.width,
@@ -281,7 +303,7 @@ export default function ProductSearchDropdown({
             borderRadius: 14,
             border: '1.5px solid var(--border)',
             boxShadow: '0 8px 32px rgba(0,0,0,.18)',
-            maxHeight: (dropHeight + 40) + 'px',
+            maxHeight: Math.min(dropHeight + 40, getViewportHeight() * 0.45) + 'px',
             overflowY: 'auto',
             overflowX: 'hidden',
             WebkitOverflowScrolling: 'touch' as any,

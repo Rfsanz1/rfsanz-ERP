@@ -1,5 +1,5 @@
-const CACHE_NAME = 'gm-erp-v5';
-const API_CACHE_NAME = 'gm-erp-api-v5';
+const CACHE_NAME = 'gm-erp-v6';
+const API_CACHE_NAME = 'gm-erp-api-v6';
 
 const STATIC_ASSETS = [
   '/manifest.json',
