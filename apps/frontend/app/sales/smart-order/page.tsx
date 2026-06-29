@@ -505,11 +505,6 @@ export default function SmartOrderPage() {
           )}
         </div>
 
-        {metodePembayaran === 'cod' && (
-          <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 12, background: 'rgba(16,185,129,.08)', border: '1px solid rgba(16,185,129,.25)', color: '#065F46', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Truck size={14} /> Bayar saat barang tiba di lokasi pelanggan.
-          </div>
-        )}
       </div>
 
       {error && (
