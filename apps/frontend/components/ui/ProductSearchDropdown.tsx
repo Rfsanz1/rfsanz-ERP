@@ -13,8 +13,30 @@ export interface ProductOption {
   stok: number;
   kledoProductId?: string | null;
   unit?: { name: string } | null;
-  kasUnit?: 'elektronik' | 'bahan_bangunan' | null; // dari category.unitBisnis
+  kasUnit?: 'elektronik' | 'bahan_bangunan' | null;
   source?: 'local' | 'kledo';
+}
+
+/**
+ * Deteksi kasUnit dari nama kategori Kledo secara otomatis.
+ * Prioritas: unitBisnis (DB) → keyword nama kategori → null
+ */
+function detectUnitFromCategory(
+  unitBisnis?: string | null,
+  categoryName?: string | null,
+): 'elektronik' | 'bahan_bangunan' | null {
+  if (unitBisnis === 'elektronik' || unitBisnis === 'bahan_bangunan') {
+    return unitBisnis;
+  }
+  if (!categoryName) return null;
+  const c = categoryName.toLowerCase();
+  const isElektro = ['elektro', 'electric', 'listrik', 'electronic', 'appliance',
+                     'mesin', 'gadget', 'peralatan rumah'].some(kw => c.includes(kw));
+  if (isElektro) return 'elektronik';
+  const isBangunan = ['bangunan', 'material', 'konstruksi', 'plumbing', 'sanitasi',
+                      'cat ', 'kayu', 'besi', 'beton', 'keramik', 'hardware'].some(kw => c.includes(kw));
+  if (isBangunan) return 'bahan_bangunan';
+  return null;
 }
 
 interface Props {
@@ -84,9 +106,7 @@ async function searchProducts(q: string): Promise<{ results: ProductOption[]; er
           stok:           Number(p.stok ?? 0),
           kledoProductId: p.kledoProductId ? String(p.kledoProductId) : null,
           unit:           p.unit?.name ? { name: String(p.unit.name) } : null,
-          kasUnit:        (p.category?.unitBisnis === 'elektronik' || p.category?.unitBisnis === 'bahan_bangunan')
-                            ? p.category.unitBisnis as 'elektronik' | 'bahan_bangunan'
-                            : null,
+          kasUnit:        detectUnitFromCategory(p.category?.unitBisnis, p.category?.name),
           source:         'local' as const,
         };
       });
@@ -131,6 +151,7 @@ async function searchViaFallbackRoute(q: string): Promise<{ results: ProductOpti
             ? String(p.kledoId)
             : (p.id?.startsWith?.('kledo-') ? p.id.replace('kledo-', '') : null),
           unit:           p.unit ? { name: String(p.unit) } : null,
+          kasUnit:        detectUnitFromCategory(null, p.category ?? p.categoryName ?? p.category_name ?? null),
           source:         'kledo' as const,
         };
       });
