@@ -792,12 +792,6 @@ export default function CreateOrderModal({
                 </div>
               )}
 
-              {metodePembayaran === 'cod' && (
-                <div className="rounded-xl px-4 py-3 flex items-center gap-2 text-sm"
-                  style={{ background: 'rgba(16,185,129,.08)', border: '1.5px solid rgba(16,185,129,.25)', color: '#065F46' }}>
-                  <Truck className="h-4 w-4" /> Bayar saat barang tiba di lokasi pelanggan. Invoice Kledo <strong>tidak</strong> otomatis lunas — catat manual setelah pembayaran diterima.
-                </div>
-              )}
             </div>
 
             {kledoStatus !== 'idle' && (
