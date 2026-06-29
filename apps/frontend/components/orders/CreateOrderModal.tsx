@@ -135,7 +135,6 @@ export default function CreateOrderModal({
   const [copiedBank, setCopiedBank]           = useState<string | null>(null);
   const [bankPilihan, setBankPilihan]         = useState<string | null>(null);
   const [edcPilihan, setEdcPilihan]           = useState<string | null>(null);
-  const [unitBisnis, setUnitBisnis]           = useState<'elektronik' | 'bahan_bangunan' | ''>('');
   const [metodeDp, setMetodeDp]               = useState<'transfer' | 'debit' | 'cash' | ''>('');
   const [uangMuka, setUangMuka]               = useState(0);
 
@@ -144,30 +143,6 @@ export default function CreateOrderModal({
   const [kledoStatus, setKledoStatus]         = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle');
   const [error, setError]                     = useState('');
   const [savedOrderId, setSavedOrderId]       = useState<number | null>(null);
-
-  /* Auto-deteksi unit dari kategori produk (kasUnit) — fallback ke keyword nama */
-  const autoUnit = useMemo(() => {
-    const counts = { elektronik: 0, bahan_bangunan: 0 };
-    for (const it of items) {
-      // Prioritas: kasUnit dari kategori DB → keyword nama
-      const k = it.kasUnit ?? (it.nama ? detectKategori(it.nama) : null);
-      if (k) counts[k]++;
-    }
-    if (counts.elektronik > 0 && counts.bahan_bangunan === 0) return 'elektronik';
-    if (counts.bahan_bangunan > 0 && counts.elektronik === 0) return 'bahan_bangunan';
-    if (counts.elektronik > 0 && counts.bahan_bangunan > 0) return 'mixed';
-    return '';
-  }, [items]);
-
-  /* Sinkronisasi unitBisnis dari auto-detect — selalu otomatis, tidak ada override manual */
-  useEffect(() => {
-    if (autoUnit === 'elektronik' || autoUnit === 'bahan_bangunan') {
-      setUnitBisnis(autoUnit);
-    } else if (autoUnit === '') {
-      setUnitBisnis('');
-    }
-  }, [autoUnit]);
-
 
   /* Load custom keywords from DB once when modal mounts */
   useEffect(() => { loadCustomKeywords(); }, []);
@@ -273,7 +248,6 @@ export default function CreateOrderModal({
       metodePembayaran,
       bankPilihan: metodePembayaran === 'transfer' ? (bankPilihan ?? undefined) : undefined,
       edcPilihan: metodePembayaran === 'debit' ? (edcPilihan ?? undefined) : undefined,
-      unitBisnis: unitBisnis || undefined,
       metodeDp: metodePembayaran === 'dp' ? (metodeDp || undefined) : undefined,
       uangMuka: uangMuka || undefined,
       items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId, unit }) => ({
@@ -596,7 +570,6 @@ export default function CreateOrderModal({
                           if (opt.value !== 'transfer') setBankPilihan(null);
                           if (opt.value !== 'debit') setEdcPilihan(null);
                           if (opt.value !== 'dp') setMetodeDp('');
-                          if (opt.value !== 'cash' && opt.value !== 'dp') { setUnitBisnis(''); }
                         }}
                         className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-center transition-all active:scale-95"
                         style={{
@@ -781,7 +754,6 @@ export default function CreateOrderModal({
                             type="button"
                             onClick={() => {
                               setMetodeDp(opt.key as any);
-                              if (opt.key !== 'cash') setUnitBisnis('');
                             }}
                             className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-center transition-all active:scale-95"
                             style={{
@@ -799,28 +771,6 @@ export default function CreateOrderModal({
                   </div>
                 );
               })()}
-
-              {/* Info KAS otomatis — tampil saat Cash atau DP+Cash */}
-              {(metodePembayaran === 'cash' || (metodePembayaran === 'dp' && metodeDp === 'cash')) && unitBisnis && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-medium"
-                  style={{
-                    background: unitBisnis === 'elektronik' ? '#6366F115' : '#0891B215',
-                    color: unitBisnis === 'elektronik' ? '#6366F1' : '#0891B2',
-                    border: `1.5px solid ${unitBisnis === 'elektronik' ? '#6366F130' : '#0891B230'}`,
-                  }}>
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                  <span>
-                    {unitBisnis === 'elektronik' ? '⚡ Elektronik' : '🏗 Bahan Bangunan'} — Invoice Kledo otomatis lunas via{' '}
-                    <strong>{unitBisnis === 'elektronik' ? 'KAS ELEKTRONIK' : 'KAS SULAWESI'}</strong>
-                  </span>
-                </div>
-              )}
-              {(metodePembayaran === 'cash' || (metodePembayaran === 'dp' && metodeDp === 'cash')) && autoUnit === 'mixed' && (
-                <div className="px-3 py-2 rounded-xl text-[11px]"
-                  style={{ background: 'rgba(245,158,11,.1)', color: '#92400E', border: '1.5px solid rgba(245,158,11,.3)' }}>
-                  ⚠ Barang campuran — lunas manual setelah order dibuat.
-                </div>
-              )}
 
               {/* Uang Muka / DP — tampil saat metode bukan cash penuh */}
               <div>
