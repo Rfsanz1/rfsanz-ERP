@@ -660,11 +660,16 @@ export default function CreateOrderModal({
                           );
                         })}
                       </div>
-                      {bankPilihan && (
-                        <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
-                          <CheckCircle2 className="h-3 w-3" /> Invoice Kledo akan otomatis ditandai <strong>LUNAS</strong> via {REKENING.find(r => r.key === bankPilihan)?.label}
-                        </p>
-                      )}
+                      {bankPilihan && (() => {
+                        const KLEDO_AKUN: Record<string, string> = {
+                          bca: 'BCA Giro', bri: 'BRI', mandiri: 'Mandiri', bni: 'BNI',
+                        };
+                        return (
+                          <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
+                            <CheckCircle2 className="h-3 w-3" /> Invoice Kledo otomatis <strong>LUNAS</strong> via akun <strong>{KLEDO_AKUN[bankPilihan] ?? bankPilihan.toUpperCase()}</strong>
+                          </p>
+                        );
+                      })()}
                     </div>
 
                     {/* Nomor rekening — tap untuk copy */}
@@ -739,11 +744,16 @@ export default function CreateOrderModal({
                         );
                       })}
                     </div>
-                    {edcPilihan && (
-                      <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
-                        <CheckCircle2 className="h-3 w-3" /> Pembayaran via <strong>{EDC_OPTIONS.find(e => e.key === edcPilihan)?.label}</strong>
-                      </p>
-                    )}
+                    {edcPilihan && (() => {
+                      const KLEDO_AKUN: Record<string, string> = {
+                        bri_edc: 'BRI', bca_edc: 'BCA Giro', bni_edc: 'BNI',
+                      };
+                      return (
+                        <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
+                          <CheckCircle2 className="h-3 w-3" /> Invoice Kledo otomatis <strong>LUNAS</strong> via akun <strong>{KLEDO_AKUN[edcPilihan] ?? edcPilihan.toUpperCase()}</strong>
+                        </p>
+                      );
+                    })()}
                   </div>
                 );
               })()}
@@ -900,7 +910,7 @@ export default function CreateOrderModal({
               {metodePembayaran === 'cod' && (
                 <div className="rounded-xl px-4 py-3 flex items-center gap-2 text-sm"
                   style={{ background: 'rgba(16,185,129,.08)', border: '1.5px solid rgba(16,185,129,.25)', color: '#065F46' }}>
-                  <Truck className="h-4 w-4" /> Bayar saat barang tiba di lokasi pelanggan.
+                  <Truck className="h-4 w-4" /> Bayar saat barang tiba di lokasi pelanggan. Invoice Kledo <strong>tidak</strong> otomatis lunas — catat manual setelah pembayaran diterima.
                 </div>
               )}
             </div>

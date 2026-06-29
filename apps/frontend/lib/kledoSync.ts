@@ -160,16 +160,31 @@ export async function findOrCreateKledoContact(
   return null;
 }
 
-/** Keyword mapping: bankKey → kata kunci pencarian di nama akun Kledo */
+/**
+ * Keyword mapping: bankKey → kata kunci pencarian di nama akun Kledo.
+ *
+ * Pemetaan akun:
+ *   - Transfer BCA & EDC BCA → "BCA Giro" di Kledo
+ *   - Transfer BRI & EDC BRI → "BRI" di Kledo
+ *   - Transfer Mandiri        → "Mandiri"
+ *   - Transfer BNI & EDC BNI → "BNI"
+ *   - Cash Elektronik         → "KAS ELEKTRONIK"
+ *   - Cash Sulawesi           → "KAS SULAWESI"
+ */
 const BANK_KEYWORDS: Record<string, string[]> = {
-  bca:          ['bca giro', 'giro bca', 'bca'],
-  bri:          ['bri edc', 'edc bri', 'bri'],
-  mandiri:      ['mandiri'],
-  bni:          ['bni'],
-  bri_edc:      ['bri edc', 'edc bri', 'bri'],
-  bca_edc:      ['bca edc', 'edc bca', 'bca giro', 'giro bca', 'bca'],
-  bni_edc:      ['bni'],
-  elektronik:   ['kas elektronik', 'elektronik'],
+  /* Transfer Bank */
+  bca:            ['bca giro', 'giro bca', 'bca'],    // Transfer BCA → BCA Giro
+  bri:            ['bri edc', 'edc bri', 'bri'],      // Transfer BRI → BRI
+  mandiri:        ['mandiri'],
+  bni:            ['bni'],
+
+  /* Debit EDC — gunakan akun bank yang sama dengan transfer */
+  bri_edc:        ['bri edc', 'edc bri', 'bri'],      // EDC BRI → BRI (sama dengan transfer)
+  bca_edc:        ['bca giro', 'giro bca', 'bca'],    // EDC BCA → BCA Giro (sama dengan transfer)
+  bni_edc:        ['bni'],
+
+  /* Cash unit bisnis */
+  elektronik:     ['kas elektronik', 'elektronik'],
   bahan_bangunan: ['kas sulawesi', 'sulawesi'],
 };
 
@@ -337,7 +352,15 @@ export async function pushOrderToKledo(
     const invoiceId: number = data.data.id;
     const kledoRef: string  = data.data.ref_number ?? null;
 
-    /* ── Auto tandai LUNAS jika Transfer Bank + bank dipilih, atau Debit EDC ── */
+    /* ── Auto tandai LUNAS sesuai jalur pembayaran masing-masing ── */
+    /*
+     * BCA (transfer/EDC) → akun "BCA CV" di Kledo
+     * BRI (transfer/EDC) → akun "BRI CV" di Kledo
+     * Mandiri / BNI      → akun sesuai nama bank
+     * Cash               → KAS ELEKTRONIK / KAS SULAWESI (sesuai unit bisnis)
+     * DP                 → ikut sub-metode DP (transfer/debit/cash)
+     * COD                → tidak ditandai lunas otomatis (bayar saat tiba)
+     */
     let kledoPaid      = false;
     let kledoPaidError: string | undefined;
 
@@ -348,40 +371,55 @@ export async function pushOrderToKledo(
     const bankKey    = order.bankPilihan?.toLowerCase() ?? '';
     const edcKey     = order.edcPilihan?.toLowerCase() ?? '';
     const unitKey    = order.unitBisnis?.toLowerCase() ?? '';
+    const dpMetode   = order.metodeDp?.toLowerCase() ?? '';
 
     const EDC_MEMO: Record<string, string> = {
-      bri_edc: 'BRI EDC',
-      bca_edc: 'BCA EDC',
+      bri_edc: 'BRI',
+      bca_edc: 'BCA GIRO',
       bni_edc: 'BNI',
     };
     const UNIT_MEMO: Record<string, string> = {
-      elektronik:    'KAS ELEKTRONIK',
+      elektronik:     'KAS ELEKTRONIK',
       bahan_bangunan: 'KAS SULAWESI',
     };
+    const BANK_MEMO: Record<string, string> = {
+      bca:     'BCA GIRO',
+      bri:     'BRI',
+      mandiri: 'MANDIRI',
+      bni:     'BNI',
+    };
 
-    /* Tentukan akun & memo berdasarkan metode pembayaran */
+    /* Tentukan akun & memo berdasarkan metode — tanpa fallback generik */
     let activeKey  = '';
     let activeMemo = '';
 
     if (isTransfer && bankKey) {
       activeKey  = bankKey;
-      activeMemo = bankKey.toUpperCase();
+      activeMemo = BANK_MEMO[bankKey] ?? bankKey.toUpperCase();
     } else if (isDebit && edcKey) {
       activeKey  = edcKey;
       activeMemo = EDC_MEMO[edcKey] ?? edcKey.toUpperCase();
     } else if (isCash && unitKey) {
       activeKey  = unitKey;
       activeMemo = UNIT_MEMO[unitKey] ?? unitKey.toUpperCase();
-    } else if (isDp && order.metodeDp === 'cash' && unitKey) {
-      /* DP dibayar cash → tandai ke KAS sesuai unit (hanya sebagian / uang muka) */
-      activeKey  = unitKey;
-      activeMemo = UNIT_MEMO[unitKey] ?? unitKey.toUpperCase();
+    } else if (isDp) {
+      if (dpMetode === 'transfer' && bankKey) {
+        activeKey  = bankKey;
+        activeMemo = BANK_MEMO[bankKey] ?? bankKey.toUpperCase();
+      } else if (dpMetode === 'debit' && edcKey) {
+        activeKey  = edcKey;
+        activeMemo = EDC_MEMO[edcKey] ?? edcKey.toUpperCase();
+      } else if (dpMetode === 'cash' && unitKey) {
+        activeKey  = unitKey;
+        activeMemo = UNIT_MEMO[unitKey] ?? unitKey.toUpperCase();
+      }
     }
+    /* COD: tidak otomatis lunas — bayar saat barang tiba, dicatat manual */
 
+    const totalAmount = order.totalHarga ?? order.items.reduce((s, it) => s + (it.subtotal ?? 0), 0);
     if (activeKey) {
       const bankAccountId = await getBankAccountId(cfg.baseUrl, cfg.token, activeKey);
       if (bankAccountId) {
-        const totalAmount = order.totalHarga ?? order.items.reduce((s, it) => s + (it.subtotal ?? 0), 0);
         const paid = await markKledoInvoicePaid(
           cfg.baseUrl,
           cfg.token,
