@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Plus, X, Trash2, Package,
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
-  CreditCard, Banknote, Smartphone, Wallet, ChevronDown, Copy, Check,
+  CreditCard, Banknote, Smartphone, Wallet, Copy, Check,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { api } from '../../lib/api';
@@ -131,8 +131,6 @@ export default function CreateOrderModal({
   const [ongkir, setOngkir]                   = useState(0);
 
   const [metodePembayaran, setMetodePembayaran] = useState('transfer');
-  const [metodeOpen, setMetodeOpen]           = useState(false);
-  const metodeRef                             = useRef<HTMLDivElement>(null);
   const [copiedBank, setCopiedBank]           = useState<string | null>(null);
   const [bankPilihan, setBankPilihan]         = useState<string | null>(null);
   const [edcPilihan, setEdcPilihan]           = useState<string | null>(null);
@@ -170,16 +168,6 @@ export default function CreateOrderModal({
     }
   }, [autoUnit, unitOverride]);
 
-  useEffect(() => {
-    if (!metodeOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (metodeRef.current && !metodeRef.current.contains(e.target as Node)) {
-        setMetodeOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [metodeOpen]);
 
   /* Load custom keywords from DB once when modal mounts */
   useEffect(() => { loadCustomKeywords(); }, []);
@@ -591,81 +579,48 @@ export default function CreateOrderModal({
             <div className="rounded-2xl p-5 space-y-4"
               style={{ background: 'var(--surface-sunken)', border: '1.5px solid var(--border)' }}>
 
-              {/* Metode Pembayaran — custom dropdown */}
-              <div ref={metodeRef} className="relative">
+              {/* Metode Pembayaran — kartu pilihan */}
+              <div>
                 <Label>Metode Pembayaran</Label>
-                {(() => {
-                  const selected = METODE_OPTIONS.find(o => o.value === metodePembayaran)!;
-                  const Icon = selected.icon;
-                  return (
-                    <>
-                      {/* Trigger button */}
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                  {METODE_OPTIONS.map(opt => {
+                    const OptIcon = opt.icon;
+                    const isActive = metodePembayaran === opt.value;
+                    return (
                       <button
+                        key={opt.value}
                         type="button"
-                        onClick={() => { setMetodeOpen(v => !v); if (metodePembayaran !== 'transfer') setBankPilihan(null); }}
-                        className="w-full flex items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all"
-                        style={{
-                          border: `1.5px solid ${metodeOpen ? COLOR : 'var(--border)'}`,
-                          background: 'var(--surface)',
-                          color: 'var(--text-primary)',
-                          outline: 'none',
-                        }}
-                      >
-                        <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 flex-shrink-0" style={{ color: COLOR }} />
-                          {selected.label}
-                        </span>
-                        <ChevronDown
-                          className="h-4 w-4 flex-shrink-0 transition-transform duration-200"
-                          style={{ color: 'var(--text-muted)', transform: metodeOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                        />
-                      </button>
-
-                      {/* Dropdown list */}
-                      {metodeOpen && (
-                        <div
-                          className="absolute left-0 right-0 mt-1 rounded-xl overflow-hidden z-50"
-                          style={{
-                            border: '1.5px solid var(--border)',
-                            background: 'var(--surface)',
-                            boxShadow: '0 8px 24px rgba(0,0,0,.18)',
-                          }}
-                        >
-                          {METODE_OPTIONS.map((opt, i) => {
-                            const OptIcon = opt.icon;
-                            const isActive = metodePembayaran === opt.value;
-                            return (
-                              <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => {
+                        onClick={() => {
                           setMetodePembayaran(opt.value);
-                          setMetodeOpen(false);
                           if (opt.value !== 'transfer') setBankPilihan(null);
                           if (opt.value !== 'debit') setEdcPilihan(null);
                           if (opt.value !== 'dp') setMetodeDp('');
                           if (opt.value !== 'cash' && opt.value !== 'dp') { setUnitBisnis(''); setUnitOverride(false); }
                         }}
-                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left"
-                                style={{
-                                  background: isActive ? `${COLOR}12` : 'transparent',
-                                  color: isActive ? COLOR : 'var(--text-primary)',
-                                  borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-                                }}
-                              >
-                                <OptIcon className="h-4 w-4 flex-shrink-0" style={{ color: isActive ? COLOR : 'var(--text-muted)' }} />
-                                <span className="flex-1">{opt.label}</span>
-                                {isActive && (
-                                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLOR }} />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
+                        className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-center transition-all active:scale-95"
+                        style={{
+                          border: `2px solid ${isActive ? COLOR : 'var(--border)'}`,
+                          background: isActive ? `${COLOR}15` : 'var(--surface)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <OptIcon
+                          className="h-5 w-5 flex-shrink-0"
+                          style={{ color: isActive ? COLOR : 'var(--text-muted)' }}
+                        />
+                        <span
+                          className="text-[11px] font-semibold leading-tight"
+                          style={{ color: isActive ? COLOR : 'var(--text-secondary)' }}
+                        >
+                          {opt.label}
+                        </span>
+                        {isActive && (
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: COLOR }} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Info Rekening + Pilih Bank — tampil saat Transfer dipilih */}
