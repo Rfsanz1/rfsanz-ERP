@@ -143,7 +143,6 @@ export default function CreateOrderModal({
   const [saving, setSaving]                   = useState(false);
   const [kledoStatus, setKledoStatus]         = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle');
   const [error, setError]                     = useState('');
-  const [unitOverride, setUnitOverride]       = useState(false);
   const [savedOrderId, setSavedOrderId]       = useState<number | null>(null);
 
   /* Auto-deteksi unit dari kategori produk (kasUnit) — fallback ke keyword nama */
@@ -160,15 +159,14 @@ export default function CreateOrderModal({
     return '';
   }, [items]);
 
-  /* Sinkronisasi unitBisnis dari auto-detect jika tidak di-override manual */
+  /* Sinkronisasi unitBisnis dari auto-detect — selalu otomatis, tidak ada override manual */
   useEffect(() => {
-    if (unitOverride) return;
     if (autoUnit === 'elektronik' || autoUnit === 'bahan_bangunan') {
       setUnitBisnis(autoUnit);
     } else if (autoUnit === '') {
       setUnitBisnis('');
     }
-  }, [autoUnit, unitOverride]);
+  }, [autoUnit]);
 
 
   /* Load custom keywords from DB once when modal mounts */
@@ -598,7 +596,7 @@ export default function CreateOrderModal({
                           if (opt.value !== 'transfer') setBankPilihan(null);
                           if (opt.value !== 'debit') setEdcPilihan(null);
                           if (opt.value !== 'dp') setMetodeDp('');
-                          if (opt.value !== 'cash' && opt.value !== 'dp') { setUnitBisnis(''); setUnitOverride(false); }
+                          if (opt.value !== 'cash' && opt.value !== 'dp') { setUnitBisnis(''); }
                         }}
                         className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-center transition-all active:scale-95"
                         style={{
@@ -802,93 +800,27 @@ export default function CreateOrderModal({
                 );
               })()}
 
-              {/* Unit Bisnis — tampil saat Cash atau DP+Cash */}
-              {(metodePembayaran === 'cash' || (metodePembayaran === 'dp' && metodeDp === 'cash')) && (() => {
-                const UNIT_OPTIONS = [
-                  { key: 'elektronik',     label: 'Elektronik',     sub: 'KAS ELEKTRONIK', color: '#6366F1' },
-                  { key: 'bahan_bangunan', label: 'Bahan Bangunan', sub: 'KAS SULAWESI',   color: '#0891B2' },
-                ];
-                const kasName = unitBisnis === 'elektronik' ? 'KAS ELEKTRONIK' : unitBisnis === 'bahan_bangunan' ? 'KAS SULAWESI' : null;
-                const isAutoDetected = !unitOverride && (autoUnit === 'elektronik' || autoUnit === 'bahan_bangunan');
-                const isMixed = autoUnit === 'mixed';
-
-                return (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5" style={{ color: COLOR }}>
-                        Unit Bisnis
-                      </p>
-                      {isAutoDetected && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
-                          style={{ background: '#10B98115', color: '#10B981' }}>
-                          ✦ Terdeteksi otomatis
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Mixed warning */}
-                    {isMixed && !unitOverride && (
-                      <div className="rounded-lg px-3 py-2 text-[11px] flex items-center gap-1.5"
-                        style={{ background: 'rgba(245,158,11,.1)', color: '#92400E', border: '1.5px solid rgba(245,158,11,.3)' }}>
-                        ⚠ Barang campuran (Elektronik & Bahan Bangunan) — pilih unit secara manual di bawah.
-                      </div>
-                    )}
-
-                    {/* Auto-detected display — tap to change */}
-                    {isAutoDetected && !isMixed ? (
-                      <div className="rounded-xl px-4 py-3 flex items-center justify-between"
-                        style={{
-                          background: unitBisnis === 'elektronik' ? '#6366F115' : '#0891B215',
-                          border: `2px solid ${unitBisnis === 'elektronik' ? '#6366F1' : '#0891B2'}`,
-                        }}>
-                        <div>
-                          <p className="text-[12px] font-bold" style={{ color: unitBisnis === 'elektronik' ? '#6366F1' : '#0891B2' }}>
-                            {unitBisnis === 'elektronik' ? '⚡ Unit Elektronik' : '🏗 Unit Bahan Bangunan'}
-                          </p>
-                          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                            Lunas → <strong>{kasName}</strong>
-                          </p>
-                        </div>
-                        <button type="button"
-                          onClick={() => { setUnitOverride(true); }}
-                          className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
-                          style={{ color: 'var(--text-muted)', border: '1.5px solid var(--border)', background: 'var(--surface)' }}>
-                          Ganti
-                        </button>
-                      </div>
-                    ) : (
-                      /* Manual picker — shown when mixed, undetected, or override mode */
-                      <div className="grid grid-cols-2 gap-2">
-                        {UNIT_OPTIONS.map(u => {
-                          const isSelected = unitBisnis === u.key;
-                          return (
-                            <button
-                              key={u.key}
-                              type="button"
-                              onClick={() => { setUnitBisnis(u.key as any); setUnitOverride(true); }}
-                              className="flex flex-col items-start gap-1 py-3 px-3.5 rounded-xl transition-all active:scale-95"
-                              style={{
-                                border: `2px solid ${isSelected ? u.color : 'var(--border)'}`,
-                                background: isSelected ? `${u.color}12` : 'var(--surface)',
-                              }}
-                            >
-                              <span className="text-[12px] font-bold" style={{ color: isSelected ? u.color : 'var(--text-secondary)' }}>{u.label}</span>
-                              <span className="text-[10px] font-medium" style={{ color: isSelected ? u.color : 'var(--text-muted)' }}>→ {u.sub}</span>
-                              {isSelected && <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: u.color }} />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {kasName && (
-                      <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
-                        <CheckCircle2 className="h-3 w-3" /> Invoice Kledo otomatis lunas via <strong>{kasName}</strong>
-                      </p>
-                    )}
-                  </div>
-                );
-              })()}
+              {/* Info KAS otomatis — tampil saat Cash atau DP+Cash */}
+              {(metodePembayaran === 'cash' || (metodePembayaran === 'dp' && metodeDp === 'cash')) && unitBisnis && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-medium"
+                  style={{
+                    background: unitBisnis === 'elektronik' ? '#6366F115' : '#0891B215',
+                    color: unitBisnis === 'elektronik' ? '#6366F1' : '#0891B2',
+                    border: `1.5px solid ${unitBisnis === 'elektronik' ? '#6366F130' : '#0891B230'}`,
+                  }}>
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    {unitBisnis === 'elektronik' ? '⚡ Elektronik' : '🏗 Bahan Bangunan'} — Invoice Kledo otomatis lunas via{' '}
+                    <strong>{unitBisnis === 'elektronik' ? 'KAS ELEKTRONIK' : 'KAS SULAWESI'}</strong>
+                  </span>
+                </div>
+              )}
+              {(metodePembayaran === 'cash' || (metodePembayaran === 'dp' && metodeDp === 'cash')) && autoUnit === 'mixed' && (
+                <div className="px-3 py-2 rounded-xl text-[11px]"
+                  style={{ background: 'rgba(245,158,11,.1)', color: '#92400E', border: '1.5px solid rgba(245,158,11,.3)' }}>
+                  ⚠ Barang campuran — lunas manual setelah order dibuat.
+                </div>
+              )}
 
               {/* Uang Muka / DP — tampil saat metode bukan cash penuh */}
               <div>
