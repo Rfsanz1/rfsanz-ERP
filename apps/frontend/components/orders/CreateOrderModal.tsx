@@ -662,7 +662,7 @@ export default function CreateOrderModal({
                       </div>
                       {bankPilihan && (() => {
                         const KLEDO_AKUN: Record<string, string> = {
-                          bca: 'BCA Giro', bri: 'BRI', mandiri: 'Mandiri', bni: 'BNI',
+                          bca: 'BCA Giro', bri: 'BRI EDC', mandiri: 'Mandiri', bni: 'BNI',
                         };
                         return (
                           <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
@@ -746,7 +746,7 @@ export default function CreateOrderModal({
                     </div>
                     {edcPilihan && (() => {
                       const KLEDO_AKUN: Record<string, string> = {
-                        bri_edc: 'BRI', bca_edc: 'BCA Giro', bni_edc: 'BNI',
+                        bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI',
                       };
                       return (
                         <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>

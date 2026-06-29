@@ -163,24 +163,27 @@ export async function findOrCreateKledoContact(
 /**
  * Keyword mapping: bankKey → kata kunci pencarian di nama akun Kledo.
  *
- * Pemetaan akun:
- *   - Transfer BCA & EDC BCA → "BCA Giro" di Kledo
- *   - Transfer BRI & EDC BRI → "BRI" di Kledo
- *   - Transfer Mandiri        → "Mandiri"
- *   - Transfer BNI & EDC BNI → "BNI"
- *   - Cash Elektronik         → "KAS ELEKTRONIK"
- *   - Cash Sulawesi           → "KAS SULAWESI"
+ * Pemetaan akun Kledo:
+ *   Transfer BCA     → "BCA Giro"
+ *   Transfer BRI     → "BRI EDC"
+ *   Transfer Mandiri → "Mandiri"
+ *   Transfer BNI     → "BNI"
+ *   Debit BCA EDC   → "BCA EDC"   (akun berbeda dari BCA Giro)
+ *   Debit BRI EDC   → "BRI EDC"   (sama dengan transfer BRI)
+ *   Debit BNI       → "BNI"
+ *   Cash Elektronik  → "KAS ELEKTRONIK"
+ *   Cash Sulawesi    → "KAS SULAWESI"
  */
 const BANK_KEYWORDS: Record<string, string[]> = {
   /* Transfer Bank */
-  bca:            ['bca giro', 'giro bca', 'bca'],    // Transfer BCA → BCA Giro
-  bri:            ['bri edc', 'edc bri', 'bri'],      // Transfer BRI → BRI
+  bca:            ['bca giro', 'giro bca'],            // Transfer BCA → BCA Giro
+  bri:            ['bri edc', 'edc bri', 'bri'],       // Transfer BRI → BRI EDC
   mandiri:        ['mandiri'],
   bni:            ['bni'],
 
-  /* Debit EDC — gunakan akun bank yang sama dengan transfer */
-  bri_edc:        ['bri edc', 'edc bri', 'bri'],      // EDC BRI → BRI (sama dengan transfer)
-  bca_edc:        ['bca giro', 'giro bca', 'bca'],    // EDC BCA → BCA Giro (sama dengan transfer)
+  /* Debit EDC */
+  bca_edc:        ['bca edc', 'edc bca'],              // EDC BCA → BCA EDC (bukan BCA Giro)
+  bri_edc:        ['bri edc', 'edc bri', 'bri'],       // EDC BRI → BRI EDC
   bni_edc:        ['bni'],
 
   /* Cash unit bisnis */
@@ -374,8 +377,8 @@ export async function pushOrderToKledo(
     const dpMetode   = order.metodeDp?.toLowerCase() ?? '';
 
     const EDC_MEMO: Record<string, string> = {
-      bri_edc: 'BRI',
-      bca_edc: 'BCA GIRO',
+      bca_edc: 'BCA EDC',
+      bri_edc: 'BRI EDC',
       bni_edc: 'BNI',
     };
     const UNIT_MEMO: Record<string, string> = {
@@ -383,9 +386,9 @@ export async function pushOrderToKledo(
       bahan_bangunan: 'KAS SULAWESI',
     };
     const BANK_MEMO: Record<string, string> = {
-      bca:     'BCA GIRO',
-      bri:     'BRI',
-      mandiri: 'MANDIRI',
+      bca:     'BCA Giro',
+      bri:     'BRI EDC',
+      mandiri: 'Mandiri',
       bni:     'BNI',
     };
 
