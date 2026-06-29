@@ -294,17 +294,18 @@ model Warehouse {
 }
 
 model ProductCategory {
-  id        String            @id @default(uuid())
-  tenantId  String
-  tenant    Tenant            @relation(fields: [tenantId], references: [id])
-  code      String            @unique
-  name      String
-  parentId  String?
-  parent    ProductCategory?  @relation("CategoryTree", fields: [parentId], references: [id])
-  children  ProductCategory[] @relation("CategoryTree")
-  products  Product[]
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id          String            @id @default(uuid())
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id])
+  code        String            @unique
+  name        String
+  unitBisnis  String?           // 'elektronik' | 'bahan_bangunan' | null — untuk otomatis lunas ke KAS yang tepat
+  parentId    String?
+  parent      ProductCategory?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    ProductCategory[] @relation("CategoryTree")
+  products    Product[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 }
 
 model ProductUnit {

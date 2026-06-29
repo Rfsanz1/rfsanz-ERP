@@ -7,7 +7,7 @@ import { api } from '../../lib/api';
 import {
   Building2, Users, Globe2, Hash, Mail, Smartphone,
   HardDrive, Link2, FileSearch, Save, RefreshCw,
-  ChevronRight, Check, AlertCircle, Tags,
+  ChevronRight, Check, AlertCircle, Tags, FolderOpen,
 } from 'lucide-react';
 
 const MENU_CARDS = [
@@ -17,6 +17,7 @@ const MENU_CARDS = [
   { href: '/settings/email-gateway',    label: 'Email Gateway',    icon: Mail,       color: '#059669', bg: '#F0FDF4' },
   { href: '/settings/wa-gateway',       label: 'WA Gateway',       icon: Smartphone, color: '#16A34A', bg: '#F0FDF4' },
   { href: '/settings/api-integration',  label: 'API & Integrasi',  icon: Link2,      color: '#7C3AED', bg: '#F5F3FF' },
+  { href: '/settings/kategori-produk',   label: 'Kategori Produk',  icon: FolderOpen, color: '#7C3AED', bg: '#F5F3FF' },
   { href: '/settings/keywords',         label: 'Deteksi Produk',   icon: Tags,       color: '#F59E0B', bg: '#FFFBEB' },
   { href: '/settings/backup',           label: 'Backup & Restore', icon: HardDrive,  color: '#DC2626', bg: '#FEF2F2' },
   { href: '/settings/audit-log',        label: 'Audit Log',        icon: FileSearch, color: '#6B7280', bg: '#F9FAFB' },

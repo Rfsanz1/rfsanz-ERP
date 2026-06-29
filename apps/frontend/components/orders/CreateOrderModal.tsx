@@ -76,6 +76,7 @@ interface OrderItem {
   subtotal: number;
   stokInfo?: number;
   unit?: string;
+  kasUnit?: 'elektronik' | 'bahan_bangunan' | null; // dari category.unitBisnis
 }
 
 const emptyItem = (): OrderItem => ({ id: Date.now(), nama: '', qty: 1, harga: 0, diskonItem: 0, subtotal: 0 });
@@ -145,11 +146,12 @@ export default function CreateOrderModal({
   const [unitOverride, setUnitOverride]       = useState(false);
   const [savedOrderId, setSavedOrderId]       = useState<number | null>(null);
 
-  /* Auto-deteksi unit dari nama produk yang dipilih */
+  /* Auto-deteksi unit dari kategori produk (kasUnit) — fallback ke keyword nama */
   const autoUnit = useMemo(() => {
     const counts = { elektronik: 0, bahan_bangunan: 0 };
     for (const it of items) {
-      const k = it.nama ? detectKategori(it.nama) : null;
+      // Prioritas: kasUnit dari kategori DB → keyword nama
+      const k = it.kasUnit ?? (it.nama ? detectKategori(it.nama) : null);
       if (k) counts[k]++;
     }
     if (counts.elektronik > 0 && counts.bahan_bangunan === 0) return 'elektronik';
@@ -208,6 +210,7 @@ export default function CreateOrderModal({
           ...it, nama: prod.name, productId: prod.id,
           kledoProductId: prod.kledoProductId ?? null,
           harga, diskonItem: 0, stokInfo: prod.stok, unit: prod.unit?.name,
+          kasUnit: prod.kasUnit ?? null,
         };
         updated.subtotal = calcSubtotal(updated);
         return updated;
@@ -449,14 +452,14 @@ export default function CreateOrderModal({
                           <Link2 className="h-2.5 w-2.5" /> Kledo
                         </span>
                       )}
-                      {item.nama && detectKategori(item.nama) === 'elektronik' && (
+                      {(item.kasUnit === 'elektronik' || (!item.kasUnit && item.nama && detectKategori(item.nama) === 'elektronik')) && (
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: '#6366F112', color: '#6366F1' }}>
-                          ⚡ Elektronik
+                          ⚡ Elektronik{item.kasUnit ? '' : ' (kw)'}
                         </span>
                       )}
-                      {item.nama && detectKategori(item.nama) === 'bahan_bangunan' && (
+                      {(item.kasUnit === 'bahan_bangunan' || (!item.kasUnit && item.nama && detectKategori(item.nama) === 'bahan_bangunan')) && (
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: '#0891B212', color: '#0891B2' }}>
-                          🏗 Bangunan
+                          🏗 Bangunan{item.kasUnit ? '' : ' (kw)'}
                         </span>
                       )}
                     </div>

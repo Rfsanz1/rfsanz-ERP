@@ -13,6 +13,7 @@ export interface ProductOption {
   stok: number;
   kledoProductId?: string | null;
   unit?: { name: string } | null;
+  kasUnit?: 'elektronik' | 'bahan_bangunan' | null; // dari category.unitBisnis
   source?: 'local' | 'kledo';
 }
 
@@ -83,6 +84,9 @@ async function searchProducts(q: string): Promise<{ results: ProductOption[]; er
           stok:           Number(p.stok ?? 0),
           kledoProductId: p.kledoProductId ? String(p.kledoProductId) : null,
           unit:           p.unit?.name ? { name: String(p.unit.name) } : null,
+          kasUnit:        (p.category?.unitBisnis === 'elektronik' || p.category?.unitBisnis === 'bahan_bangunan')
+                            ? p.category.unitBisnis as 'elektronik' | 'bahan_bangunan'
+                            : null,
           source:         'local' as const,
         };
       });

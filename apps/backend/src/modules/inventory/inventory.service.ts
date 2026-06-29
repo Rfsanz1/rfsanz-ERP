@@ -345,6 +345,28 @@ export class InventoryService {
     return this.prisma.productCategory.findMany({ orderBy: { name: 'asc' } });
   }
 
+  async createCategory(dto: { code: string; name: string; unitBisnis?: string | null; parentId?: string }) {
+    return this.prisma.productCategory.create({
+      data: {
+        tenantId: 'default',
+        code: dto.code,
+        name: dto.name,
+        unitBisnis: dto.unitBisnis ?? null,
+        parentId: dto.parentId ?? null,
+      },
+    });
+  }
+
+  async updateCategory(id: string, dto: { name?: string; unitBisnis?: string | null; parentId?: string | null }) {
+    return this.prisma.productCategory.update({ where: { id }, data: dto });
+  }
+
+  async deleteCategory(id: string) {
+    // Lepas semua produk dari kategori ini dulu
+    await this.prisma.product.updateMany({ where: { categoryId: id }, data: { categoryId: null } });
+    return this.prisma.productCategory.delete({ where: { id } });
+  }
+
   async getUnits() {
     return this.prisma.productUnit.findMany({ orderBy: { name: 'asc' } });
   }

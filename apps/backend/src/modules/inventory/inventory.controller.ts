@@ -94,6 +94,9 @@ export class InventoryController {
   }
   @Get('warehouses') getWarehouses() { return this.svc.getWarehouses(); }
   @Get('categories') getCategories() { return this.svc.getCategories(); }
+  @Post('categories') createCategory(@Body() dto: any) { return this.svc.createCategory(dto); }
+  @Put('categories/:id') updateCategory(@Param('id') id: string, @Body() dto: any) { return this.svc.updateCategory(id, dto); }
+  @Delete('categories/:id') deleteCategory(@Param('id') id: string) { return this.svc.deleteCategory(id); }
   @Get('units') getUnits() { return this.svc.getUnits(); }
 
   // ─── COSTING ROUTES ───────────────────────────────────────────────────────
