@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import {
   ArrowLeft, Package, User, MapPin, Calendar, Phone, FileText,
   Link2, RefreshCw, CheckCircle2, AlertCircle, Clock, Send,
-  ChevronRight, Tag, Percent,
+  ChevronRight, Tag, Percent, Smartphone, Banknote, CreditCard, Truck,
 } from 'lucide-react';
 
 const C = '#00ACC1';
@@ -272,6 +272,94 @@ export default function OrderDetailPage() {
           {order.catatan     && <InfoRow icon={FileText} label="Catatan"      value={order.catatan} />}
         </div>
       </div>
+
+      {/* Detail Pembayaran */}
+      {(() => {
+        const raw = order.pembayaran_list ?? order.pembayaranList;
+        const list: any[] = Array.isArray(raw) ? raw : (typeof raw === 'string' ? (() => { try { return JSON.parse(raw); } catch { return []; } })() : []);
+        if (list.length === 0 && !order.metode_pembayaran && !order.metodePembayaran) return null;
+
+        const METODE_ICON: Record<string, any> = { transfer: Smartphone, cash: Banknote, debit: CreditCard, cod: Truck, mixed: CreditCard };
+        const METODE_LABEL: Record<string, string> = { transfer: 'Transfer Bank', cash: 'Tunai', debit: 'Debit EDC', cod: 'COD', mixed: 'Campuran' };
+        const METODE_COLOR: Record<string, string> = { transfer: '#6366F1', cash: '#10B981', debit: '#F59E0B', cod: '#06B6D4', mixed: '#8B5CF6' };
+
+        const grandTotal = Number(order.totalHarga ?? order.totalAmount ?? 0);
+        const effectiveMetode = order.metode_pembayaran ?? order.metodePembayaran ?? 'transfer';
+
+        /* Jika tidak ada pembayaranList, tampilkan single entry dari metode_pembayaran */
+        const entries = list.length > 0 ? list : [{
+          metode: effectiveMetode,
+          jumlah: grandTotal,
+          bankPilihan: order.bank_pilihan ?? order.bankPilihan ?? null,
+          edcPilihan: order.edc_pilihan ?? order.edcPilihan ?? null,
+        }];
+
+        const BANK_LABEL: Record<string, string> = { bca: 'BCA Giro', bri: 'BRI EDC', mandiri: 'Mandiri', bni: 'BNI' };
+        const EDC_LABEL:  Record<string, string> = { bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI' };
+
+        const totalDibayar = entries.reduce((s: number, e: any) => s + Number(e.jumlah || 0), 0);
+        const isSplit = entries.length > 1;
+
+        return (
+          <div className="bg-white rounded-2xl p-5 space-y-3" style={{ border: '1.5px solid #F0EDFB' }}>
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Detail Pembayaran</p>
+              {isSplit && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,.1)', color: '#6366F1' }}>
+                  Split {entries.length} metode
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {entries.map((entry: any, i: number) => {
+                const metode = entry.metode ?? effectiveMetode;
+                const Icon   = METODE_ICON[metode] ?? CreditCard;
+                const label  = METODE_LABEL[metode] ?? metode;
+                const color  = METODE_COLOR[metode] ?? C;
+                const bank   = entry.bankPilihan ? (BANK_LABEL[entry.bankPilihan] ?? entry.bankPilihan.toUpperCase()) : null;
+                const edc    = entry.edcPilihan  ? (EDC_LABEL[entry.edcPilihan]   ?? entry.edcPilihan.toUpperCase())  : null;
+                const sub    = bank ?? edc ?? (metode === 'cash' ? (entry.unitBisnis ?? '') : '');
+                const jumlah = Number(entry.jumlah || (isSplit ? 0 : grandTotal));
+
+                return (
+                  <div key={i} className="flex items-center gap-3 rounded-xl px-4 py-3"
+                    style={{ background: `${color}08`, border: `1.5px solid ${color}20` }}>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0"
+                      style={{ background: `${color}18` }}>
+                      <Icon className="h-4 w-4" style={{ color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: '#1E1B4B' }}>{label}</p>
+                      {sub && <p className="text-[11px] font-medium mt-0.5" style={{ color: '#9CA3AF' }}>{sub}</p>}
+                    </div>
+                    {isSplit && (
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-bold" style={{ color }}>{jumlah.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })}</p>
+                        <p className="text-[10px] font-medium" style={{ color: '#9CA3AF' }}>
+                          {grandTotal > 0 ? `${Math.round(jumlah / grandTotal * 100)}%` : ''}
+                        </p>
+                      </div>
+                    )}
+                    {!isSplit && (
+                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: '#10B981' }} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {isSplit && (
+              <div className="flex justify-between items-center pt-1 border-t" style={{ borderColor: '#F0EDFB' }}>
+                <span className="text-xs font-semibold" style={{ color: '#9CA3AF' }}>Total Dialokasikan</span>
+                <span className="text-sm font-bold" style={{ color: totalDibayar >= grandTotal ? '#10B981' : '#F59E0B' }}>
+                  {totalDibayar.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })}
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Daftar Produk */}
       <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1.5px solid #F0EDFB' }}>
