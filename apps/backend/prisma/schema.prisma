@@ -639,17 +639,18 @@ model Order {
 }
 
 model OrderItem {
-  id        Int      @id @default(autoincrement())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  orderId   Int
-  order     Order    @relation(fields: [orderId], references: [id])
-  productId String?
-  product   Product? @relation(fields: [productId], references: [id])
-  nama      String
-  qty       Int
-  harga     Decimal  @db.Decimal(15, 2)
-  subtotal  Decimal  @db.Decimal(15, 2)
+  id             Int      @id @default(autoincrement())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  orderId        Int
+  order          Order    @relation(fields: [orderId], references: [id])
+  productId      String?
+  product        Product? @relation(fields: [productId], references: [id])
+  kledoProductId String?
+  nama           String
+  qty            Int
+  harga          Decimal  @db.Decimal(15, 2)
+  subtotal       Decimal  @db.Decimal(15, 2)
 }
 
 model Sale {

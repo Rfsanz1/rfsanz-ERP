@@ -130,8 +130,12 @@ export class SalesService {
     }));
     const noInvoice = `ORD-${String(order.id).padStart(5, '0')}`;
     const result = await this.kledo.createInvoice({ namaCustomer: order.namaCustomer, noHp: order.noHp, orderId: order.id, noInvoice, items: kledoItems });
-    if (result.success && result.kledoInvoiceId) {
-      await this.prisma.order.update({ where: { id: order.id }, data: { kledoInvoiceId: result.kledoInvoiceId?.toString() } }).catch(() => null);
+    if (result.success) {
+      // Simpan trans_no Kledo (INV/53135) — jika tidak ada, fallback ke numeric ID
+      const kledoRef = (result as any).kledoTransNo ?? result.kledoInvoiceId?.toString() ?? null;
+      if (kledoRef) {
+        await this.prisma.order.update({ where: { id: order.id }, data: { kledoInvoiceId: kledoRef } }).catch(() => null);
+      }
     }
     return result;
   }

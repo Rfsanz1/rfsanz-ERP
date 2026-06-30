@@ -384,10 +384,11 @@ export class KledoService {
       const res = await firstValueFrom(
         this.http.post(`${baseUrl}/finance/invoices`, payload, { headers, timeout: 15000 }),
       );
-      // Kledo mengembalikan: { data: { id: ... } } atau { id: ... }
-      const kledoId = res.data?.data?.id ?? res.data?.id;
+      // Kledo mengembalikan: { data: { id: ..., trans_no: "INV/53135" } }
+      const kledoId    = res.data?.data?.id ?? res.data?.id;
+      const kledoTransNo = res.data?.data?.trans_no ?? res.data?.trans_no ?? null;
       this.logger.log(`[Kledo] Response: ${JSON.stringify(res.data)}`);
-      return { success: true, kledoInvoiceId: kledoId, message: res.data?.message ?? 'Tagihan berhasil dibuat di Kledo' };
+      return { success: true, kledoInvoiceId: kledoId, kledoTransNo, message: res.data?.message ?? 'Tagihan berhasil dibuat di Kledo' };
     } catch (e: any) {
       const apiMsg = e.response?.data?.message ?? JSON.stringify(e.response?.data) ?? '';
       const msg = e.code === 'ECONNABORTED'
