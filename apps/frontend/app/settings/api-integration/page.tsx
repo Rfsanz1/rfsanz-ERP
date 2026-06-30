@@ -509,7 +509,7 @@ export default function ApiIntegrationPage() {
 
   useEffect(() => {
     if (!authReady) return;
-    if (!authToken) { router.push('/dashboard'); return; }
+    if (!authToken) return;
     setMounted(true);
     refreshKledo();
     const initial = new Set<string>();
