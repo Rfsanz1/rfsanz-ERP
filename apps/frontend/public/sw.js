@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gm-erp-v7';
+const CACHE_NAME = 'gm-erp-v8';
 const API_CACHE_NAME = 'gm-erp-api-v7';
 
 const STATIC_ASSETS = [

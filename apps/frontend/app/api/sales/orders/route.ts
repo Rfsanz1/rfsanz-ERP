@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
       unitBisnis = null,
       metodeDp = null,
       uangMuka = 0,
+      pembayaranList = null,
     } = body;
 
     if (!namaCustomer) {
@@ -98,19 +99,25 @@ export async function POST(req: NextRequest) {
     const db = getDb();
     const soNumber = generateSoNumber();
 
+    /* Derive effective metodePembayaran from pembayaranList if provided */
+    const effectiveMetode = pembayaranList && Array.isArray(pembayaranList) && pembayaranList.length > 0
+      ? (new Set(pembayaranList.map((p: any) => p.metode)).size === 1 ? pembayaranList[0].metode : 'mixed')
+      : metodePembayaran;
+
     const orderRes = await db.query(
       `INSERT INTO local_orders
         (nama_customer, no_hp, alamat, catatan, sales_name, tanggal,
          diskon_total, pajak, ongkir, total_harga, status, customer_id, so_number,
-         metode_pembayaran, uang_muka, kledo_contact_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+         metode_pembayaran, uang_muka, kledo_contact_id, pembayaran_list)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
        RETURNING *`,
       [
         namaCustomer, noHp ?? null, alamat ?? null, catatan ?? null,
         salesName ?? null, tanggal ?? new Date().toISOString().slice(0, 10),
         diskonTotal ?? 0, pajak ?? 0, ongkir ?? 0,
         totalHarga ?? 0, status, customerId ?? null, soNumber,
-        metodePembayaran, uangMuka ?? 0, kledoContactId ?? null,
+        effectiveMetode, uangMuka ?? 0, kledoContactId ?? null,
+        pembayaranList ? JSON.stringify(pembayaranList) : null,
       ],
     );
     const order = orderRes.rows[0];
@@ -150,11 +157,12 @@ export async function POST(req: NextRequest) {
         pajak: pajak ?? 0,
         ongkir: ongkir ?? 0,
         totalHarga: totalHarga ?? 0,
-        metodePembayaran,
+        metodePembayaran: effectiveMetode,
         bankPilihan: bankPilihan ?? null,
         edcPilihan: edcPilihan ?? null,
         unitBisnis: unitBisnis ?? null,
         metodeDp: metodeDp ?? null,
+        pembayaranList: pembayaranList ?? undefined,
         items: savedItems.length > 0 ? savedItems : items,
       });
 

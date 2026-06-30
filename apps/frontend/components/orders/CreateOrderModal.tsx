@@ -131,12 +131,11 @@ export default function CreateOrderModal({
   const [pajak, setPajak]                     = useState(0);
   const [ongkir, setOngkir]                   = useState(0);
 
-  const [metodePembayaran, setMetodePembayaran] = useState('transfer');
+  type PembayaranMetode = 'transfer' | 'cash' | 'debit' | 'cod';
+  interface PembayaranEntry { id: string; metode: PembayaranMetode; jumlah: number; bankPilihan: string | null; edcPilihan: string | null; }
+  const newPembayaran = (m: PembayaranMetode = 'transfer'): PembayaranEntry => ({ id: Math.random().toString(36).slice(2), metode: m, jumlah: 0, bankPilihan: null, edcPilihan: null });
+  const [pembayaranList, setPembayaranList]   = useState<PembayaranEntry[]>([newPembayaran()]);
   const [copiedBank, setCopiedBank]           = useState<string | null>(null);
-  const [bankPilihan, setBankPilihan]         = useState<string | null>(null);
-  const [edcPilihan, setEdcPilihan]           = useState<string | null>(null);
-  const [metodeDp, setMetodeDp]               = useState<'transfer' | 'debit' | 'cash' | ''>('');
-  const [uangMuka, setUangMuka]               = useState(0);
 
   const [items, setItems]                     = useState<OrderItem[]>([emptyItem()]);
   const [saving, setSaving]                   = useState(false);
@@ -162,7 +161,8 @@ export default function CreateOrderModal({
 
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
   const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
-  const sisaBayar     = Math.max(0, grandTotal - uangMuka);
+  const totalDibayar  = pembayaranList.reduce((s, p) => s + (p.jumlah || 0), 0);
+  const sisaBayar     = Math.max(0, grandTotal - totalDibayar);
 
   const handleCustomerSelect = (c: CustomerOption) => {
     setNamaCustomer(c.name);
@@ -258,12 +258,17 @@ export default function CreateOrderModal({
       totalHarga: grandTotal,
       status: 'pending',
       kledoContactId: kledoContactId || undefined,
-      metodePembayaran,
-      bankPilihan: metodePembayaran === 'transfer' ? (bankPilihan ?? undefined) : undefined,
-      edcPilihan: metodePembayaran === 'debit' ? (edcPilihan ?? undefined) : undefined,
+      metodePembayaran: pembayaranList.length === 1
+        ? pembayaranList[0].metode
+        : (new Set(pembayaranList.map(p => p.metode)).size === 1 ? pembayaranList[0].metode : 'mixed'),
       unitBisnis: unitBisnis || undefined,
-      metodeDp: metodePembayaran === 'dp' ? (metodeDp || undefined) : undefined,
-      uangMuka: uangMuka || undefined,
+      pembayaranList: pembayaranList.map(p => ({
+        metode:      p.metode,
+        jumlah:      p.jumlah || grandTotal,
+        bankPilihan: p.metode === 'transfer' ? p.bankPilihan : null,
+        edcPilihan:  p.metode === 'debit'    ? p.edcPilihan  : null,
+        unitBisnis:  p.metode === 'cash'     ? (unitBisnis || null) : null,
+      })),
       items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId, unit }) => ({
         nama, qty, harga, subtotal,
         diskon: diskonItem || undefined,
@@ -565,248 +570,200 @@ export default function CreateOrderModal({
           <section className="space-y-4">
             <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Detail Pembayaran</p>
 
-            <div className="rounded-2xl p-5 space-y-4"
-              style={{ background: 'var(--surface-sunken)', border: '1.5px solid var(--border)' }}>
+            {/* ── Daftar pembayaran (bisa lebih dari satu) ── */}
+            {(() => {
+              const REKENING = [
+                { key: 'bri',     bank: 'BRI',     no: '0262 01 000031 562', sub: 'EDC'  },
+                { key: 'mandiri', bank: 'MANDIRI', no: '136 000 4780612',    sub: ''     },
+                { key: 'bca',     bank: 'BCA',     no: '155 91 99999',       sub: 'GIRO' },
+                { key: 'bni',     bank: 'BNI',     no: '0822 705 836',       sub: ''     },
+              ];
+              const EDC_OPTIONS = [
+                { key: 'bri_edc', bank: 'BRI' },
+                { key: 'bca_edc', bank: 'BCA' },
+                { key: 'bni_edc', bank: 'BNI' },
+              ];
+              const KLEDO_BANK: Record<string, string> = { bca: 'BCA Giro', bri: 'BRI EDC', mandiri: 'Mandiri', bni: 'BNI' };
+              const KLEDO_EDC:  Record<string, string> = { bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI' };
+              const METODE_LIST: { value: PembayaranMetode; label: string; icon: any }[] = [
+                { value: 'transfer', label: 'Transfer', icon: Smartphone },
+                { value: 'cash',     label: 'Cash',     icon: Banknote   },
+                { value: 'debit',    label: 'Debit',    icon: CreditCard },
+                { value: 'cod',      label: 'COD',      icon: Truck      },
+              ];
 
-              {/* Metode Pembayaran — kartu pilihan */}
-              <div>
-                <Label>Metode Pembayaran</Label>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                  {METODE_OPTIONS.map(opt => {
-                    const OptIcon = opt.icon;
-                    const isActive = metodePembayaran === opt.value;
+              return (
+                <div className="space-y-3">
+                  {pembayaranList.map((entry, idx) => {
+                    const updateEntry = (patch: Partial<PembayaranEntry>) =>
+                      setPembayaranList(prev => prev.map((p, i) => i === idx ? { ...p, ...patch } : p));
+
                     return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => {
-                          setMetodePembayaran(opt.value);
-                          if (opt.value !== 'transfer') setBankPilihan(null);
-                          if (opt.value !== 'debit') setEdcPilihan(null);
-                          if (opt.value !== 'dp') setMetodeDp('');
-                        }}
-                        className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-center transition-all active:scale-95"
-                        style={{
-                          border: `2px solid ${isActive ? COLOR : 'var(--border)'}`,
-                          background: isActive ? `${COLOR}15` : 'var(--surface)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <OptIcon
-                          className="h-5 w-5 flex-shrink-0"
-                          style={{ color: isActive ? COLOR : 'var(--text-muted)' }}
-                        />
-                        <span
-                          className="text-[11px] font-semibold leading-tight"
-                          style={{ color: isActive ? COLOR : 'var(--text-secondary)' }}
-                        >
-                          {opt.label}
-                        </span>
-                        {isActive && (
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: COLOR }} />
+                      <div key={entry.id} className="rounded-2xl p-4 space-y-3"
+                        style={{ background: 'var(--surface-sunken)', border: '1.5px solid var(--border)' }}>
+
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: COLOR }}>
+                            Pembayaran {idx + 1}
+                          </span>
+                          {pembayaranList.length > 1 && (
+                            <button type="button"
+                              onClick={() => setPembayaranList(prev => prev.filter((_, i) => i !== idx))}
+                              className="p-1 rounded-lg"
+                              style={{ color: 'var(--danger)', background: 'rgba(239,68,68,.08)' }}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Pilih metode */}
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {METODE_LIST.map(opt => {
+                            const OptIcon = opt.icon;
+                            const isActive = entry.metode === opt.value;
+                            return (
+                              <button key={opt.value} type="button"
+                                onClick={() => updateEntry({ metode: opt.value, bankPilihan: null, edcPilihan: null })}
+                                className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95"
+                                style={{ border: `2px solid ${isActive ? COLOR : 'var(--border)'}`, background: isActive ? `${COLOR}15` : 'var(--surface)' }}>
+                                <OptIcon className="h-4 w-4" style={{ color: isActive ? COLOR : 'var(--text-muted)' }} />
+                                <span className="text-[10px] font-bold leading-tight" style={{ color: isActive ? COLOR : 'var(--text-secondary)' }}>{opt.label}</span>
+                                {isActive && <span className="w-1.5 h-1.5 rounded-full" style={{ background: COLOR }} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Jumlah */}
+                        <div>
+                          <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>Jumlah (Rp)</label>
+                          <input type="number" min={0}
+                            className={`${inputCls} text-right`} style={inputSt}
+                            placeholder={pembayaranList.length === 1 ? 'Kosongkan = bayar penuh' : '0'}
+                            value={entry.jumlah || ''}
+                            onChange={e => updateEntry({ jumlah: Math.max(0, Number(e.target.value) || 0) })}
+                            onFocus={focusColor} onBlur={blurColor} />
+                        </div>
+
+                        {/* Bank selector — jika Transfer */}
+                        {entry.metode === 'transfer' && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
+                              Bank Tujuan <span className="font-normal" style={{ color: 'var(--text-muted)' }}>— pilih untuk otomatis lunas di Kledo</span>
+                            </p>
+                            <div className="grid grid-cols-4 gap-1.5">
+                              {REKENING.map(r => {
+                                const isSelected = entry.bankPilihan === r.key;
+                                return (
+                                  <button key={r.key} type="button"
+                                    onClick={() => updateEntry({ bankPilihan: isSelected ? null : r.key })}
+                                    className="flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-center transition-all active:scale-95"
+                                    style={{ border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`, background: isSelected ? `${COLOR}15` : 'var(--surface)' }}>
+                                    <span className="text-[11px] font-bold" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{r.bank}</span>
+                                    {r.sub && <span className="text-[9px]" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>{r.sub}</span>}
+                                    {isSelected && <span className="w-1 h-1 rounded-full mt-0.5" style={{ background: COLOR }} />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {entry.bankPilihan && (() => {
+                              const r = REKENING.find(x => x.key === entry.bankPilihan);
+                              const isCopied = copiedBank === r?.bank;
+                              return (
+                                <div className="space-y-1">
+                                  <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
+                                    <CheckCircle2 className="h-3 w-3" /> Kledo otomatis <strong>LUNAS</strong> via <strong>{KLEDO_BANK[entry.bankPilihan] ?? entry.bankPilihan.toUpperCase()}</strong>
+                                  </p>
+                                  {r && (
+                                    <button type="button" onClick={() => copyRekening(r.bank, r.no)}
+                                      className="w-full flex items-center gap-2 rounded-lg px-3 py-2 transition-all active:scale-[.98]"
+                                      style={{ background: isCopied ? `${COLOR}0D` : 'var(--surface)', border: `1.5px solid ${isCopied ? `${COLOR}50` : 'var(--border)'}` }}>
+                                      <span className="text-[11px] font-bold w-16 flex-shrink-0" style={{ color: COLOR }}>{r.bank}</span>
+                                      <span className="text-[12px] font-semibold flex-1 text-left" style={{ color: 'var(--text-primary)', letterSpacing: '.03em' }}>{r.no}</span>
+                                      {isCopied ? <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: COLOR }} /> : <Copy className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
                         )}
-                      </button>
+
+                        {/* EDC selector — jika Debit */}
+                        {entry.metode === 'debit' && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>Mesin EDC</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {EDC_OPTIONS.map(edc => {
+                                const isSelected = entry.edcPilihan === edc.key;
+                                return (
+                                  <button key={edc.key} type="button"
+                                    onClick={() => updateEntry({ edcPilihan: isSelected ? null : edc.key })}
+                                    className="flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl text-center transition-all active:scale-95"
+                                    style={{ border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`, background: isSelected ? `${COLOR}15` : 'var(--surface)' }}>
+                                    <CreditCard className="h-3.5 w-3.5" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }} />
+                                    <span className="text-[11px] font-bold" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{edc.bank}</span>
+                                    <span className="text-[9px]" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>EDC</span>
+                                    {isSelected && <span className="w-1 h-1 rounded-full" style={{ background: COLOR }} />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {entry.edcPilihan && (
+                              <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
+                                <CheckCircle2 className="h-3 w-3" /> Kledo otomatis <strong>LUNAS</strong> via <strong>{KLEDO_EDC[entry.edcPilihan] ?? entry.edcPilihan.toUpperCase()}</strong>
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
-                </div>
-              </div>
 
-              {/* Info Rekening + Pilih Bank — tampil saat Transfer dipilih */}
-              {metodePembayaran === 'transfer' && (() => {
-                const REKENING = [
-                  { key: 'bri',     label: 'BRI EDC',    bank: 'BRI',     no: '0262 01 000031 562', nama: 'Dian Purnama Reza T.' },
-                  { key: 'mandiri', label: 'Mandiri',    bank: 'MANDIRI', no: '136 000 4780612',    nama: 'Dian Purnama' },
-                  { key: 'bca',     label: 'BCA GIRO',   bank: 'BCA',     no: '155 91 99999',       nama: 'Indarto Wibowo' },
-                  { key: 'bni',     label: 'BNI',        bank: 'BNI',     no: '0822 705 836',       nama: 'Indarto Wibowo' },
-                ];
-                return (
-                  <div className="space-y-3">
-                    {/* Pilih bank yang digunakan */}
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5" style={{ color: COLOR }}>
-                        Bank yang Digunakan
-                        <span className="font-normal normal-case text-[10px]" style={{ color: 'var(--text-muted)' }}>— pilih untuk otomatis lunas di Kledo</span>
-                      </p>
-                      <div className="grid grid-cols-4 gap-2">
-                        {REKENING.map(r => {
-                          const isSelected = bankPilihan === r.key;
-                          return (
-                            <button
-                              key={r.key}
-                              type="button"
-                              onClick={() => setBankPilihan(isSelected ? null : r.key)}
-                              className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all active:scale-95"
-                              style={{
-                                border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`,
-                                background: isSelected ? `${COLOR}15` : 'var(--surface)',
-                              }}
-                            >
-                              <span className="text-[11px] font-bold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{r.bank}</span>
-                              <span className="text-[9px] font-medium leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>{r.label.replace(r.bank, '').trim() || r.label}</span>
-                              {isSelected && <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: COLOR }} />}
-                            </button>
-                          );
-                        })}
+                  {/* Tambah metode pembayaran */}
+                  <button type="button"
+                    onClick={() => {
+                      const sisa = Math.max(0, grandTotal - pembayaranList.reduce((s, p) => s + (p.jumlah || 0), 0));
+                      setPembayaranList(prev => [...prev, { ...newPembayaran(), jumlah: sisa }]);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[.98]"
+                    style={{ border: `2px dashed ${COLOR}50`, color: COLOR, background: `${COLOR}08` }}>
+                    <Plus className="h-4 w-4" /> Tambah Metode Pembayaran
+                  </button>
+
+                  {/* Ringkasan alokasi */}
+                  {(pembayaranList.length > 1 || (pembayaranList[0]?.jumlah || 0) > 0) && (() => {
+                    const lebih = Math.max(0, totalDibayar - grandTotal);
+                    const isLunas = sisaBayar === 0 && lebih === 0;
+                    return (
+                      <div className="rounded-xl px-4 py-3 space-y-1.5"
+                        style={{
+                          background: isLunas ? 'rgba(16,185,129,.08)' : lebih > 0 ? 'rgba(239,68,68,.06)' : 'rgba(245,158,11,.08)',
+                          border: `1.5px solid ${isLunas ? 'rgba(16,185,129,.3)' : lebih > 0 ? 'rgba(239,68,68,.25)' : 'rgba(245,158,11,.3)'}`,
+                        }}>
+                        <div className="flex justify-between text-sm">
+                          <span style={{ color: 'var(--text-secondary)' }}>Total dialokasikan</span>
+                          <span className="font-bold" style={{ color: isLunas ? '#10B981' : 'var(--text-primary)' }}>{fmtRp(totalDibayar)}</span>
+                        </div>
+                        {sisaBayar > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span style={{ color: '#92400E' }}>Sisa belum dialokasikan</span>
+                            <span className="font-bold" style={{ color: '#F59E0B' }}>{fmtRp(sisaBayar)}</span>
+                          </div>
+                        )}
+                        {lebih > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span style={{ color: '#991B1B' }}>Kelebihan alokasi</span>
+                            <span className="font-bold" style={{ color: '#EF4444' }}>{fmtRp(lebih)}</span>
+                          </div>
+                        )}
                       </div>
-                      {bankPilihan && (() => {
-                        const KLEDO_AKUN: Record<string, string> = {
-                          bca: 'BCA Giro', bri: 'BRI EDC', mandiri: 'Mandiri', bni: 'BNI',
-                        };
-                        return (
-                          <p className="mt-1.5 text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
-                            <CheckCircle2 className="h-3 w-3" /> Invoice Kledo otomatis <strong>LUNAS</strong> via akun <strong>{KLEDO_AKUN[bankPilihan] ?? bankPilihan.toUpperCase()}</strong>
-                          </p>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Nomor rekening — tap untuk copy */}
-                    <div className="rounded-xl p-3 space-y-1.5"
-                      style={{ background: 'rgba(99,102,241,.06)', border: '1.5px solid rgba(99,102,241,.2)' }}>
-                      <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: COLOR }}>
-                        Nomor Rekening Tujuan
-                      </p>
-                      {REKENING.map(r => {
-                        const isCopied   = copiedBank === r.bank;
-                        const isSelected = bankPilihan === r.key;
-                        return (
-                          <button
-                            key={r.bank}
-                            type="button"
-                            onClick={() => { copyRekening(r.bank, r.no); setBankPilihan(r.key); }}
-                            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all active:scale-[.98]"
-                            style={{
-                              background: isSelected ? `${COLOR}18` : isCopied ? `${COLOR}0D` : 'var(--surface)',
-                              border: `1.5px solid ${isSelected ? COLOR : isCopied ? `${COLOR}50` : 'transparent'}`,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <span className="text-[11px] font-bold w-14 flex-shrink-0 text-left" style={{ color: COLOR }}>{r.bank}</span>
-                            <span className="text-[13px] font-semibold flex-1 text-left" style={{ color: 'var(--text-primary)', letterSpacing: '.03em' }}>{r.no}</span>
-                            <span className="text-[11px] flex-shrink-0 hidden sm:block" style={{ color: 'var(--text-muted)' }}>{r.nama}</span>
-                            <span className="flex-shrink-0 ml-auto pl-2">
-                              {isCopied
-                                ? <Check className="h-3.5 w-3.5" style={{ color: COLOR }} />
-                                : <Copy className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
-                              }
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Pilihan EDC — tampil saat Debit dipilih */}
-              {metodePembayaran === 'debit' && (() => {
-                const EDC_OPTIONS = [
-                  { key: 'bri_edc',  label: 'BRI EDC',  bank: 'BRI' },
-                  { key: 'bca_edc',  label: 'BCA EDC',  bank: 'BCA' },
-                  { key: 'bni_edc',  label: 'BNI EDC',  bank: 'BNI' },
-                ];
-                return (
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5" style={{ color: COLOR }}>
-                      Mesin EDC yang Digunakan
-                    </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {EDC_OPTIONS.map(edc => {
-                        const isSelected = edcPilihan === edc.key;
-                        return (
-                          <button
-                            key={edc.key}
-                            type="button"
-                            onClick={() => setEdcPilihan(isSelected ? null : edc.key)}
-                            className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-center transition-all active:scale-95"
-                            style={{
-                              border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`,
-                              background: isSelected ? `${COLOR}15` : 'var(--surface)',
-                            }}
-                          >
-                            <CreditCard className="h-4 w-4 flex-shrink-0" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }} />
-                            <span className="text-[12px] font-bold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{edc.bank}</span>
-                            <span className="text-[10px] font-medium leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>EDC</span>
-                            {isSelected && <span className="w-1.5 h-1.5 rounded-full" style={{ background: COLOR }} />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {edcPilihan && (() => {
-                      const KLEDO_AKUN: Record<string, string> = {
-                        bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI',
-                      };
-                      return (
-                        <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
-                          <CheckCircle2 className="h-3 w-3" /> Invoice Kledo otomatis <strong>LUNAS</strong> via akun <strong>{KLEDO_AKUN[edcPilihan] ?? edcPilihan.toUpperCase()}</strong>
-                        </p>
-                      );
-                    })()}
-                  </div>
-                );
-              })()}
-
-              {/* Sub-metode DP — tampil saat Uang Muka dipilih */}
-              {metodePembayaran === 'dp' && (() => {
-                const DP_OPTIONS = [
-                  { key: 'transfer', label: 'Transfer',  icon: Smartphone },
-                  { key: 'debit',    label: 'Debit EDC', icon: CreditCard },
-                  { key: 'cash',     label: 'Cash',      icon: Banknote   },
-                ];
-                return (
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5" style={{ color: COLOR }}>
-                      DP Dibayar Via
-                    </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {DP_OPTIONS.map(opt => {
-                        const OptIcon = opt.icon;
-                        const isSelected = metodeDp === opt.key;
-                        return (
-                          <button
-                            key={opt.key}
-                            type="button"
-                            onClick={() => {
-                              setMetodeDp(opt.key as any);
-                            }}
-                            className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-center transition-all active:scale-95"
-                            style={{
-                              border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`,
-                              background: isSelected ? `${COLOR}15` : 'var(--surface)',
-                            }}
-                          >
-                            <OptIcon className="h-4 w-4 flex-shrink-0" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }} />
-                            <span className="text-[12px] font-bold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{opt.label}</span>
-                            {isSelected && <span className="w-1.5 h-1.5 rounded-full" style={{ background: COLOR }} />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Uang Muka / DP — tampil saat metode bukan cash penuh */}
-              <div>
-                <Label optional>Uang Muka / DP (Rp)</Label>
-                <input type="number" min={0} max={grandTotal}
-                  className={`${inputCls} text-right`} style={inputSt}
-                  placeholder="0 jika bayar penuh"
-                  value={uangMuka || ''}
-                  onChange={e => setUangMuka(Math.min(grandTotal, Number(e.target.value) || 0))}
-                  onFocus={focusColor} onBlur={blurColor} />
-              </div>
-
-              {/* Sisa Bayar */}
-              {uangMuka > 0 && (
-                <div className="rounded-xl px-4 py-3 flex justify-between items-center"
-                  style={{ background: 'rgba(245,158,11,.08)', border: '1.5px solid rgba(245,158,11,.25)' }}>
-                  <span className="text-sm font-semibold" style={{ color: '#92400E' }}>Sisa Bayar</span>
-                  <span className="text-lg font-bold" style={{ color: '#F59E0B' }}>{fmtRp(sisaBayar)}</span>
+                    );
+                  })()}
                 </div>
-              )}
-
-            </div>
+              );
+            })()}
 
             {kledoStatus !== 'idle' && (
               <div className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm"
