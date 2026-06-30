@@ -375,8 +375,11 @@ export class KledoService {
         items: resolvedItems,
       };
       if (contactId && contactId > 0) payload.contact_id = contactId;
-      // Kirim nomor invoice ERP sebagai ref_number ke Kledo
-      if (dto.noInvoice) payload.ref_number = dto.noInvoice;
+      // Kirim nomor invoice ERP sebagai trans_no (nomor invoice di Kledo) dan ref_number
+      if (dto.noInvoice) {
+        payload.trans_no = dto.noInvoice;
+        payload.ref_number = dto.noInvoice;
+      }
 
       this.logger.log(`[Kledo] Mengirim invoice — contact_id=${contactId}, items=${resolvedItems.length}`);
       this.logger.debug(`[Kledo] Payload: ${JSON.stringify(payload)}`);
