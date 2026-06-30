@@ -370,7 +370,6 @@ export class KledoService {
       const payload: any = {
         trans_date: transDate,
         due_date: dueDate,
-        status_id: 3,
         include_tax: 0,
         memo: dto.memo ?? (dto.orderId ? `Order #${dto.orderId} - ${dto.namaCustomer}` : dto.namaCustomer),
         items: resolvedItems,

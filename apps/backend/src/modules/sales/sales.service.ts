@@ -56,6 +56,7 @@ export class SalesService {
       harga: it.harga ?? it.price ?? 0,
       subtotal: it.subtotal ?? (Number(it.qty || 1) * Number(it.harga ?? it.price ?? 0)),
       ...(it.productId && !String(it.productId).startsWith('kledo-') ? { productId: it.productId } : {}),
+      ...(it.kledoProductId ? { kledoProductId: String(it.kledoProductId) } : {}),
     }));
     const order = await this.prisma.order.create({
       data: {
