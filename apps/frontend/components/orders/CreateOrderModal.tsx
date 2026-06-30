@@ -144,6 +144,19 @@ export default function CreateOrderModal({
   const [error, setError]                     = useState('');
   const [savedOrderId, setSavedOrderId]       = useState<number | null>(null);
 
+  /* Auto-deteksi unit bisnis dari kategori produk — dipakai di payload, tidak ditampilkan di UI */
+  const unitBisnis = useMemo<'elektronik' | 'bahan_bangunan' | ''>(() => {
+    const counts = { elektronik: 0, bahan_bangunan: 0 };
+    for (const it of items) {
+      const k = it.kasUnit ?? (it.nama ? detectKategori(it.nama) : null);
+      if (k === 'elektronik') counts.elektronik++;
+      else if (k === 'bahan_bangunan') counts.bahan_bangunan++;
+    }
+    if (counts.elektronik > 0 && counts.bahan_bangunan === 0) return 'elektronik';
+    if (counts.bahan_bangunan > 0 && counts.elektronik === 0) return 'bahan_bangunan';
+    return '';
+  }, [items]);
+
   /* Load custom keywords from DB once when modal mounts */
   useEffect(() => { loadCustomKeywords(); }, []);
 
@@ -248,6 +261,7 @@ export default function CreateOrderModal({
       metodePembayaran,
       bankPilihan: metodePembayaran === 'transfer' ? (bankPilihan ?? undefined) : undefined,
       edcPilihan: metodePembayaran === 'debit' ? (edcPilihan ?? undefined) : undefined,
+      unitBisnis: unitBisnis || undefined,
       metodeDp: metodePembayaran === 'dp' ? (metodeDp || undefined) : undefined,
       uangMuka: uangMuka || undefined,
       items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId, unit }) => ({
