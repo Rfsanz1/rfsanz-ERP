@@ -128,7 +128,8 @@ export class SalesService {
       harga: Number(it.harga) || Number(it.price) || 0,
       unitId: it.unitId ?? 1,
     }));
-    const result = await this.kledo.createInvoice({ namaCustomer: order.namaCustomer, noHp: order.noHp, orderId: order.id, items: kledoItems });
+    const noInvoice = `ORD-${String(order.id).padStart(5, '0')}`;
+    const result = await this.kledo.createInvoice({ namaCustomer: order.namaCustomer, noHp: order.noHp, orderId: order.id, noInvoice, items: kledoItems });
     if (result.success && result.kledoInvoiceId) {
       await this.prisma.order.update({ where: { id: order.id }, data: { kledoInvoiceId: result.kledoInvoiceId?.toString() } }).catch(() => null);
     }
