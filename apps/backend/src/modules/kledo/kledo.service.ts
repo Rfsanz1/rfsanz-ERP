@@ -313,7 +313,7 @@ export class KledoService {
 
   async createInvoice(dto: {
     namaCustomer: string; noHp?: string; memo?: string; orderId?: number | string;
-    noInvoice?: string;
+    noInvoice?: string; salesName?: string;
     items: Array<{ kledoProductId?: string | null; nama: string; qty: number; harga: number; unitId?: number }>;
     dueDays?: number;
   }) {
@@ -375,8 +375,9 @@ export class KledoService {
         items: resolvedItems,
       };
       if (contactId && contactId > 0) payload.contact_id = contactId;
-      // Kirim nomor order ERP sebagai ref_number — nomor invoice (INV/...) di-generate otomatis oleh Kledo
-      if (dto.noInvoice) payload.ref_number = dto.noInvoice;
+      // Field referensi di Kledo diisi nama sales
+      if (dto.salesName) payload.ref_number = dto.salesName;
+      else if (dto.noInvoice) payload.ref_number = dto.noInvoice;
 
       this.logger.log(`[Kledo] Mengirim invoice — contact_id=${contactId}, items=${resolvedItems.length}`);
       this.logger.debug(`[Kledo] Payload: ${JSON.stringify(payload)}`);
