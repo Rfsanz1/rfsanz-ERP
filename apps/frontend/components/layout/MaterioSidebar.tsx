@@ -10,7 +10,7 @@ import {
   BarChart2, Settings, Bell, ChevronDown, ChevronRight,
   Truck, DollarSign, UserCheck, BookOpen, CreditCard,
   Brain, Megaphone, Globe, Warehouse, Navigation,
-  Receipt, PanelLeftClose, PanelLeftOpen,
+  Receipt, PanelLeftClose, PanelLeftOpen, Smartphone, Link2,
 } from 'lucide-react';
 
 export const SIDEBAR_WIDTH           = 240;
@@ -125,9 +125,11 @@ const NAV: NavItem[] = [
   {
     label: 'Pengaturan', icon: Settings, categoryLabel: 'SISTEM',
     children: [
-      { href: '/settings',          label: 'Pengaturan Umum' },
-      { href: '/settings/workflow', label: 'Workflow Config' },
-      { href: '/help',              label: 'FAQ / Bantuan'   },
+      { href: '/settings',                 label: 'Pengaturan Umum' },
+      { href: '/settings/wa-gateway',      label: 'WA Gateway'      },
+      { href: '/settings/api-integration', label: 'API & Integrasi' },
+      { href: '/settings/workflow',        label: 'Workflow Config'  },
+      { href: '/help',                     label: 'FAQ / Bantuan'    },
     ],
   },
 ];
