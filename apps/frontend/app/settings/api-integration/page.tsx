@@ -121,6 +121,16 @@ const INTEGRATIONS: Integration[] = [
 
 type KledoConfig = { tokenSet: boolean; tokenMasked: string; source: string } | null;
 type KledoStatus = { connected: boolean; message: string } | null;
+type FonnteConfig = {
+  tokenSet: boolean;
+  tokenMasked: string;
+  source: 'env' | 'database';
+  groupInvoice: string;
+  groupPayment: string;
+  templateOrder: string;
+  templatePayment: string;
+  templateKonsumen: string;
+} | null;
 
 const LS_INTG_PREFIX = 'erp_intg_';
 
@@ -206,6 +216,7 @@ function IntCard({
 ══════════════════════════════════════════════════════════════════════════ */
 function ConfigModal({
   intg, onClose, authToken, kledoConfig, kledoStatus, onKledoSaved, onOtherSaved,
+  fonnteConfig, onFonnteSaved,
 }: {
   intg: Integration;
   onClose: () => void;
@@ -214,15 +225,20 @@ function ConfigModal({
   kledoStatus: KledoStatus;
   onKledoSaved: () => void;
   onOtherSaved: (id: string) => void;
+  fonnteConfig: FonnteConfig;
+  onFonnteSaved: () => void;
 }) {
   const existingSaved = intg.id !== 'kledo' ? loadIntgConfig(intg.id) : {};
-  // Pre-populate template fields: key baru → key lama → defaultValue
+  // Pre-populate fonnte fields: prioritas DB → localStorage → defaultValue
   const initValues = intg.id === 'fonnte'
     ? {
         ...existingSaved,
-        templateOrder: existingSaved.templateOrder ?? existingSaved.template_order ?? DEFAULT_TEMPLATE_ORDER,
-        templatePayment: existingSaved.templatePayment ?? existingSaved.template_payment ?? DEFAULT_TEMPLATE_PAYMENT,
-        templateKonsumen: existingSaved.templateKonsumen ?? existingSaved.template_invoice ?? DEFAULT_TEMPLATE_KONSUMEN,
+        // Prioritas: DB → localStorage → defaultValue
+        groupInvoice: fonnteConfig?.groupInvoice || existingSaved.groupInvoice || '',
+        groupBuktiTf: fonnteConfig?.groupPayment || existingSaved.groupBuktiTf || '',
+        templateOrder: (fonnteConfig?.templateOrder) || existingSaved.templateOrder || existingSaved.template_order || DEFAULT_TEMPLATE_ORDER,
+        templatePayment: (fonnteConfig?.templatePayment) || existingSaved.templatePayment || existingSaved.template_payment || DEFAULT_TEMPLATE_PAYMENT,
+        templateKonsumen: (fonnteConfig?.templateKonsumen) || existingSaved.templateKonsumen || existingSaved.template_invoice || DEFAULT_TEMPLATE_KONSUMEN,
       }
     : existingSaved;
   const [values, setValues] = useState<Record<string, string>>(initValues);
@@ -276,6 +292,37 @@ function ConfigModal({
           setValues({});
         } else if (!saveMsg) {
           setSaveMsg({ ok: true, text: 'Token Kledo disimpan lokal. Hubungkan backend untuk sync penuh.' });
+        }
+      } else if (intg.id === 'fonnte') {
+        const token = (values['token'] ?? '').trim();
+        if (!token) {
+          setSaveMsg({ ok: false, text: 'Token Fonnte tidak boleh kosong.' });
+          return;
+        }
+        // Simpan ke localStorage dulu (fallback lokal)
+        saveIntgConfig('fonnte', values);
+
+        // Simpan ke database via API (persisten lintas perangkat)
+        const res = await fetch('/api/fonnte/config', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            groupInvoice: (values['groupInvoice'] ?? '').trim(),
+            groupPayment: (values['groupBuktiTf'] ?? '').trim(),
+            templateOrder: values['templateOrder'] ?? DEFAULT_TEMPLATE_ORDER,
+            templatePayment: values['templatePayment'] ?? DEFAULT_TEMPLATE_PAYMENT,
+            templateKonsumen: values['templateKonsumen'] ?? DEFAULT_TEMPLATE_KONSUMEN,
+          }),
+        });
+        const data = await safeJson(res);
+        if (res.ok) {
+          setSaveMsg({ ok: true, text: 'Konfigurasi Fonnte berhasil disimpan ke database!' });
+          onOtherSaved('fonnte');
+          onFonnteSaved();
+          setValues({});
+        } else {
+          setSaveMsg({ ok: false, text: data?.error ?? 'Gagal menyimpan ke database.' });
         }
       } else {
         const toSave: Record<string, string> = {};
@@ -354,6 +401,19 @@ function ConfigModal({
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
               style={{ background: `${intg.color}15`, color: intg.color }}>
               {kledoConfig.source === 'env' ? 'dari .env' : 'database'}
+            </span>
+          </div>
+        )}
+
+        {/* Token aktif Fonnte */}
+        {intg.id === 'fonnte' && fonnteConfig?.tokenSet && (
+          <div className="flex items-center gap-3 rounded-xl px-4 py-2.5"
+            style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+            <span className="text-xs" style={{ color: '#9CA3AF' }}>Token aktif:</span>
+            <span className="flex-1 font-mono text-xs truncate" style={{ color: '#1E1B4B' }}>{fonnteConfig.tokenMasked}</span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+              style={{ background: `${intg.color}15`, color: intg.color }}>
+              {fonnteConfig.source === 'env' ? 'dari .env' : 'database'}
             </span>
           </div>
         )}
@@ -494,6 +554,7 @@ export default function ApiIntegrationPage() {
   const [selected, setSelected] = useState<Integration | null>(null);
   const [kledoConfig, setKledoConfig] = useState<KledoConfig>(null);
   const [kledoStatus, setKledoStatus] = useState<KledoStatus>(null);
+  const [fonnteConfig, setFonnteConfig] = useState<FonnteConfig>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   const apiFetch = useCallback(
@@ -507,11 +568,21 @@ export default function ApiIntegrationPage() {
     fetch('/api/kledo/status').then(r => r.ok ? r.json() : null).then(d => d && setKledoStatus(d)).catch(() => {});
   }, [apiFetch]);
 
+  const refreshFonnte = useCallback(() => {
+    fetch('/api/fonnte/config').then(r => r.ok ? r.json() : null).then(d => {
+      if (d) {
+        setFonnteConfig(d);
+        if (d.tokenSet) setSavedIds(prev => new Set([...prev, 'fonnte']));
+      }
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (!authReady) return;
     if (!authToken) return;
     setMounted(true);
     refreshKledo();
+    refreshFonnte();
     const initial = new Set<string>();
     INTEGRATIONS.forEach(i => { if (i.id !== 'kledo' && isIntgSaved(i.id)) initial.add(i.id); });
     setSavedIds(initial);
@@ -572,6 +643,8 @@ export default function ApiIntegrationPage() {
           kledoStatus={kledoStatus}
           onKledoSaved={refreshKledo}
           onOtherSaved={handleOtherSaved}
+          fonnteConfig={fonnteConfig}
+          onFonnteSaved={refreshFonnte}
         />
       )}
     </OdooLayout>
