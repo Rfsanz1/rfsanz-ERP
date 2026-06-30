@@ -37,7 +37,7 @@ const COMPANY_FIELDS = [
 export default function SettingsPage() {
   const { token } = useAuthStore();
   const [settings, setSettings] = useState<Record<string, string>>({});
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading]   = useState(false);
   const [saving, setSaving]     = useState(false);
   const [msg, setMsg]           = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -99,31 +99,23 @@ export default function SettingsPage() {
         </div>
 
         <div className="rounded-2xl p-5" style={{ background: '#fff', border: '1px solid #E5E7EB' }}>
-          {loading ? (
-            <div className="grid grid-cols-2 gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} style={{ height: 52, borderRadius: 8, background: '#F3F4F6' }} />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {COMPANY_FIELDS.map(f => (
-                <div key={f.key} className={`space-y-1 ${f.wide ? 'col-span-2' : ''}`}>
-                  <label className="text-xs font-medium" style={{ color: '#6B7280' }}>{f.label}</label>
-                  <input
-                    type={f.type}
-                    value={settings[f.key] ?? ''}
-                    onChange={e => setSettings(s => ({ ...s, [f.key]: e.target.value }))}
-                    placeholder={`${f.label}…`}
-                    className="w-full text-sm rounded-lg px-3 py-2 outline-none"
-                    style={{ border: '1px solid #E5E7EB', background: '#FAFAFA', color: '#1E1B4B' }}
-                    onFocus={e => (e.target.style.borderColor = '#6366F1')}
-                    onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-2 gap-3">
+            {COMPANY_FIELDS.map(f => (
+              <div key={f.key} className={`space-y-1 ${f.wide ? 'col-span-2' : ''}`}>
+                <label className="text-xs font-medium" style={{ color: '#6B7280' }}>{f.label}</label>
+                <input
+                  type={f.type}
+                  value={settings[f.key] ?? ''}
+                  onChange={e => setSettings(s => ({ ...s, [f.key]: e.target.value }))}
+                  placeholder={`${f.label}…`}
+                  className="w-full text-sm rounded-lg px-3 py-2 outline-none"
+                  style={{ border: '1px solid #E5E7EB', background: '#FAFAFA', color: '#1E1B4B' }}
+                  onFocus={e => (e.target.style.borderColor = '#6366F1')}
+                  onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

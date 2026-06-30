@@ -17,6 +17,8 @@ const allowedDevOrigins = [
 ];
 if (replitDevDomain) allowedDevOrigins.push(replitDevDomain);
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const nextConfig = {
   transpilePackages: ['@gm/ui', '@gm/utils', '@gm/types'],
   reactStrictMode: true,
@@ -67,12 +69,12 @@ const nextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
         ],
       },
-      // Asset statis Next.js: cache 1 tahun di browser & Cloudflare
-      // (nama file sudah include hash, aman di-cache permanen)
+      // Asset statis Next.js: di dev pakai no-store agar browser tidak cache JS lama
+      // Di production, file sudah include content hash jadi aman di-cache permanen
       {
         source: '/_next/static/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+          { key: 'Cache-Control', value: isDev ? 'no-store, must-revalidate' : 'public, max-age=31536000, immutable' },
         ],
       },
       // Gambar, font, icon di folder public: cache 7 hari

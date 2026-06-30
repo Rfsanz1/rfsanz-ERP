@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../../lib/store/useAuthStore';
 import { OdooLayout } from '../../../components/layout/OdooLayout';
 import {
@@ -548,9 +547,7 @@ function SectionHead({ label }: { label: string }) {
    PAGE
 ══════════════════════════════════════════════════════════════════════════ */
 export default function ApiIntegrationPage() {
-  const { token: authToken, authReady } = useAuthStore();
-  const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const { token: authToken } = useAuthStore();
   const [selected, setSelected] = useState<Integration | null>(null);
   const [kledoConfig, setKledoConfig] = useState<KledoConfig>(null);
   const [kledoStatus, setKledoStatus] = useState<KledoStatus>(null);
@@ -578,17 +575,14 @@ export default function ApiIntegrationPage() {
   }, []);
 
   useEffect(() => {
-    if (!authReady) return;
-    if (!authToken) return;
-    setMounted(true);
-    refreshKledo();
-    refreshFonnte();
     const initial = new Set<string>();
     INTEGRATIONS.forEach(i => { if (i.id !== 'kledo' && isIntgSaved(i.id)) initial.add(i.id); });
     setSavedIds(initial);
-  }, [authReady, authToken]);
-
-  if (!authReady || !mounted || !authToken) return null;
+    if (authToken) {
+      refreshKledo();
+      refreshFonnte();
+    }
+  }, [authToken]);
 
   const bySection = (s: Integration['section']) => INTEGRATIONS.filter(i => i.section === s);
 
