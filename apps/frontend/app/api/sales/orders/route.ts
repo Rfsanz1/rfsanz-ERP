@@ -149,6 +149,7 @@ export async function POST(req: NextRequest) {
     try {
       const result = await pushOrderToKledo(authHeader, {
         soNumber,
+        salesName: salesName ?? null,
         tanggal: tanggal ?? new Date().toISOString().slice(0, 10),
         catatan: catatan ?? undefined,
         contactId: kledoContactId ? Number(kledoContactId) : null,

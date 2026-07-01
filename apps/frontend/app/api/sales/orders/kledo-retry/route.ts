@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
 
     const result = await pushOrderToKledo(authHeader, {
       soNumber:         o.so_number,
+      salesName:        o.sales_name ?? null,
       tanggal:          o.tanggal instanceof Date
                           ? o.tanggal.toISOString().slice(0, 10)
                           : String(o.tanggal).slice(0, 10),
