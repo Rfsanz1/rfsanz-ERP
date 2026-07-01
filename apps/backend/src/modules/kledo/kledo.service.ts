@@ -367,17 +367,16 @@ export class KledoService {
       }
 
       // contact_id hanya dikirim jika valid (bukan 0)
+      // PENTING: di Kledo, field "memo" tampil sebagai "Referensi" (bukan catatan)
+      // ref_number TIDAK dikirim → biar Kledo auto-generate nomor invoice (INV/53xxx)
       const payload: any = {
         trans_date: transDate,
         due_date: dueDate,
         include_tax: 0,
-        memo: dto.memo || '',
+        memo: dto.salesName ?? dto.memo ?? '',
         items: resolvedItems,
       };
       if (contactId && contactId > 0) payload.contact_id = contactId;
-      // Field referensi di Kledo diisi nama sales (wajib), fallback ke noInvoice
-      if (dto.salesName) payload.ref_number = dto.salesName;
-      else if (dto.noInvoice) payload.ref_number = dto.noInvoice;
 
       this.logger.log(`[Kledo] Mengirim invoice — contact_id=${contactId}, items=${resolvedItems.length}`);
       this.logger.debug(`[Kledo] Payload: ${JSON.stringify(payload)}`);

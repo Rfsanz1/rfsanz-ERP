@@ -97,8 +97,7 @@ export default function OrderDetailPage() {
       await api.post('/kledo/invoices', {
         trans_date: order.tanggal ?? order.createdAt?.slice(0, 10),
         due_date: order.jatuhTempo ?? undefined,
-        ref_number: order.salesName ?? undefined,
-        memo: order.catatan ?? order.notes ?? undefined,
+        memo: order.salesName ?? order.catatan ?? order.notes ?? undefined,
         contact_id: order.kledoContactId ? Number(order.kledoContactId) : undefined,
         contact_name: order.namaCustomer ?? order.customerName,
         include_tax: 0,
