@@ -330,7 +330,8 @@ export async function pushOrderToKledo(
         amount,
       };
       if (diskon > 0) item.discount = diskon;
-      if (it.kledoProductId) item.product_id = Number(it.kledoProductId);
+      // product_id TIDAK dikirim — nilai kledoProductId di DB lokal bisa stale/salah
+      // (semua resolve ke SKU-2995 STB MINATO). Kirim nama saja agar Kledo pakai nama produk asli.
       return item;
     });
 
