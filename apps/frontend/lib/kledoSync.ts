@@ -192,6 +192,9 @@ const BANK_KEYWORDS: Record<string, string[]> = {
   /* Cash unit bisnis */
   elektronik:     ['kas elektronik', 'elektronik'],
   bahan_bangunan: ['kas sulawesi', 'sulawesi'],
+
+  /* Cash generic — fallback jika unitBisnis tidak dipilih */
+  kas:            ['kas masuk', 'kas tunai', 'petty cash', 'kas'],
 };
 
 /** Cari finance account Kledo berdasarkan nama bank (semua tipe akun) */
@@ -390,9 +393,9 @@ export async function pushOrderToKledo(
       const bank = entry.bankPilihan?.toLowerCase() ?? '';
       const edc  = entry.edcPilihan?.toLowerCase()  ?? '';
       const unit = entry.unitBisnis?.toLowerCase()   ?? '';
-      if (entry.metode === 'transfer' && bank) return { key: bank, memo: BANK_MEMO[bank]  ?? bank.toUpperCase() };
-      if (entry.metode === 'debit'    && edc)  return { key: edc,  memo: EDC_MEMO[edc]   ?? edc.toUpperCase() };
-      if (entry.metode === 'cash'     && unit) return { key: unit, memo: UNIT_MEMO[unit] ?? unit.toUpperCase() };
+      if (entry.metode === 'transfer' && bank) return { key: bank,  memo: BANK_MEMO[bank]  ?? bank.toUpperCase() };
+      if (entry.metode === 'debit'    && edc)  return { key: edc,   memo: EDC_MEMO[edc]   ?? edc.toUpperCase() };
+      if (entry.metode === 'cash')             return { key: unit || 'kas', memo: UNIT_MEMO[unit] ?? (unit ? unit.toUpperCase() : 'KAS') };
       return { key: '', memo: '' };
     };
 
