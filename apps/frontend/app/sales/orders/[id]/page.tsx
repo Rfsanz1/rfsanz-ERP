@@ -154,14 +154,14 @@ export default function OrderDetailPage() {
           </button>
           <div>
             <h1 className="text-lg font-bold" style={{ color: '#1E1B4B' }}>
-              {order.soNumber ?? order.orderNumber ?? `Order #${id}`}
+              {order.kledoInvoiceId ?? order.soNumber ?? order.orderNumber ?? `Order #${id}`}
             </h1>
             <div className="flex items-center gap-2 mt-0.5">
               <Badge status={order.status ?? 'pending'} />
               {order.kledoInvoiceId && (
                 <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
                   style={{ background: `${PURPLE}12`, color: PURPLE }}>
-                  <Link2 className="h-2.5 w-2.5" /> Kledo #{order.kledoInvoiceId}
+                  <Link2 className="h-2.5 w-2.5" /> Kledo
                 </span>
               )}
             </div>

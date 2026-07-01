@@ -152,7 +152,7 @@ export default function SalesOrdersPage() {
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-hover)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   onClick={() => router.push(`/sales/orders/${r.id}`)}>
-                  <td style={{ padding: '13px 16px', fontWeight: 700, color: C, fontSize: 12, fontFamily: 'monospace' }}>{r.soNumber ?? r.orderNumber ?? `#${r.id}`}</td>
+                  <td style={{ padding: '13px 16px', fontWeight: 700, color: C, fontSize: 12, fontFamily: 'monospace' }}>{r.kledoInvoiceId ?? r.soNumber ?? r.orderNumber ?? `#${r.id}`}</td>
                   <td style={{ padding: '13px 16px', color: 'var(--text-primary)', fontWeight: 500 }}>{r.namaCustomer ?? r.customerName ?? r.customer?.name ?? '–'}</td>
                   <td style={{ padding: '13px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{fmtDate(r.createdAt ?? r.tanggal)}</td>
                   <td style={{ padding: '13px 16px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmtRp(r.totalHarga ?? r.totalAmount ?? r.amount ?? 0)}</td>
