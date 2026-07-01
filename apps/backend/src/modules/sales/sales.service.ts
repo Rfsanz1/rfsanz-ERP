@@ -72,11 +72,13 @@ export class SalesService {
 
     /* ── Push ke Kledo secara SYNCHRONOUS agar frontend tahu hasilnya ── */
     let kledoResult: { ok: boolean; error?: string } = { ok: false, error: 'Tidak dicoba' };
+    let kledoInvoiceNumber: string | null = null;
     try {
       const result = await this.pushInvoiceToKledo(order, items ?? []);
       kledoResult = { ok: result.success, error: result.success ? undefined : (result.message ?? 'Gagal kirim ke Kledo') };
-      if (result.success && result.kledoInvoiceId) {
-        this.logger.log(`Kledo invoice dibuat: #${result.kledoInvoiceId} untuk order #${order.id}`);
+      if (result.success) {
+        kledoInvoiceNumber = (result as any).kledoTransNo ?? result.kledoInvoiceId?.toString() ?? null;
+        this.logger.log(`Kledo invoice dibuat: ${kledoInvoiceNumber} untuk order #${order.id}`);
       } else {
         this.logger.warn(`Kledo push gagal untuk order #${order.id}: ${result.message}`);
       }
@@ -92,7 +94,7 @@ export class SalesService {
     }));
     this.notif.notifyGrupInvoice({
       orderId: order.id,
-      noInvoice: order.kledoInvoiceId ?? null,
+      noInvoice: kledoInvoiceNumber ?? order.kledoInvoiceId ?? null,
       namaCustomer: order.namaCustomer,
       noHp: order.noHp ?? null,
       salesName: order.salesName ?? null,
