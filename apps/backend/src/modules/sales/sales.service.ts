@@ -128,8 +128,8 @@ export class SalesService {
       harga: Number(it.harga) || Number(it.price) || 0,
       unitId: it.unitId ?? 1,
     }));
-    const noInvoice = `ORD-${String(order.id).padStart(5, '0')}`;
-    const result = await this.kledo.createInvoice({ namaCustomer: order.namaCustomer, noHp: order.noHp, orderId: order.id, noInvoice, salesName: order.salesName ?? undefined, items: kledoItems });
+    const noInvoice = `INV-${String(order.id).padStart(5, '0')}`;
+    const result = await this.kledo.createInvoice({ namaCustomer: order.namaCustomer, noHp: order.noHp, orderId: order.id, noInvoice, salesName: order.salesName ?? undefined, memo: order.catatan ?? undefined, items: kledoItems });
     if (result.success) {
       // Simpan trans_no Kledo (INV/53135) — jika tidak ada, fallback ke numeric ID
       const kledoRef = (result as any).kledoTransNo ?? result.kledoInvoiceId?.toString() ?? null;

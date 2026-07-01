@@ -371,11 +371,11 @@ export class KledoService {
         trans_date: transDate,
         due_date: dueDate,
         include_tax: 0,
-        memo: dto.memo ?? (dto.orderId ? `Order #${dto.orderId} - ${dto.namaCustomer}` : dto.namaCustomer),
+        memo: dto.memo || '',
         items: resolvedItems,
       };
       if (contactId && contactId > 0) payload.contact_id = contactId;
-      // Field referensi di Kledo diisi nama sales
+      // Field referensi di Kledo diisi nama sales (wajib), fallback ke noInvoice
       if (dto.salesName) payload.ref_number = dto.salesName;
       else if (dto.noInvoice) payload.ref_number = dto.noInvoice;
 
