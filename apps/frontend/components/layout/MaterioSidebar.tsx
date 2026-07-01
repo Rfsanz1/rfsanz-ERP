@@ -6,11 +6,8 @@ import { usePathname } from 'next/navigation';
 import Drawer from '@mui/material/Drawer';
 import Tooltip from '@mui/material/Tooltip';
 import {
-  LayoutDashboard, Users, ShoppingCart, Package,
-  BarChart2, Settings, Bell, ChevronDown, ChevronRight,
-  Truck, DollarSign, UserCheck, BookOpen, CreditCard,
-  Brain, Megaphone, Globe, Warehouse, Navigation,
-  Receipt, PanelLeftClose, PanelLeftOpen, Smartphone, Link2,
+  LayoutDashboard, ShoppingCart, Settings, ChevronDown,
+  Warehouse, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 
 export const SIDEBAR_WIDTH           = 240;
@@ -23,113 +20,37 @@ interface NavItem  {
 }
 
 const NAV: NavItem[] = [
-  { href: '/dashboard',  label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'UTAMA' },
+  /* ── Beranda ───────────────────────────────────── */
+  { href: '/dashboard', label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'MENU UTAMA' },
+
+  /* ── Penjualan ─────────────────────────────────── */
   {
     label: 'Penjualan', icon: ShoppingCart, categoryLabel: 'OPERASIONAL',
     children: [
-      { href: '/sales/smart-order', label: 'Smart Order'       },
-      { href: '/sales/quotations',  label: 'Penawaran'         },
-      { href: '/sales/orders',      label: 'Pesanan Penjualan' },
-      { href: '/sales/invoices',    label: 'Invoice'           },
-      { href: '/sales/returns',     label: 'Retur Penjualan'   },
-      { href: '/customers',         label: 'Pelanggan'         },
-      { href: '/sales/reports',     label: 'Laporan'           },
+      { href: '/sales/smart-order', label: 'Buat Order Baru'  },
+      { href: '/sales/orders',      label: 'Daftar Pesanan'   },
+      { href: '/sales/customers',   label: 'Data Pelanggan'   },
+      { href: '/sales/reports',     label: 'Laporan Penjualan'},
     ],
   },
+
+  /* ── Gudang ────────────────────────────────────── */
   {
-    label: 'Pembelian', icon: Truck,
+    label: 'Gudang & Stok', icon: Warehouse,
     children: [
-      { href: '/purchasing/purchase-orders', label: 'Pesanan Pembelian'    },
-      { href: '/purchasing/rfq',             label: 'Permintaan Penawaran' },
-      { href: '/purchasing/vendors',         label: 'Vendor'               },
+      { href: '/gudang',          label: 'Dashboard Gudang' },
+      { href: '/gudang/inbound',  label: 'Barang Masuk'     },
+      { href: '/gudang/outbound', label: 'Barang Keluar'    },
     ],
   },
-  {
-    label: 'Invoice', icon: Receipt,
-    children: [
-      { href: '/invoice/list',         label: 'Daftar Invoice' },
-      { href: '/invoice/down-payment', label: 'Down Payment'   },
-      { href: '/invoice/payments',     label: 'Pembayaran'     },
-      { href: '/invoice/aging',        label: 'Aging Report'   },
-      { href: '/invoice/credit-notes', label: 'Kredit Nota'    },
-    ],
-  },
-  {
-    label: 'Inventory', icon: Package,
-    children: [
-      { href: '/inventory/products',      label: 'Produk'        },
-      { href: '/inventory/lots',          label: 'Lot & Serial'  },
-      { href: '/inventory/transfers',     label: 'Transfer Stok' },
-      { href: '/inventory/stock-opnames', label: 'Stock Opname'  },
-      { href: '/inventory/warehouses',    label: 'Multi Gudang'  },
-      { href: '/inventory/reorder-rules', label: 'Reorder Rules' },
-    ],
-  },
-  {
-    label: 'Gudang', icon: Warehouse,
-    children: [
-      { href: '/gudang',              label: 'Dashboard Gudang' },
-      { href: '/gudang/picking',      label: 'Picking Order'    },
-      { href: '/gudang/inbound',      label: 'Barang Masuk'     },
-      { href: '/gudang/outbound',     label: 'Barang Keluar'    },
-      { href: '/gudang/transfer',     label: 'Transfer Stok'    },
-      { href: '/gudang/stock-opname', label: 'Stock Opname'     },
-    ],
-  },
-  {
-    label: 'Pengiriman', icon: Navigation,
-    children: [
-      { href: '/driver',              label: 'Dashboard Driver'   },
-      { href: '/driver/deliveries',   label: 'Daftar Pengiriman'  },
-      { href: '/delivery/areas',      label: 'Wilayah Pengiriman' },
-      { href: '/fleet/vehicles',      label: 'Armada Kendaraan'   },
-      { href: '/fleet/drivers',       label: 'Manajemen Driver'   },
-      { href: '/fleet/shipments',     label: 'Shipment'           },
-      { href: '/fleet/fuel-tracking', label: 'Tracking BBM'       },
-      { href: '/fleet/gps',           label: 'GPS Tracking'       },
-    ],
-  },
-  {
-    label: 'Keuangan', icon: DollarSign, categoryLabel: 'KEUANGAN',
-    children: [
-      { href: '/finance/journal',             label: 'Jurnal'            },
-      { href: '/accounting',                  label: 'Chart of Accounts' },
-      { href: '/finance/bank-reconciliation', label: 'Rekonsiliasi Bank' },
-      { href: '/finance/cash',                label: 'Kas & Bank'        },
-      { href: '/finance/budget',              label: 'Anggaran'          },
-    ],
-  },
-  {
-    label: 'Laporan', icon: BarChart2,
-    children: [
-      { href: '/reports/sales',     label: 'Laporan Penjualan' },
-      { href: '/finance/reports',   label: 'Laporan Keuangan'  },
-      { href: '/reports/inventory', label: 'Laporan Stok'      },
-    ],
-  },
-  { href: '/hr',         label: 'Karyawan',      icon: Users,      categoryLabel: 'SDM & OPERASI' },
-  { href: '/payroll',    label: 'Payroll',        icon: BookOpen },
-  { href: '/pos/orders', label: 'Point of Sale',  icon: CreditCard },
-  {
-    label: 'CRM', icon: UserCheck,
-    children: [
-      { href: '/crm/leads',         label: 'Leads'       },
-      { href: '/crm/pipeline',      label: 'Pipeline'    },
-      { href: '/crm/opportunities', label: 'Opportunity' },
-    ],
-  },
-  { href: '/ai',            label: 'AI Assistant', icon: Brain,    badge: 'AI', categoryLabel: 'DIGITAL' },
-  { href: '/marketing',     label: 'Marketing',    icon: Megaphone },
-  { href: '/website',       label: 'Website',      icon: Globe     },
-  { href: '/notifications', label: 'Notifikasi',   icon: Bell,     badge: '5'  },
+
+  /* ── Pengaturan ────────────────────────────────── */
   {
     label: 'Pengaturan', icon: Settings, categoryLabel: 'SISTEM',
     children: [
       { href: '/settings',                 label: 'Pengaturan Umum' },
-      { href: '/settings/wa-gateway',      label: 'WA Gateway'      },
-      { href: '/settings/api-integration', label: 'API & Integrasi' },
-      { href: '/settings/workflow',        label: 'Workflow Config'  },
-      { href: '/help',                     label: 'FAQ / Bantuan'    },
+      { href: '/settings/api-integration', label: 'Integrasi'       },
+      { href: '/help',                     label: 'Bantuan'         },
     ],
   },
 ];
@@ -337,7 +258,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                   onClick={() => toggle(item.label)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
-                    width: '100%', padding: '7px 16px',
+                    width: '100%', padding: '11px 16px',
                     background: active ? 'rgba(99,102,241,.06)' : 'transparent',
                     border: 'none', cursor: 'pointer',
                     borderLeft: active ? '3px solid #6366F1' : '3px solid transparent',
@@ -347,8 +268,8 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                   <Icon size={16} strokeWidth={active ? 2.2 : 1.8}
                     style={{ color: active ? '#6366F1' : '#9CA3AF', flexShrink: 0 }} />
                   <span style={{
-                    flex: 1, textAlign: 'left', fontSize: 13,
-                    fontWeight: active ? 600 : 400,
+                    flex: 1, textAlign: 'left', fontSize: 15,
+                    fontWeight: active ? 700 : 500,
                     color: active ? '#1E1B4B' : '#374151',
                   }}>
                     {item.label}
@@ -408,7 +329,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                         <div
                           style={{
                             display: 'flex', alignItems: 'center', gap: 8,
-                            padding: '5px 16px 5px 42px',
+                            padding: '10px 16px 10px 44px',
                             background: ca ? 'rgba(99,102,241,.06)' : 'transparent',
                             transition: 'background 0.12s', cursor: 'pointer',
                           }}
@@ -420,8 +341,8 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                             background: ca ? '#6366F1' : '#D1D5DB', transition: 'all 0.15s',
                           }} />
                           <span style={{
-                            fontSize: 12.5, fontWeight: ca ? 600 : 400,
-                            color: ca ? '#6366F1' : '#6B7280',
+                            fontSize: 14, fontWeight: ca ? 600 : 400,
+                            color: ca ? '#6366F1' : '#4B5563',
                           }}>
                             {child.label}
                           </span>
