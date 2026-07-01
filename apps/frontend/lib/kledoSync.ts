@@ -80,7 +80,10 @@ export async function getDefaultFinanceAccount(baseUrl: string, token: string): 
       const d = await r.json();
       const products: any[] = d?.data?.data ?? d?.data ?? [];
       if (products.length > 0) {
-        const accId = products[0].income_account_id ?? products[0].account_id;
+        // Hanya pakai income_account_id — jangan fallback ke account_id/id
+        // karena account_id adalah ID produk itu sendiri (misal 2995 = STB MINATO),
+        // bukan COA, sehingga Kledo akan mengabaikan field name dan memakai nama produk tsb.
+        const accId = products[0].income_account_id;
         if (accId) return Number(accId);
       }
     }
