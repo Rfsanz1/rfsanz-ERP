@@ -266,6 +266,7 @@ interface PembayaranEntry {
 interface KledoOrderInput {
   soNumber?: string;
   salesName?: string | null;
+  noHp?: string | null;
   tanggal: string;
   dueDate?: string | null;
   catatan?: string;
@@ -349,11 +350,13 @@ export async function pushOrderToKledo(
       items: kledoItems,
     };
     // ref_number tidak dikirim → Kledo auto-generate nomor INV/xxxxx
-    // Memo: nama sales | catatan order
-    const memoSales  = order.salesName ? `Sales: ${order.salesName}` : '';
-    const memoBase   = order.catatan ?? '';
-    const memo       = [memoSales, memoBase].filter(Boolean).join(' | ');
-    if (memo)                   payload.memo         = memo;
+    // Memo: nama sales + no HP saja
+    const memoSales = order.salesName ? `Sales: ${order.salesName}` : '';
+    const memoHp    = order.noHp ? `HP: ${order.noHp}` : '';
+    const memo      = [memoSales, memoHp].filter(Boolean).join(' | ');
+    if (memo)                   payload.memo    = memo;
+    // Catatan order → field "Pesan" di Kledo
+    if (order.catatan)          payload.message = order.catatan;
     if (resolvedContactId)      payload.contact_id   = resolvedContactId;
     else if (order.contactName) payload.contact_name = order.contactName;
     if (order.diskonTotal)  payload.discount     = order.diskonTotal;
