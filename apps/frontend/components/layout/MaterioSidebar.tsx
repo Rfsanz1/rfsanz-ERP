@@ -8,6 +8,9 @@ import Tooltip from '@mui/material/Tooltip';
 import {
   LayoutDashboard, ShoppingCart, Settings, ChevronDown,
   Warehouse, PanelLeftClose, PanelLeftOpen,
+  Truck, Receipt, Package, Navigation, DollarSign,
+  BarChart2, Users, BookOpen, CreditCard, UserCheck,
+  Brain, Megaphone, Globe, Bell, ChevronUp,
 } from 'lucide-react';
 
 export const SIDEBAR_WIDTH           = 240;
@@ -19,22 +22,18 @@ interface NavItem  {
   children?: NavChild[]; badge?: string; categoryLabel?: string;
 }
 
-const NAV: NavItem[] = [
-  /* ── Beranda ───────────────────────────────────── */
+/* ── Menu simpel (tampilan default) ─────────────────── */
+const NAV_SIMPLE: NavItem[] = [
   { href: '/dashboard', label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'MENU UTAMA' },
-
-  /* ── Penjualan ─────────────────────────────────── */
   {
     label: 'Penjualan', icon: ShoppingCart, categoryLabel: 'OPERASIONAL',
     children: [
-      { href: '/sales/smart-order', label: 'Buat Order Baru'  },
-      { href: '/sales/orders',      label: 'Daftar Pesanan'   },
-      { href: '/sales/customers',   label: 'Data Pelanggan'   },
-      { href: '/sales/reports',     label: 'Laporan Penjualan'},
+      { href: '/sales/smart-order', label: 'Buat Order Baru'   },
+      { href: '/sales/orders',      label: 'Daftar Pesanan'    },
+      { href: '/sales/customers',   label: 'Data Pelanggan'    },
+      { href: '/sales/reports',     label: 'Laporan Penjualan' },
     ],
   },
-
-  /* ── Gudang ────────────────────────────────────── */
   {
     label: 'Gudang & Stok', icon: Warehouse,
     children: [
@@ -43,8 +42,6 @@ const NAV: NavItem[] = [
       { href: '/gudang/outbound', label: 'Barang Keluar'    },
     ],
   },
-
-  /* ── Pengaturan ────────────────────────────────── */
   {
     label: 'Pengaturan', icon: Settings, categoryLabel: 'SISTEM',
     children: [
@@ -54,6 +51,130 @@ const NAV: NavItem[] = [
     ],
   },
 ];
+
+/* ── Menu lengkap admin ─────────────────────────────── */
+const NAV_FULL: NavItem[] = [
+  { href: '/dashboard', label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'UTAMA' },
+  {
+    label: 'Penjualan', icon: ShoppingCart, categoryLabel: 'OPERASIONAL',
+    children: [
+      { href: '/sales/smart-order', label: 'Smart Order'       },
+      { href: '/sales/quotations',  label: 'Penawaran'         },
+      { href: '/sales/orders',      label: 'Pesanan Penjualan' },
+      { href: '/sales/invoices',    label: 'Invoice'           },
+      { href: '/sales/returns',     label: 'Retur Penjualan'   },
+      { href: '/customers',         label: 'Pelanggan'         },
+      { href: '/sales/reports',     label: 'Laporan'           },
+    ],
+  },
+  {
+    label: 'Pembelian', icon: Truck,
+    children: [
+      { href: '/purchasing/purchase-orders', label: 'Pesanan Pembelian'    },
+      { href: '/purchasing/rfq',             label: 'Permintaan Penawaran' },
+      { href: '/purchasing/vendors',         label: 'Vendor'               },
+    ],
+  },
+  {
+    label: 'Invoice', icon: Receipt,
+    children: [
+      { href: '/invoice/list',         label: 'Daftar Invoice' },
+      { href: '/invoice/down-payment', label: 'Down Payment'   },
+      { href: '/invoice/payments',     label: 'Pembayaran'     },
+      { href: '/invoice/aging',        label: 'Aging Report'   },
+      { href: '/invoice/credit-notes', label: 'Kredit Nota'    },
+    ],
+  },
+  {
+    label: 'Inventory', icon: Package,
+    children: [
+      { href: '/inventory/products',      label: 'Produk'        },
+      { href: '/inventory/lots',          label: 'Lot & Serial'  },
+      { href: '/inventory/transfers',     label: 'Transfer Stok' },
+      { href: '/inventory/stock-opnames', label: 'Stock Opname'  },
+      { href: '/inventory/warehouses',    label: 'Multi Gudang'  },
+      { href: '/inventory/reorder-rules', label: 'Reorder Rules' },
+    ],
+  },
+  {
+    label: 'Gudang', icon: Warehouse,
+    children: [
+      { href: '/gudang',              label: 'Dashboard Gudang' },
+      { href: '/gudang/picking',      label: 'Picking Order'    },
+      { href: '/gudang/inbound',      label: 'Barang Masuk'     },
+      { href: '/gudang/outbound',     label: 'Barang Keluar'    },
+      { href: '/gudang/transfer',     label: 'Transfer Stok'    },
+      { href: '/gudang/stock-opname', label: 'Stock Opname'     },
+    ],
+  },
+  {
+    label: 'Pengiriman', icon: Navigation,
+    children: [
+      { href: '/driver',              label: 'Dashboard Driver'   },
+      { href: '/driver/deliveries',   label: 'Daftar Pengiriman'  },
+      { href: '/delivery/areas',      label: 'Wilayah Pengiriman' },
+      { href: '/fleet/vehicles',      label: 'Armada Kendaraan'   },
+      { href: '/fleet/drivers',       label: 'Manajemen Driver'   },
+      { href: '/fleet/shipments',     label: 'Shipment'           },
+      { href: '/fleet/fuel-tracking', label: 'Tracking BBM'       },
+      { href: '/fleet/gps',           label: 'GPS Tracking'       },
+    ],
+  },
+  {
+    label: 'Keuangan', icon: DollarSign, categoryLabel: 'KEUANGAN',
+    children: [
+      { href: '/finance/journal',             label: 'Jurnal'            },
+      { href: '/accounting',                  label: 'Chart of Accounts' },
+      { href: '/finance/bank-reconciliation', label: 'Rekonsiliasi Bank' },
+      { href: '/finance/cash',                label: 'Kas & Bank'        },
+      { href: '/finance/budget',              label: 'Anggaran'          },
+    ],
+  },
+  {
+    label: 'Laporan', icon: BarChart2,
+    children: [
+      { href: '/reports/sales',     label: 'Laporan Penjualan' },
+      { href: '/finance/reports',   label: 'Laporan Keuangan'  },
+      { href: '/reports/inventory', label: 'Laporan Stok'      },
+    ],
+  },
+  { href: '/hr',         label: 'Karyawan',     icon: Users,     categoryLabel: 'SDM & OPERASI' },
+  { href: '/payroll',    label: 'Payroll',       icon: BookOpen },
+  { href: '/pos/orders', label: 'Point of Sale', icon: CreditCard },
+  {
+    label: 'CRM', icon: UserCheck,
+    children: [
+      { href: '/crm/leads',         label: 'Leads'       },
+      { href: '/crm/pipeline',      label: 'Pipeline'    },
+      { href: '/crm/opportunities', label: 'Opportunity' },
+    ],
+  },
+  { href: '/ai',            label: 'AI Assistant', icon: Brain,    badge: 'AI', categoryLabel: 'DIGITAL' },
+  { href: '/marketing',     label: 'Marketing',    icon: Megaphone },
+  { href: '/website',       label: 'Website',      icon: Globe     },
+  { href: '/notifications', label: 'Notifikasi',   icon: Bell      },
+  {
+    label: 'Pengaturan', icon: Settings, categoryLabel: 'SISTEM',
+    children: [
+      { href: '/settings',                 label: 'Pengaturan Umum' },
+      { href: '/settings/wa-gateway',      label: 'WA Gateway'      },
+      { href: '/settings/api-integration', label: 'API & Integrasi' },
+      { href: '/settings/workflow',        label: 'Workflow Config'  },
+      { href: '/help',                     label: 'FAQ / Bantuan'    },
+    ],
+  },
+];
+
+const LS_MODE_KEY = 'erp_sidebar_mode';
+function loadMode(): 'simple' | 'full' {
+  try {
+    const v = typeof window !== 'undefined' ? window.localStorage.getItem(LS_MODE_KEY) : null;
+    return v === 'full' ? 'full' : 'simple';
+  } catch { return 'simple'; }
+}
+function saveMode(m: 'simple' | 'full') {
+  if (typeof window !== 'undefined') window.localStorage.setItem(LS_MODE_KEY, m);
+}
 
 const LS_KEY = 'erp_sidebar_open_v2';
 function loadOpen(): Record<string, boolean> {
@@ -76,6 +197,13 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState<'simple' | 'full'>('simple');
+
+  const NAV = sidebarMode === 'full' ? NAV_FULL : NAV_SIMPLE;
+
+  useEffect(() => {
+    setSidebarMode(loadMode());
+  }, []);
 
   useEffect(() => {
     const saved = loadOpen();
@@ -87,7 +215,13 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
     });
     setOpen(auto);
     setMounted(true);
-  }, [pathname]);
+  }, [pathname, sidebarMode]);
+
+  const toggleMode = () => {
+    const next = sidebarMode === 'simple' ? 'full' : 'simple';
+    setSidebarMode(next);
+    saveMode(next);
+  };
 
   const toggle = (label: string) => {
     if (collapsed) return;
@@ -355,8 +489,38 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
             </div>
           );
         })}
-        <div style={{ height: 72 }} />
+        <div style={{ height: 8 }} />
       </div>
+
+      {/* ── Mode toggle button ─────────────────────────────────────── */}
+      {!collapsed && (
+        <div style={{ padding: '10px 12px 14px', borderTop: '1px solid #F0F0F5', flexShrink: 0 }}>
+          <button
+            onClick={toggleMode}
+            aria-pressed={sidebarMode === 'full'}
+            title={sidebarMode === 'full' ? 'Kembali ke tampilan simpel' : 'Buka semua menu admin'}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '10px 14px', borderRadius: 12, cursor: 'pointer',
+              border: '1.5px solid',
+              borderColor: sidebarMode === 'full' ? '#6366F1' : '#E5E7EB',
+              background: sidebarMode === 'full' ? 'rgba(99,102,241,.07)' : '#F9FAFB',
+              transition: 'all 0.2s',
+            }}
+          >
+            {sidebarMode === 'full'
+              ? <ChevronUp size={15} strokeWidth={2.5} style={{ color: '#6366F1' }} />
+              : <ChevronDown size={15} strokeWidth={2.5} style={{ color: '#6B7280' }} />
+            }
+            <span style={{
+              fontSize: 13, fontWeight: 600,
+              color: sidebarMode === 'full' ? '#6366F1' : '#6B7280',
+            }}>
+              {sidebarMode === 'full' ? 'Mode Simpel' : 'Mode Admin (Semua Menu)'}
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
