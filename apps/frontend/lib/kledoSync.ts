@@ -344,8 +344,11 @@ export async function pushOrderToKledo(
       include_tax: (order.pajak ?? 0) > 0 ? 1 : 0,
       items: kledoItems,
     };
-    if (order.soNumber)         payload.ref_number   = order.soNumber;
-    if (order.catatan)          payload.memo         = order.catatan;
+    // ref_number tidak dikirim → Kledo auto-generate nomor INV/xxxxx
+    const memoBase = order.catatan ?? '';
+    const memoSO   = order.soNumber ? `[${order.soNumber}]` : '';
+    const memo     = [memoSO, memoBase].filter(Boolean).join(' ');
+    if (memo)                   payload.memo         = memo;
     if (resolvedContactId)      payload.contact_id   = resolvedContactId;
     else if (order.contactName) payload.contact_name = order.contactName;
     if (order.diskonTotal)  payload.discount     = order.diskonTotal;
