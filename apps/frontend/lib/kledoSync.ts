@@ -58,38 +58,96 @@ export async function getKledoCfg(authHeader: string): Promise<{ token: string; 
 }
 
 /**
- * Cari finance_account_id yang valid untuk item invoice Kledo.
- * Kledo memakai "product account" (akun produk/pendapatan penjualan) yang
- * BERBEDA dari akun chart-of-accounts biasa. Endpoint /finance/accounts
- * hanya menampilkan COA (id ≤ 1500-an); akun produk seperti id 3234 tidak
- * muncul di sana. Kita ambil dari produk pertama yang ada sebagai referensi,
- * dan fallback ke KLEDO_DEFAULT_INCOME_ACCOUNT (env) atau 3234 jika gagal.
+ * Cari produk Kledo berdasarkan nama.
+ * Kembalikan product id (yang dipakai sebagai finance_account_id di invoice Kledo),
+ * atau null jika tidak ditemukan — TIDAK pernah fallback ke produk random.
+ *
+ * Kledo: finance_account_id di invoice items = product id dari /finance/products,
+ * bukan COA. Saat ID produk yang benar dipakai, Kledo menampilkan nama produk tsb.
+ */
+export async function findKledoProductIdByName(
+  baseUrl: string,
+  token: string,
+  nama: string,
+): Promise<number | null> {
+  if (!nama?.trim()) return null;
+  const namaLower = nama.toLowerCase().trim();
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const tryFetch = async (params: Record<string, string>): Promise<any[]> => {
+    try {
+      const qs = new URLSearchParams({ per_page: '20', page: '1', ...params });
+      const r = await fetch(`${baseUrl}/finance/products?${qs}`, {
+        headers,
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!r.ok) return [];
+      const d = await r.json();
+      return d?.data?.data ?? d?.data ?? [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Cari paralel dengan dua param yang mungkin didukung Kledo
+  const [byName, bySearch] = await Promise.all([
+    tryFetch({ name: nama }),
+    tryFetch({ search: nama }),
+  ]);
+
+  const all = [...byName, ...bySearch];
+
+  // 1. Exact match
+  const exact = all.find(p => p.name?.toLowerCase().trim() === namaLower);
+  if (exact?.id) return Number(exact.id);
+
+  // 2. Partial — nama lokal ada di dalam nama Kledo (atau sebaliknya)
+  const partial = all.find(
+    p =>
+      p.name?.toLowerCase().includes(namaLower) ||
+      namaLower.includes((p.name ?? '').toLowerCase().trim()),
+  );
+  if (partial?.id) return Number(partial.id);
+
+  // Tidak ditemukan — jangan tebak
+  return null;
+}
+
+/**
+ * Cari finance_account_id fallback yang valid (dipakai hanya saat produk tidak
+ * ditemukan di Kledo by name). Env var KLEDO_DEFAULT_INCOME_ACCOUNT selalu menang.
+ * JANGAN ambil id/income_account_id dari produk pertama Kledo — itu bisa mengembalikan
+ * ID produk sembarang (misal STB Minato) yang lalu tampil sebagai nama produk di Kledo.
  */
 export async function getDefaultFinanceAccount(baseUrl: string, token: string): Promise<number | null> {
-  // Env override — bisa diset manual jika tahu account id yang valid
+  // Env override — set ini jika tahu account id income yang valid di Kledo
   if (process.env.KLEDO_DEFAULT_INCOME_ACCOUNT) {
     return Number(process.env.KLEDO_DEFAULT_INCOME_ACCOUNT);
   }
 
-  // Ambil dari produk pertama Kledo — finance_account_id produk sudah pasti valid
+  // Cari akun income/pendapatan dari COA Kledo (/finance/accounts)
+  // Ini akun jurnal biasa (Pendapatan Penjualan), bukan product account.
+  // Saat dipakai sebagai finance_account_id, Kledo akan tampilkan field 'name' dari payload.
   try {
-    const r = await fetch(`${baseUrl}/finance/products?per_page=1`, {
+    const r = await fetch(`${baseUrl}/finance/accounts?type=income&per_page=50`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(5000),
     });
     if (r.ok) {
       const d = await r.json();
-      const products: any[] = d?.data?.data ?? d?.data ?? [];
-      if (products.length > 0) {
-        // Hanya pakai income_account_id — jangan fallback ke account_id/id
-        // karena account_id adalah ID produk itu sendiri (misal 2995 = STB MINATO),
-        // bukan COA, sehingga Kledo akan mengabaikan field name dan memakai nama produk tsb.
-        const accId = products[0].income_account_id;
-        if (accId) return Number(accId);
+      const accounts: any[] = d?.data?.data ?? d?.data ?? [];
+      // Cari akun yang namanya mengandung kata "penjualan" / "pendapatan" / "sales"
+      const keywords = ['penjualan', 'pendapatan', 'sales revenue', 'sales', 'income'];
+      for (const kw of keywords) {
+        const match = accounts.find(a => (a.name ?? '').toLowerCase().includes(kw));
+        if (match?.id) return Number(match.id);
       }
+      // Fallback: akun income pertama yang ada
+      if (accounts[0]?.id) return Number(accounts[0].id);
     }
   } catch {}
 
-  // Fallback hardcoded: akun "Penjualan" Kledo yang diketahui valid (dari invoice existing)
+  // Fallback hardcoded terakhir
   return 3234;
 }
 
@@ -316,13 +374,26 @@ export async function pushOrderToKledo(
       );
     }
 
-    const kledoItems = order.items.map(it => {
+    // Cari ID produk Kledo per item secara paralel — lebih cepat dari sequential
+    const resolvedAccountIds = await Promise.all(
+      order.items.map(it =>
+        it.kledoProductId
+          ? Promise.resolve(Number(it.kledoProductId))          // sudah ada ID → pakai langsung
+          : findKledoProductIdByName(cfg.baseUrl, cfg.token, it.nama),  // cari by nama
+      ),
+    );
+
+    const kledoItems = order.items.map((it, idx) => {
       const qty    = Number(it.qty ?? 1);
       const rate   = Number(it.harga ?? 0);
       const diskon = Number(it.diskon ?? 0);
       const amount = Math.max(0, qty * rate - diskon);
+
+      // Gunakan ID produk yang ditemukan; fallback ke defaultAccountId jika tidak ketemu
+      const financeAccountId = resolvedAccountIds[idx] ?? defaultAccountId;
+
       const item: any = {
-        finance_account_id: defaultAccountId,
+        finance_account_id: financeAccountId,
         name: it.nama,
         qty,
         rate,
@@ -330,8 +401,6 @@ export async function pushOrderToKledo(
         amount,
       };
       if (diskon > 0) item.discount = diskon;
-      // product_id TIDAK dikirim — nilai kledoProductId di DB lokal bisa stale/salah
-      // (semua resolve ke SKU-2995 STB MINATO). Kirim nama saja agar Kledo pakai nama produk asli.
       return item;
     });
 
