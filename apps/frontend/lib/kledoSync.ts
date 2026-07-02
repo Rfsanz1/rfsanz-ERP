@@ -236,15 +236,15 @@ export async function findOrCreateKledoContact(
  *   Cash Sulawesi    → "KAS SULAWESI"
  */
 const BANK_KEYWORDS: Record<string, string[]> = {
-  /* Transfer Bank */
-  bca:            ['bca giro', 'giro bca'],            // Transfer BCA → BCA Giro
-  bri:            ['bri edc', 'edc bri', 'bri'],       // Transfer BRI → BRI EDC
+  /* Transfer Bank spesifik */
+  bca:            ['bca giro', 'giro bca'],
+  bri:            ['bri edc', 'edc bri', 'bri'],
   mandiri:        ['mandiri'],
   bni:            ['bni'],
 
-  /* Debit EDC */
-  bca_edc:        ['bca edc', 'edc bca'],              // EDC BCA → BCA EDC (bukan BCA Giro)
-  bri_edc:        ['bri edc', 'edc bri', 'bri'],       // EDC BRI → BRI EDC
+  /* Debit EDC spesifik */
+  bca_edc:        ['bca edc', 'edc bca'],
+  bri_edc:        ['bri edc', 'edc bri', 'bri'],
   bni_edc:        ['bni'],
 
   /* Cash unit bisnis */
@@ -253,21 +253,41 @@ const BANK_KEYWORDS: Record<string, string[]> = {
 
   /* Cash generic — fallback jika unitBisnis tidak dipilih */
   kas:            ['kas masuk', 'kas tunai', 'petty cash', 'kas'],
+
+  /* Transfer generic — fallback jika bank tidak dipilih */
+  transfer:       ['transfer', 'giro', 'tabungan', 'bank'],
+
+  /* Debit/EDC generic — fallback jika EDC tidak dipilih */
+  edc:            ['edc', 'debit', 'kartu'],
 };
 
-/** Cari finance account Kledo berdasarkan nama bank (semua tipe akun) */
+/** Ambil semua akun dari Kledo (semua halaman, max 10 halaman) */
+async function fetchAllKledoAccounts(baseUrl: string, token: string): Promise<any[]> {
+  const all: any[] = [];
+  for (let page = 1; page <= 10; page++) {
+    try {
+      const r = await fetch(`${baseUrl}/finance/accounts?per_page=200&page=${page}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!r.ok) break;
+      const d = await r.json();
+      const items: any[] = d?.data?.data ?? d?.data ?? [];
+      all.push(...items);
+      if (items.length < 200) break; // halaman terakhir
+    } catch { break; }
+  }
+  return all;
+}
+
+/** Cari finance account Kledo berdasarkan nama bank/kas (semua halaman) */
 export async function getBankAccountId(
   baseUrl: string,
   token: string,
   bankKey: string,
 ): Promise<number | null> {
   try {
-    const r = await fetch(`${baseUrl}/finance/accounts?per_page=200`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!r.ok) return null;
-    const d = await r.json();
-    const accounts: any[] = d?.data?.data ?? d?.data ?? [];
+    const accounts = await fetchAllKledoAccounts(baseUrl, token);
     const keywords = BANK_KEYWORDS[bankKey.toLowerCase()] ?? [bankKey.toLowerCase()];
 
     // Coba match dari keyword yang paling spesifik dulu
@@ -275,7 +295,7 @@ export async function getBankAccountId(
       const match = accounts.find((a: any) =>
         (a.name ?? '').toLowerCase().includes(kw),
       );
-      if (match) return match.id;
+      if (match) return Number(match.id);
     }
     return null;
   } catch {
@@ -283,7 +303,7 @@ export async function getBankAccountId(
   }
 }
 
-/** Tandai invoice Kledo sebagai lunas */
+/** Tandai invoice Kledo sebagai lunas — coba dua variasi payload */
 export async function markKledoInvoicePaid(
   baseUrl: string,
   token: string,
@@ -293,24 +313,38 @@ export async function markKledoInvoicePaid(
   date: string,
   memo?: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+  const base = {
+    trans_date: date,
+    finance_account_id: financeAccountId,
+    memo: memo ?? 'Pembayaran lunas',
+  };
+
+  // Variasi 1 — format pay_from (Kledo versi lama)
   try {
-    const payload = {
-      trans_date: date,
-      finance_account_id: financeAccountId,
-      memo: memo ?? 'Pembayaran lunas',
-      pay_from: [{ id: invoiceId, amount }],
-    };
     const res = await fetch(`${baseUrl}/finance/invoicepayments`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+      headers,
+      body: JSON.stringify({ ...base, pay_from: [{ id: invoiceId, amount }] }),
     });
     const data = await res.json();
     if (res.ok) return { ok: true };
-    return { ok: false, error: data?.message ?? 'Gagal tandai lunas di Kledo' };
+
+    // Variasi 2 — format items dengan invoice_id (Kledo versi baru)
+    const res2 = await fetch(`${baseUrl}/finance/invoicepayments`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ ...base, items: [{ invoice_id: invoiceId, amount }] }),
+    });
+    const data2 = await res2.json();
+    if (res2.ok) return { ok: true };
+
+    // Keduanya gagal — kembalikan error dari variasi pertama
+    const msg = data?.message ?? data2?.message ?? 'Gagal tandai lunas di Kledo';
+    return { ok: false, error: msg };
   } catch (e: any) {
     return { ok: false, error: e.message };
   }
@@ -463,9 +497,17 @@ export async function pushOrderToKledo(
       const bank = entry.bankPilihan?.toLowerCase() ?? '';
       const edc  = entry.edcPilihan?.toLowerCase()  ?? '';
       const unit = entry.unitBisnis?.toLowerCase()   ?? '';
-      if (entry.metode === 'transfer' && bank) return { key: bank,  memo: BANK_MEMO[bank]  ?? bank.toUpperCase() };
-      if (entry.metode === 'debit'    && edc)  return { key: edc,   memo: EDC_MEMO[edc]   ?? edc.toUpperCase() };
-      if (entry.metode === 'cash')             return { key: unit || 'kas', memo: UNIT_MEMO[unit] ?? (unit ? unit.toUpperCase() : 'KAS') };
+      if (entry.metode === 'transfer') {
+        // Jika bankPilihan ada → gunakan spesifik, jika tidak → fallback ke akun transfer/bank generik
+        if (bank) return { key: bank, memo: BANK_MEMO[bank] ?? bank.toUpperCase() };
+        return { key: 'transfer', memo: 'Transfer' };
+      }
+      if (entry.metode === 'debit') {
+        if (edc) return { key: edc, memo: EDC_MEMO[edc] ?? edc.toUpperCase() };
+        return { key: 'edc', memo: 'Debit/EDC' };
+      }
+      if (entry.metode === 'cash') return { key: unit || 'kas', memo: UNIT_MEMO[unit] ?? (unit ? unit.toUpperCase() : 'KAS') };
+      if (entry.metode === 'dp')   return { key: 'kas', memo: 'Uang Muka' };
       return { key: '', memo: '' };
     };
 

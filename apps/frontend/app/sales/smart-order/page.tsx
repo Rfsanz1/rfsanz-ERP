@@ -83,6 +83,7 @@ export default function SmartOrderPage() {
   const [pajak, setPajak]                     = useState(0);
   const [ongkir, setOngkir]                   = useState(0);
   const [metodePembayaran, setMetodePembayaran] = useState('transfer');
+  const [bankPilihan, setBankPilihan]         = useState<string | null>(null);
   const [uangMuka, setUangMuka]               = useState(0);
 
   const [bulkText, setBulkText]               = useState('');
@@ -182,6 +183,7 @@ export default function SmartOrderPage() {
         pajak: pajak || undefined,
         ongkir: ongkir || undefined,
         metodePembayaran,
+        bankPilihan: metodePembayaran === 'transfer' ? (bankPilihan || undefined) : undefined,
         uangMuka: uangMuka || undefined,
         status: 'pending',
         items: items.map(i => ({
@@ -468,20 +470,33 @@ export default function SmartOrderPage() {
         {metodePembayaran === 'transfer' && (
           <div style={{ marginBottom: 16, padding: 14, borderRadius: 12, background: 'rgba(99,102,241,.06)', border: '1.5px solid rgba(99,102,241,.2)' }}>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: ACCENT, margin: '0 0 10px' }}>
-              Nomor Rekening Tujuan
+              Pilih Bank Tujuan Transfer
             </p>
             {[
-              { bank: 'BRI',     no: '0262 01 000031 562', nama: 'Dian Purnama Reza T.' },
-              { bank: 'MANDIRI', no: '136 000 4780612',    nama: 'Dian Purnama' },
-              { bank: 'BCA',     no: '155 91 99999',       nama: 'Indarto Wibowo' },
-              { bank: 'BNI',     no: '0822 705 836',       nama: 'Indarto Wibowo' },
-            ].map(r => (
-              <div key={r.bank} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 10, background: 'var(--surface)', marginBottom: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, width: 60, flexShrink: 0 }}>{r.bank}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '.03em', flex: 1 }}>{r.no}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{r.nama}</span>
-              </div>
-            ))}
+              { key: 'bri',     bank: 'BRI',     no: '0262 01 000031 562', nama: 'Dian Purnama Reza T.' },
+              { key: 'mandiri', bank: 'MANDIRI', no: '136 000 4780612',    nama: 'Dian Purnama' },
+              { key: 'bca',     bank: 'BCA',     no: '155 91 99999',       nama: 'Indarto Wibowo' },
+              { key: 'bni',     bank: 'BNI',     no: '0822 705 836',       nama: 'Indarto Wibowo' },
+            ].map(r => {
+              const selected = bankPilihan === r.key;
+              return (
+                <div key={r.bank} onClick={() => setBankPilihan(selected ? null : r.key)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 10,
+                    background: selected ? ACCENT + '18' : 'var(--surface)',
+                    border: `1.5px solid ${selected ? ACCENT : 'transparent'}`,
+                    marginBottom: 6, cursor: 'pointer', transition: 'all .15s' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, width: 60, flexShrink: 0 }}>{r.bank}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '.03em', flex: 1 }}>{r.no}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{r.nama}</span>
+                  {selected && <CheckCircle2 size={14} style={{ color: ACCENT, flexShrink: 0 }} />}
+                </div>
+              );
+            })}
+            {bankPilihan && (
+              <p style={{ fontSize: 11, color: ACCENT, fontWeight: 600, margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CheckCircle2 size={12} /> Kledo otomatis <strong>LUNAS</strong> via {bankPilihan.toUpperCase()}
+              </p>
+            )}
           </div>
         )}
 
