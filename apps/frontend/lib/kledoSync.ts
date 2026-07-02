@@ -244,8 +244,8 @@ const BANK_KEYWORDS: Record<string, string[]> = {
 
   /* Debit EDC spesifik */
   bca_edc:        ['bca edc', 'edc bca'],
-  bri_edc:        ['bri edc', 'edc bri', 'bri'],
-  bni_edc:        ['bni'],
+  bri_edc:        ['bri edc', 'edc bri'],
+  bni_edc:        ['bni edc', 'edc bni'],
 
   /* Cash unit bisnis */
   elektronik:     ['kas elektronik', 'elektronik'],
@@ -511,7 +511,7 @@ export async function pushOrderToKledo(
     let kledoPaidError: string | undefined;
 
     const BANK_MEMO: Record<string, string> = { bca: 'BCA Giro', bri: 'BRI EDC', mandiri: 'Mandiri', bni: 'BNI' };
-    const EDC_MEMO:  Record<string, string> = { bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI' };
+    const EDC_MEMO:  Record<string, string> = { bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI EDC' };
     const UNIT_MEMO: Record<string, string> = { elektronik: 'KAS ELEKTRONIK', bahan_bangunan: 'KAS SULAWESI' };
 
     const totalAmount = order.totalHarga ?? order.items.reduce((s, it) => s + (it.subtotal ?? 0), 0);

@@ -584,7 +584,7 @@ export default function CreateOrderModal({
                 { key: 'bni_edc', bank: 'BNI' },
               ];
               const KLEDO_BANK: Record<string, string> = { bca: 'BCA Giro', bri: 'BRI EDC', mandiri: 'Mandiri', bni: 'BNI' };
-              const KLEDO_EDC:  Record<string, string> = { bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI' };
+              const KLEDO_EDC:  Record<string, string> = { bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI EDC' };
               const METODE_LIST: { value: PembayaranMetode; label: string; icon: any }[] = [
                 { value: 'transfer', label: 'Transfer', icon: Smartphone },
                 { value: 'cash',     label: 'Cash',     icon: Banknote   },
