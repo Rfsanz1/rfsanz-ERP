@@ -270,12 +270,19 @@ async function fetchAllKledoAccounts(baseUrl: string, token: string): Promise<an
         headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(8000),
       });
-      if (!r.ok) break;
+      if (!r.ok) {
+        console.error(`[kledo] fetchAllKledoAccounts page=${page} HTTP ${r.status}`);
+        break;
+      }
       const d = await r.json();
       const items: any[] = d?.data?.data ?? d?.data ?? [];
       all.push(...items);
-      if (items.length < 200) break; // halaman terakhir
-    } catch { break; }
+      console.log(`[kledo] fetchAllKledoAccounts page=${page} → ${items.length} akun (total=${all.length})`);
+      if (items.length < 200) break;
+    } catch (e: any) {
+      console.error(`[kledo] fetchAllKledoAccounts page=${page} error:`, e.message);
+      break;
+    }
   }
   return all;
 }
@@ -289,16 +296,25 @@ export async function getBankAccountId(
   try {
     const accounts = await fetchAllKledoAccounts(baseUrl, token);
     const keywords = BANK_KEYWORDS[bankKey.toLowerCase()] ?? [bankKey.toLowerCase()];
+    console.log(`[kledo] getBankAccountId key="${bankKey}" keywords=${JSON.stringify(keywords)} total_accounts=${accounts.length}`);
+    // Cetak nama akun hanya saat development (tidak dump di production)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[kledo] akun tersedia:`, accounts.map(a => `${a.id}:${a.name}`).join(' | '));
+    }
 
-    // Coba match dari keyword yang paling spesifik dulu
     for (const kw of keywords) {
       const match = accounts.find((a: any) =>
         (a.name ?? '').toLowerCase().includes(kw),
       );
-      if (match) return Number(match.id);
+      if (match) {
+        console.log(`[kledo] getBankAccountId MATCH keyword="${kw}" → id=${match.id} name="${match.name}"`);
+        return Number(match.id);
+      }
     }
+    console.warn(`[kledo] getBankAccountId TIDAK KETEMU untuk key="${bankKey}" — cek nama akun di Kledo`);
     return null;
-  } catch {
+  } catch (e: any) {
+    console.error('[kledo] getBankAccountId error:', e.message);
     return null;
   }
 }
@@ -323,29 +339,37 @@ export async function markKledoInvoicePaid(
     memo: memo ?? 'Pembayaran lunas',
   };
 
-  // Variasi 1 — format pay_from (Kledo versi lama)
+  console.log(`[kledo] markKledoInvoicePaid invoiceId=${invoiceId} accountId=${financeAccountId} amount=${amount} date=${date}`);
   try {
+    // Variasi 1 — format pay_from (Kledo versi lama)
     const res = await fetch(`${baseUrl}/finance/invoicepayments`, {
-      method: 'POST',
-      headers,
+      method: 'POST', headers,
       body: JSON.stringify({ ...base, pay_from: [{ id: invoiceId, amount }] }),
     });
     const data = await res.json();
-    if (res.ok) return { ok: true };
+    console.log(`[kledo] invoicepayments v1 status=${res.status} ok=${res.ok} msg=${data?.message ?? '-'}`);
+    if (res.ok) {
+      console.log(`[kledo] markKledoInvoicePaid BERHASIL v1`);
+      return { ok: true };
+    }
 
     // Variasi 2 — format items dengan invoice_id (Kledo versi baru)
     const res2 = await fetch(`${baseUrl}/finance/invoicepayments`, {
-      method: 'POST',
-      headers,
+      method: 'POST', headers,
       body: JSON.stringify({ ...base, items: [{ invoice_id: invoiceId, amount }] }),
     });
     const data2 = await res2.json();
-    if (res2.ok) return { ok: true };
+    console.log(`[kledo] invoicepayments v2 status=${res2.status} ok=${res2.ok} msg=${data2?.message ?? '-'}`);
+    if (res2.ok) {
+      console.log(`[kledo] markKledoInvoicePaid BERHASIL v2`);
+      return { ok: true };
+    }
 
-    // Keduanya gagal — kembalikan error dari variasi pertama
     const msg = data?.message ?? data2?.message ?? 'Gagal tandai lunas di Kledo';
+    console.error(`[kledo] markKledoInvoicePaid GAGAL kedua variasi: ${msg}`);
     return { ok: false, error: msg };
   } catch (e: any) {
+    console.error('[kledo] markKledoInvoicePaid exception:', e.message);
     return { ok: false, error: e.message };
   }
 }
@@ -521,10 +545,13 @@ export async function pushOrderToKledo(
           unitBisnis:  order.unitBisnis  ?? null,
         }];
 
+    console.log(`[kledo] auto-lunas: ${paymentEntries.length} entry, totalAmount=${totalAmount}, invoiceId=${invoiceId}`);
     for (const entry of paymentEntries) {
-      if (entry.metode === 'cod') continue; /* COD tidak auto-lunas */
+      console.log(`[kledo] entry: metode=${entry.metode} bank=${entry.bankPilihan} edc=${entry.edcPilihan} unit=${entry.unitBisnis} jumlah=${entry.jumlah}`);
+      if (entry.metode === 'cod') { console.log('[kledo] COD → skip'); continue; }
       const { key, memo } = resolveKey(entry);
-      if (!key) continue;
+      if (!key) { console.log(`[kledo] metode=${entry.metode} → key kosong, di-skip`); continue; }
+      console.log(`[kledo] resolveKey → key="${key}" memo="${memo}"`);
       const entryAmount   = entry.jumlah || totalAmount;
       const bankAccountId = await getBankAccountId(cfg.baseUrl, cfg.token, key);
       if (bankAccountId) {
@@ -538,8 +565,10 @@ export async function pushOrderToKledo(
         else kledoPaidError = paid.error;
       } else {
         kledoPaidError = `Akun ${memo} tidak ditemukan di Kledo`;
+        console.error(`[kledo] TIDAK KETEMU akun untuk key="${key}" memo="${memo}"`);
       }
     }
+    console.log(`[kledo] auto-lunas selesai: kledoPaid=${kledoPaid} error=${kledoPaidError ?? '-'}`);
 
     return { ok: true, kledoInvoiceId: invoiceId, kledoRef, kledoPaid, kledoPaidError };
   } catch (e: any) {
