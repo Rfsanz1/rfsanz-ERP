@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Plus, X, Trash2, Package,
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
-  CreditCard, Banknote, Smartphone, Wallet, Copy, Check,
+  CreditCard, Banknote, Smartphone, Wallet, Copy, Check, ChevronDown,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { api } from '../../lib/api';
@@ -635,52 +635,47 @@ export default function CreateOrderModal({
                           })}
                         </div>
 
-                        {/* Jumlah */}
-                        <div>
-                          <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>Jumlah (Rp)</label>
-                          <input type="number" min={0}
-                            className={`${inputCls} text-right`} style={inputSt}
-                            placeholder={pembayaranList.length === 1 ? 'Kosongkan = bayar penuh' : '0'}
-                            value={entry.jumlah || ''}
-                            onChange={e => updateEntry({ jumlah: Math.max(0, Number(e.target.value) || 0) })}
-                            onFocus={focusColor} onBlur={blurColor} />
-                        </div>
-
-                        {/* Bank selector — jika Transfer */}
+                        {/* Bank selector — jika Transfer (di atas Jumlah) */}
                         {entry.metode === 'transfer' && (
                           <div className="space-y-2">
                             <label className="block text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
                               Bank Tujuan <span className="font-normal" style={{ color: 'var(--text-muted)' }}>— pilih untuk otomatis lunas di Kledo</span>
                             </label>
-                            <select
-                              value={entry.bankPilihan ?? ''}
-                              onChange={e => updateEntry({ bankPilihan: e.target.value || null })}
-                              className="w-full rounded-xl px-3 py-2.5 text-[13px] font-semibold appearance-none cursor-pointer transition-all"
-                              style={{
-                                border: `2px solid ${entry.bankPilihan ? COLOR : 'var(--border)'}`,
-                                background: entry.bankPilihan ? `${COLOR}10` : 'var(--surface)',
-                                color: entry.bankPilihan ? COLOR : 'var(--text-secondary)',
-                                outline: 'none',
-                              }}>
-                              <option value="">— Pilih Bank —</option>
-                              {REKENING.map(r => (
-                                <option key={r.key} value={r.key}>
-                                  {r.bank}{r.sub ? ` (${r.sub})` : ''}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="relative">
+                              <select
+                                value={entry.bankPilihan ?? ''}
+                                onChange={e => updateEntry({ bankPilihan: e.target.value || null })}
+                                className="w-full rounded-xl pl-4 pr-10 py-3 text-[13px] font-semibold appearance-none cursor-pointer transition-all"
+                                style={{
+                                  border: `2px solid ${entry.bankPilihan ? COLOR : 'var(--border)'}`,
+                                  background: entry.bankPilihan ? `${COLOR}0D` : 'var(--surface)',
+                                  color: entry.bankPilihan ? COLOR : 'var(--text-muted)',
+                                  outline: 'none',
+                                  boxShadow: entry.bankPilihan ? `0 0 0 3px ${COLOR}20` : 'none',
+                                }}>
+                                <option value="">— Pilih Bank —</option>
+                                {REKENING.map(r => (
+                                  <option key={r.key} value={r.key}>
+                                    {r.bank}{r.sub ? ` (${r.sub})` : ''}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                                <ChevronDown className="h-4 w-4" style={{ color: entry.bankPilihan ? COLOR : 'var(--text-muted)' }} />
+                              </div>
+                            </div>
                             {entry.bankPilihan && (() => {
                               const r = REKENING.find(x => x.key === entry.bankPilihan);
                               const isCopied = copiedBank === r?.bank;
                               return (
-                                <div className="space-y-1">
+                                <div className="space-y-1.5">
                                   <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
                                     <CheckCircle2 className="h-3 w-3" /> Kledo otomatis <strong>LUNAS</strong> via <strong>{KLEDO_BANK[entry.bankPilihan] ?? entry.bankPilihan.toUpperCase()}</strong>
                                   </p>
                                   {r && (
                                     <button type="button" onClick={() => copyRekening(r.bank, r.no)}
-                                      className="w-full flex items-center gap-2 rounded-lg px-3 py-2 transition-all active:scale-[.98]"
-                                      style={{ background: isCopied ? `${COLOR}0D` : 'var(--surface)', border: `1.5px solid ${isCopied ? `${COLOR}50` : 'var(--border)'}` }}>
+                                      className="w-full flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all active:scale-[.98]"
+                                      style={{ background: isCopied ? `${COLOR}0D` : 'var(--surface-sunken)', border: `1.5px solid ${isCopied ? `${COLOR}60` : 'var(--border)'}` }}>
                                       <span className="text-[11px] font-bold w-16 flex-shrink-0" style={{ color: COLOR }}>{r.bank}</span>
                                       <span className="text-[12px] font-semibold flex-1 text-left" style={{ color: 'var(--text-primary)', letterSpacing: '.03em' }}>{r.no}</span>
                                       {isCopied ? <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: COLOR }} /> : <Copy className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />}
@@ -691,6 +686,17 @@ export default function CreateOrderModal({
                             })()}
                           </div>
                         )}
+
+                        {/* Jumlah — selalu di bawah bank selector */}
+                        <div>
+                          <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>Jumlah (Rp)</label>
+                          <input type="number" min={0}
+                            className={`${inputCls} text-right`} style={inputSt}
+                            placeholder={pembayaranList.length === 1 ? 'Kosongkan = bayar penuh' : '0'}
+                            value={entry.jumlah || ''}
+                            onChange={e => updateEntry({ jumlah: Math.max(0, Number(e.target.value) || 0) })}
+                            onFocus={focusColor} onBlur={blurColor} />
+                        </div>
 
                         {/* EDC selector — jika Debit */}
                         {entry.metode === 'debit' && (
