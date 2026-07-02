@@ -466,32 +466,25 @@ export default function SmartOrderPage() {
           })}
         </div>
 
-        {/* Info Rekening Bank — tampil saat Transfer dipilih */}
+        {/* Bank Tujuan — dropdown, tampil saat Transfer dipilih */}
         {metodePembayaran === 'transfer' && (
-          <div style={{ marginBottom: 16, padding: 14, borderRadius: 12, background: 'rgba(99,102,241,.06)', border: '1.5px solid rgba(99,102,241,.2)' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: ACCENT, margin: '0 0 10px' }}>
-              Pilih Bank Tujuan Transfer
-            </p>
-            {[
-              { key: 'bri',     bank: 'BRI',     no: '0262 01 000031 562', nama: 'Dian Purnama Reza T.' },
-              { key: 'mandiri', bank: 'MANDIRI', no: '136 000 4780612',    nama: 'Dian Purnama' },
-              { key: 'bca',     bank: 'BCA',     no: '155 91 99999',       nama: 'Indarto Wibowo' },
-              { key: 'bni',     bank: 'BNI',     no: '0822 705 836',       nama: 'Indarto Wibowo' },
-            ].map(r => {
-              const selected = bankPilihan === r.key;
-              return (
-                <div key={r.bank} onClick={() => setBankPilihan(selected ? null : r.key)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 10,
-                    background: selected ? ACCENT + '18' : 'var(--surface)',
-                    border: `1.5px solid ${selected ? ACCENT : 'transparent'}`,
-                    marginBottom: 6, cursor: 'pointer', transition: 'all .15s' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, width: 60, flexShrink: 0 }}>{r.bank}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '.03em', flex: 1 }}>{r.no}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{r.nama}</span>
-                  {selected && <CheckCircle2 size={14} style={{ color: ACCENT, flexShrink: 0 }} />}
-                </div>
-              );
-            })}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+              Bank Tujuan — <span style={{ fontWeight: 400 }}>pilih untuk otomatis lunas di Kledo</span>
+            </label>
+            <select
+              value={bankPilihan ?? ''}
+              onChange={e => setBankPilihan(e.target.value || null)}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                border: `1.5px solid ${bankPilihan ? ACCENT : 'var(--border)'}`,
+                background: bankPilihan ? ACCENT + '0d' : 'var(--surface)',
+                color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
+              <option value="">— Pilih Bank —</option>
+              <option value="bri">BRI — EDC · 0262 01 000031 562</option>
+              <option value="mandiri">MANDIRI · 136 000 4780612</option>
+              <option value="bca">BCA — GIRO · 155 91 99999</option>
+              <option value="bni">BNI · 0822 705 836</option>
+            </select>
             {bankPilihan && (
               <p style={{ fontSize: 11, color: ACCENT, fontWeight: 600, margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <CheckCircle2 size={12} /> Kledo otomatis <strong>LUNAS</strong> via {bankPilihan.toUpperCase()}
