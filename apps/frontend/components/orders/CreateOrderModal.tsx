@@ -649,24 +649,26 @@ export default function CreateOrderModal({
                         {/* Bank selector — jika Transfer */}
                         {entry.metode === 'transfer' && (
                           <div className="space-y-2">
-                            <p className="text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
+                            <label className="block text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
                               Bank Tujuan <span className="font-normal" style={{ color: 'var(--text-muted)' }}>— pilih untuk otomatis lunas di Kledo</span>
-                            </p>
-                            <div className="grid grid-cols-4 gap-1.5">
-                              {REKENING.map(r => {
-                                const isSelected = entry.bankPilihan === r.key;
-                                return (
-                                  <button key={r.key} type="button"
-                                    onClick={() => updateEntry({ bankPilihan: isSelected ? null : r.key })}
-                                    className="flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-center transition-all active:scale-95"
-                                    style={{ border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`, background: isSelected ? `${COLOR}15` : 'var(--surface)' }}>
-                                    <span className="text-[11px] font-bold" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{r.bank}</span>
-                                    {r.sub && <span className="text-[9px]" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>{r.sub}</span>}
-                                    {isSelected && <span className="w-1 h-1 rounded-full mt-0.5" style={{ background: COLOR }} />}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                            </label>
+                            <select
+                              value={entry.bankPilihan ?? ''}
+                              onChange={e => updateEntry({ bankPilihan: e.target.value || null })}
+                              className="w-full rounded-xl px-3 py-2.5 text-[13px] font-semibold appearance-none cursor-pointer transition-all"
+                              style={{
+                                border: `2px solid ${entry.bankPilihan ? COLOR : 'var(--border)'}`,
+                                background: entry.bankPilihan ? `${COLOR}10` : 'var(--surface)',
+                                color: entry.bankPilihan ? COLOR : 'var(--text-secondary)',
+                                outline: 'none',
+                              }}>
+                              <option value="">— Pilih Bank —</option>
+                              {REKENING.map(r => (
+                                <option key={r.key} value={r.key}>
+                                  {r.bank}{r.sub ? ` (${r.sub})` : ''}
+                                </option>
+                              ))}
+                            </select>
                             {entry.bankPilihan && (() => {
                               const r = REKENING.find(x => x.key === entry.bankPilihan);
                               const isCopied = copiedBank === r?.bank;
