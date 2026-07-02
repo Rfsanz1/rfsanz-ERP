@@ -290,25 +290,56 @@ export class KledoService {
   /**
    * Cari finance_account_id Kledo berdasarkan nama produk.
    * Digunakan sebagai fallback ketika kledoProductId tidak tersedia.
+   * PENTING: tidak pernah fallback ke list[0] — lebih baik skip produk
+   * daripada kirim produk yang salah ke Kledo.
    */
   private async findKledoAccountIdByName(nama: string, headers: any, baseUrl: string): Promise<number | null> {
-    try {
-      const res = await firstValueFrom(
-        this.http.get(`${baseUrl}/finance/products`, {
-          headers,
-          params: { name: nama, per_page: 5, page: 1 },
-          timeout: 5000,
-        }),
-      );
-      const body = res.data?.data ?? res.data;
-      const list: any[] = body?.data ?? body ?? [];
-      const found = list.find(
-        (p: any) => p.name?.toLowerCase().trim() === nama?.toLowerCase().trim(),
-      ) ?? list[0];
-      return found?.id ? Number(found.id) : null;
-    } catch {
-      return null;
+    const namaLower = nama?.toLowerCase().trim();
+    if (!namaLower) return null;
+
+    const trySearch = async (params: Record<string, any>): Promise<any[] | null> => {
+      try {
+        const res = await firstValueFrom(
+          this.http.get(`${baseUrl}/finance/products`, { headers, params, timeout: 5000 }),
+        );
+        const body = res.data?.data ?? res.data;
+        return body?.data ?? body ?? [];
+      } catch {
+        return null;
+      }
+    };
+
+    // Coba dua variasi parameter search yang dipakai Kledo
+    const [listByName, listBySearch] = await Promise.all([
+      trySearch({ name: nama, per_page: 10, page: 1 }),
+      trySearch({ search: nama, per_page: 10, page: 1 }),
+    ]);
+
+    const allResults = [...(listByName ?? []), ...(listBySearch ?? [])];
+
+    // 1. Exact match (case-insensitive)
+    const exact = allResults.find(
+      (p: any) => p.name?.toLowerCase().trim() === namaLower,
+    );
+    if (exact?.id) {
+      this.logger.log(`[Kledo] Produk "${nama}" ditemukan exact match → id ${exact.id}`);
+      return Number(exact.id);
     }
+
+    // 2. Partial match — nama lokal ada di dalam nama Kledo (atau sebaliknya)
+    const partial = allResults.find(
+      (p: any) =>
+        p.name?.toLowerCase().includes(namaLower) ||
+        namaLower.includes(p.name?.toLowerCase().trim() ?? '___'),
+    );
+    if (partial?.id) {
+      this.logger.log(`[Kledo] Produk "${nama}" partial match → "${partial.name}" (id ${partial.id})`);
+      return Number(partial.id);
+    }
+
+    // Tidak ditemukan — jangan ambil produk random
+    this.logger.warn(`[Kledo] Produk "${nama}" tidak ditemukan di Kledo — item akan dilewati`);
+    return null;
   }
 
   async createInvoice(dto: {
