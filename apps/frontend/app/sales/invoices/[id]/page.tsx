@@ -67,9 +67,40 @@ export default function InvoiceDetailPage() {
     if (!payForm.amount) return;
     setPaying(true);
     try {
+      // 1. Simpan pembayaran ke database lokal
       await api.post(`/invoices/${id}/payments`, { ...payForm, amount: Number(payForm.amount) });
+
+      // 2. Push pembayaran ke Kledo jika invoice punya kledoInvoiceId
+      if (inv?.kledoInvoiceId) {
+        try {
+          const today = new Date().toISOString().split('T')[0];
+          const kledoRes = await fetch(`/api/invoices/${id}/kledo-pay`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              kledoInvoiceId: inv.kledoInvoiceId,
+              amount: Number(payForm.amount),
+              method: payForm.method,
+              date: today,
+            }),
+          });
+          const kledoData = await kledoRes.json();
+          if (kledoData.ok) {
+            setMsg('Pembayaran berhasil dicatat & dikirim ke Kledo ✓');
+          } else {
+            setMsg(`Pembayaran dicatat lokal. Kledo: ${kledoData.error ?? 'gagal'}`);
+          }
+        } catch {
+          setMsg('Pembayaran dicatat lokal. Sinkronisasi Kledo gagal.');
+        }
+      } else {
+        setMsg('Pembayaran berhasil dicatat');
+      }
+
       setPayForm({ amount: '', method: 'transfer', reference: '', notes: '' });
-      setMsg('Pembayaran berhasil dicatat');
       await load();
       setTab('payments');
     } catch {} finally { setPaying(false); }
