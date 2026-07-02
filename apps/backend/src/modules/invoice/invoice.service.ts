@@ -53,7 +53,18 @@ export class InvoiceService {
   async findOne(id: string) {
     const data = await this.prisma.invoice.findUnique({
       where: { id },
-      include: { customer: true, items: true, payments: { orderBy: { createdAt: 'desc' } }, creditNotes: true },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: {
+              include: { category: { select: { unitBisnis: true } } },
+            },
+          },
+        },
+        payments: { orderBy: { createdAt: 'desc' } },
+        creditNotes: true,
+      },
     });
     if (!data) throw new NotFoundException('Invoice tidak ditemukan');
     return { data, message: 'success' };
