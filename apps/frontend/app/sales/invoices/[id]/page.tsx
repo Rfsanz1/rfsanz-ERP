@@ -319,14 +319,6 @@ export default function InvoiceDetailPage() {
             ) : (
               <form onSubmit={doPayment} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Jumlah */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold" style={{ color: '#1E1B4B' }}>Jumlah Bayar (Rp)*</label>
-                    <input type="number" className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: '1px solid #EDE8F5', color: '#1E1B4B' }}
-                      value={payForm.amount} onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))}
-                      placeholder={`Max: ${Number(outstanding).toLocaleString('id-ID')}`} max={outstanding} min={1} required />
-                  </div>
-
                   {/* Metode */}
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-semibold" style={{ color: '#1E1B4B' }}>Metode</label>
@@ -381,6 +373,14 @@ export default function InvoiceDetailPage() {
                       </p>
                     </div>
                   )}
+
+                  {/* Jumlah — di bawah pilihan bank/EDC */}
+                  <div className="flex flex-col gap-1 md:col-span-2">
+                    <label className="text-xs font-semibold" style={{ color: '#1E1B4B' }}>Jumlah Bayar (Rp)*</label>
+                    <input type="number" className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: '1px solid #EDE8F5', color: '#1E1B4B' }}
+                      value={payForm.amount} onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))}
+                      placeholder={`Max: ${Number(outstanding).toLocaleString('id-ID')}`} max={outstanding} min={1} required />
+                  </div>
 
                   {/* Referensi */}
                   <div className="flex flex-col gap-1">
