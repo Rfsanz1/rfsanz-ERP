@@ -74,7 +74,13 @@ export class SalesService {
     let kledoResult: { ok: boolean; error?: string } = { ok: false, error: 'Tidak dicoba' };
     let kledoInvoiceNumber: string | null = null;
     try {
-      const result = await this.pushInvoiceToKledo(order, items ?? []);
+      const result = await this.pushInvoiceToKledo(order, items ?? [], {
+        metodePembayaran: dto.metodePembayaran ?? dto.paymentMethod ?? null,
+        bankPilihan:      dto.bankPilihan      ?? null,
+        edcPilihan:       dto.edcPilihan       ?? null,
+        unitBisnis:       dto.unitBisnis        ?? null,
+        totalHarga:       dto.totalHarga != null ? Number(dto.totalHarga) : Number(orderData.totalHarga ?? 0),
+      });
       kledoResult = { ok: result.success, error: result.success ? undefined : (result.message ?? 'Gagal kirim ke Kledo') };
       if (result.success) {
         kledoInvoiceNumber = (result as any).kledoTransNo ?? result.kledoInvoiceId?.toString() ?? null;
@@ -122,7 +128,17 @@ export class SalesService {
     return { data: order, kledo: kledoResult };
   }
 
-  private async pushInvoiceToKledo(order: any, items: any[]) {
+  private async pushInvoiceToKledo(
+    order: any,
+    items: any[],
+    paymentParams?: {
+      metodePembayaran?: string | null;
+      bankPilihan?: string | null;
+      edcPilihan?: string | null;
+      unitBisnis?: string | null;
+      totalHarga?: number | null;
+    },
+  ) {
     const kledoItems = items.map((it: any) => ({
       kledoProductId: it.kledoProductId ?? it.product?.kledoProductId ?? null,
       nama: it.nama ?? it.name ?? '',
@@ -131,7 +147,21 @@ export class SalesService {
       unitId: it.unitId ?? 1,
     }));
     const noInvoice = `INV-${String(order.id).padStart(5, '0')}`;
-    const result = await this.kledo.createInvoice({ namaCustomer: order.namaCustomer, noHp: order.noHp, orderId: order.id, noInvoice, salesName: order.salesName ?? undefined, memo: order.catatan ?? undefined, items: kledoItems });
+    const result = await this.kledo.createInvoice({
+      namaCustomer: order.namaCustomer,
+      noHp: order.noHp,
+      orderId: order.id,
+      noInvoice,
+      salesName: order.salesName ?? undefined,
+      memo: order.catatan ?? undefined,
+      items: kledoItems,
+      /* param auto-lunas */
+      metodePembayaran: paymentParams?.metodePembayaran ?? order.metodePembayaran ?? null,
+      bankPilihan:      paymentParams?.bankPilihan      ?? order.bankPilihan      ?? null,
+      edcPilihan:       paymentParams?.edcPilihan       ?? order.edcPilihan       ?? null,
+      unitBisnis:       paymentParams?.unitBisnis        ?? order.unitBisnis       ?? null,
+      totalHarga:       paymentParams?.totalHarga        ?? Number(order.totalHarga ?? 0),
+    });
     if (result.success) {
       // Simpan trans_no Kledo (INV/53135) — jika tidak ada, fallback ke numeric ID
       const kledoRef = (result as any).kledoTransNo ?? result.kledoInvoiceId?.toString() ?? null;

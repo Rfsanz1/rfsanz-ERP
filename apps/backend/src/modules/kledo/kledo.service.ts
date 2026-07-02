@@ -287,6 +287,138 @@ export class KledoService {
     return 0;
   }
 
+  /* ── BANK_KEYWORDS: mapping key → kata kunci nama akun di COA Kledo ── */
+  private readonly BANK_KEYWORDS: Record<string, string[]> = {
+    bca:            ['bca giro', 'giro bca'],
+    bri:            ['bri edc', 'edc bri', 'bri'],
+    mandiri:        ['mandiri'],
+    bni:            ['bni'],
+    bca_edc:        ['bca edc', 'edc bca'],
+    bri_edc:        ['bri edc', 'edc bri'],
+    bni_edc:        ['bni'],
+    elektronik:     ['kas elektronik', 'elektronik'],
+    bahan_bangunan: ['kas sulawesi', 'sulawesi'],
+    kas:            ['kas masuk', 'kas tunai', 'petty cash', 'kas'],
+    transfer:       ['transfer', 'giro', 'tabungan', 'bank'],
+    edc:            ['edc', 'debit', 'kartu'],
+  };
+
+  /** Ambil semua akun COA Kledo (semua halaman, max 10) */
+  private async fetchAllKledoAccounts(headers: any, baseUrl: string): Promise<any[]> {
+    const all: any[] = [];
+    for (let page = 1; page <= 10; page++) {
+      try {
+        const res = await this.http.axiosRef.get(`${baseUrl}/finance/accounts`, {
+          headers,
+          params: { per_page: 200, page },
+          timeout: 8000,
+        });
+        const body = res.data?.data ?? res.data;
+        const items: any[] = body?.data ?? body ?? [];
+        all.push(...items);
+        this.logger.debug(`[Kledo] fetchAllAccounts page=${page} → ${items.length} akun (total=${all.length})`);
+        if (items.length < 200) break;
+      } catch (e: any) {
+        this.logger.warn(`[Kledo] fetchAllAccounts page=${page} error: ${e.message}`);
+        break;
+      }
+    }
+    return all;
+  }
+
+  /** Cari finance account Kledo berdasarkan bank key */
+  private async getBankAccountId(headers: any, baseUrl: string, bankKey: string): Promise<number | null> {
+    const keywords = this.BANK_KEYWORDS[bankKey.toLowerCase()] ?? [bankKey.toLowerCase()];
+    try {
+      const accounts = await this.fetchAllKledoAccounts(headers, baseUrl);
+      this.logger.debug(`[Kledo] getBankAccountId key="${bankKey}" keywords=${JSON.stringify(keywords)} total=${accounts.length}`);
+      for (const kw of keywords) {
+        const match = accounts.find((a: any) => (a.name ?? '').toLowerCase().includes(kw));
+        if (match) {
+          this.logger.log(`[Kledo] getBankAccountId MATCH key="${bankKey}" kw="${kw}" → id=${match.id} name="${match.name}"`);
+          return Number(match.id);
+        }
+      }
+      this.logger.warn(`[Kledo] getBankAccountId TIDAK KETEMU untuk key="${bankKey}"`);
+      return null;
+    } catch (e: any) {
+      this.logger.error(`[Kledo] getBankAccountId error: ${e.message}`);
+      return null;
+    }
+  }
+
+  /** Tandai invoice Kledo sebagai lunas — coba dua variasi payload */
+  private async markInvoicePaid(
+    headers: any,
+    baseUrl: string,
+    invoiceId: number,
+    financeAccountId: number,
+    amount: number,
+    date: string,
+    memo: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const base = { trans_date: date, finance_account_id: financeAccountId, memo };
+    this.logger.log(`[Kledo] markInvoicePaid invoiceId=${invoiceId} accountId=${financeAccountId} amount=${amount}`);
+    try {
+      // Variasi 1 — format pay_from
+      const r1 = await this.http.axiosRef.post(
+        `${baseUrl}/finance/invoicepayments`,
+        { ...base, pay_from: [{ id: invoiceId, amount }] },
+        { headers, timeout: 10000 },
+      );
+      this.logger.log(`[Kledo] markInvoicePaid v1 status=${r1.status} → BERHASIL`);
+      return { ok: true };
+    } catch (e1: any) {
+      this.logger.warn(`[Kledo] markInvoicePaid v1 gagal (${e1.response?.status}): ${e1.response?.data?.message ?? e1.message}`);
+      try {
+        // Variasi 2 — format items
+        const r2 = await this.http.axiosRef.post(
+          `${baseUrl}/finance/invoicepayments`,
+          { ...base, items: [{ invoice_id: invoiceId, amount }] },
+          { headers, timeout: 10000 },
+        );
+        this.logger.log(`[Kledo] markInvoicePaid v2 status=${r2.status} → BERHASIL`);
+        return { ok: true };
+      } catch (e2: any) {
+        const msg = e2.response?.data?.message ?? e1.response?.data?.message ?? 'Gagal tandai lunas di Kledo';
+        this.logger.error(`[Kledo] markInvoicePaid GAGAL kedua variasi: ${msg}`);
+        return { ok: false, error: msg };
+      }
+    }
+  }
+
+  /** Resolve bank key dari metode + pilihan bank/edc/unit */
+  private resolveBankKey(
+    metode: string,
+    bankPilihan?: string | null,
+    edcPilihan?: string | null,
+    unitBisnis?: string | null,
+  ): string {
+    const m = (metode ?? '').toLowerCase();
+    if (m === 'transfer') {
+      const b = bankPilihan?.toLowerCase() ?? '';
+      if (b === 'bca') return 'bca';
+      if (b === 'bri') return 'bri';
+      if (b === 'bni') return 'bni';
+      if (b === 'mandiri') return 'mandiri';
+      return 'transfer';
+    }
+    if (m === 'debit' || m === 'kartu') {
+      const e = edcPilihan?.toLowerCase() ?? '';
+      if (e === 'bca_edc') return 'bca_edc';
+      if (e === 'bri_edc') return 'bri_edc';
+      if (e === 'bni_edc') return 'bni_edc';
+      return 'edc';
+    }
+    if (m === 'cash' || m === 'tunai') {
+      const u = unitBisnis?.toLowerCase() ?? '';
+      if (u === 'elektronik') return 'elektronik';
+      if (u === 'bahan_bangunan') return 'bahan_bangunan';
+      return 'kas';
+    }
+    return '';
+  }
+
   /**
    * Cari finance_account_id Kledo berdasarkan nama produk.
    * Digunakan sebagai fallback ketika kledoProductId tidak tersedia.
@@ -347,6 +479,12 @@ export class KledoService {
     noInvoice?: string; salesName?: string;
     items: Array<{ kledoProductId?: string | null; nama: string; qty: number; harga: number; unitId?: number }>;
     dueDays?: number;
+    /* Param auto-lunas */
+    metodePembayaran?: string | null;
+    bankPilihan?: string | null;
+    edcPilihan?: string | null;
+    unitBisnis?: string | null;
+    totalHarga?: number | null;
   }) {
     const token = await this.getToken();
     if (!token) return { success: false, message: 'KLEDO_TOKEN belum dikonfigurasi' };
@@ -418,8 +556,46 @@ export class KledoService {
       // Kledo mengembalikan: { data: { id: ..., trans_no: "INV/53135" } }
       const kledoId    = res.data?.data?.id ?? res.data?.id;
       const kledoTransNo = res.data?.data?.trans_no ?? res.data?.trans_no ?? null;
-      this.logger.log(`[Kledo] Response: ${JSON.stringify(res.data)}`);
-      return { success: true, kledoInvoiceId: kledoId, kledoTransNo, message: res.data?.message ?? 'Tagihan berhasil dibuat di Kledo' };
+      this.logger.log(`[Kledo] Invoice dibuat: id=${kledoId} trans_no=${kledoTransNo}`);
+
+      /* ── Auto-lunas: tandai pembayaran di Kledo setelah invoice dibuat ── */
+      let kledoPaid      = false;
+      let kledoPaidError: string | undefined;
+
+      const metode = (dto.metodePembayaran ?? '').toLowerCase();
+      if (kledoId && metode && metode !== 'cod') {
+        const bankKey = this.resolveBankKey(metode, dto.bankPilihan, dto.edcPilihan, dto.unitBisnis);
+        const totalAmt = Number(dto.totalHarga ?? 0) || resolvedItems.reduce((s, it) => s + (it.amount ?? 0), 0);
+        this.logger.log(`[Kledo] auto-lunas: metode=${metode} bankKey="${bankKey}" amount=${totalAmt}`);
+
+        if (bankKey) {
+          const bankAccountId = await this.getBankAccountId(headers, baseUrl, bankKey);
+          if (bankAccountId) {
+            const paid = await this.markInvoicePaid(
+              headers, baseUrl, Number(kledoId),
+              bankAccountId, totalAmt, transDate,
+              `Pembayaran ${metode.toUpperCase()} — ${dto.noInvoice ?? dto.orderId ?? ''}`.trim(),
+            );
+            kledoPaid      = paid.ok;
+            kledoPaidError = paid.error;
+          } else {
+            kledoPaidError = `Akun "${bankKey}" tidak ditemukan di COA Kledo`;
+            this.logger.warn(`[Kledo] auto-lunas SKIP: ${kledoPaidError}`);
+          }
+        } else {
+          this.logger.warn(`[Kledo] auto-lunas SKIP: metode="${metode}" tidak menghasilkan bankKey`);
+        }
+        this.logger.log(`[Kledo] auto-lunas selesai: kledoPaid=${kledoPaid} error=${kledoPaidError ?? '-'}`);
+      }
+
+      return {
+        success: true,
+        kledoInvoiceId: kledoId,
+        kledoTransNo,
+        kledoPaid,
+        kledoPaidError,
+        message: res.data?.message ?? 'Tagihan berhasil dibuat di Kledo',
+      };
     } catch (e: any) {
       const apiMsg = e.response?.data?.message ?? JSON.stringify(e.response?.data) ?? '';
       const msg = e.code === 'ECONNABORTED'
