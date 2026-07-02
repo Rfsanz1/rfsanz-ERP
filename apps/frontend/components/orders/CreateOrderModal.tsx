@@ -132,8 +132,8 @@ export default function CreateOrderModal({
   const [ongkir, setOngkir]                   = useState(0);
 
   type PembayaranMetode = 'transfer' | 'cash' | 'debit' | 'cod';
-  interface PembayaranEntry { id: string; metode: PembayaranMetode; jumlah: number; bankPilihan: string | null; edcPilihan: string | null; }
-  const newPembayaran = (m: PembayaranMetode = 'transfer'): PembayaranEntry => ({ id: Math.random().toString(36).slice(2), metode: m, jumlah: 0, bankPilihan: null, edcPilihan: null });
+  interface PembayaranEntry { id: string; metode: PembayaranMetode; jumlah: number; bankPilihan: string | null; edcPilihan: string | null; autoFill: boolean; }
+  const newPembayaran = (m: PembayaranMetode = 'transfer'): PembayaranEntry => ({ id: Math.random().toString(36).slice(2), metode: m, jumlah: 0, bankPilihan: null, edcPilihan: null, autoFill: true });
   const [pembayaranList, setPembayaranList]   = useState<PembayaranEntry[]>([newPembayaran()]);
   const [copiedBank, setCopiedBank]           = useState<string | null>(null);
   const [openBankDrop, setOpenBankDrop]       = useState<string | null>(null);
@@ -164,6 +164,15 @@ export default function CreateOrderModal({
   const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
   const totalDibayar  = pembayaranList.reduce((s, p) => s + (p.jumlah || 0), 0);
   const sisaBayar     = Math.max(0, grandTotal - totalDibayar);
+
+  /* Auto-fill jumlah pembayaran saat grandTotal berubah */
+  useEffect(() => {
+    setPembayaranList(prev => {
+      const totalManual = prev.filter(p => !p.autoFill).reduce((s, p) => s + p.jumlah, 0);
+      const sisa = Math.max(0, grandTotal - totalManual);
+      return prev.map(p => p.autoFill ? { ...p, jumlah: sisa } : p);
+    });
+  }, [grandTotal]);
 
   const handleCustomerSelect = (c: CustomerOption) => {
     setNamaCustomer(c.name);
@@ -743,12 +752,27 @@ export default function CreateOrderModal({
 
                         {/* Jumlah — selalu di bawah bank selector */}
                         <div>
-                          <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>Jumlah (Rp)</label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>Jumlah (Rp)</label>
+                            {entry.autoFill && grandTotal > 0 && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ background: `${COLOR}15`, color: COLOR }}>
+                                ✦ Otomatis
+                              </span>
+                            )}
+                            {!entry.autoFill && (
+                              <button type="button"
+                                onClick={() => updateEntry({ jumlah: grandTotal, autoFill: true })}
+                                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md transition-all active:scale-95"
+                                style={{ background: 'var(--surface-sunken)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                                Reset otomatis
+                              </button>
+                            )}
+                          </div>
                           <input type="number" min={0}
                             className={`${inputCls} text-right`} style={inputSt}
-                            placeholder={pembayaranList.length === 1 ? 'Kosongkan = bayar penuh' : '0'}
+                            placeholder="0"
                             value={entry.jumlah || ''}
-                            onChange={e => updateEntry({ jumlah: Math.max(0, Number(e.target.value) || 0) })}
+                            onChange={e => updateEntry({ jumlah: Math.max(0, Number(e.target.value) || 0), autoFill: false })}
                             onFocus={focusColor} onBlur={blurColor} />
                         </div>
 
@@ -786,8 +810,14 @@ export default function CreateOrderModal({
                   {/* Tambah metode pembayaran */}
                   <button type="button"
                     onClick={() => {
-                      const sisa = Math.max(0, grandTotal - pembayaranList.reduce((s, p) => s + (p.jumlah || 0), 0));
-                      setPembayaranList(prev => [...prev, { ...newPembayaran(), jumlah: sisa }]);
+                      const totalAuto   = pembayaranList.filter(p => p.autoFill).reduce((s, p) => s + p.jumlah, 0);
+                      const totalManual = pembayaranList.filter(p => !p.autoFill).reduce((s, p) => s + p.jumlah, 0);
+                      const sisa = Math.max(0, grandTotal - totalManual);
+                      const jumlahBaru = Math.round(sisa / 2);
+                      setPembayaranList(prev => [
+                        ...prev.map(p => p.autoFill ? { ...p, jumlah: Math.max(0, sisa - jumlahBaru) } : p),
+                        { ...newPembayaran(), jumlah: jumlahBaru, autoFill: false },
+                      ]);
                     }}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[.98]"
                     style={{ border: `2px dashed ${COLOR}50`, color: COLOR, background: `${COLOR}08` }}>
