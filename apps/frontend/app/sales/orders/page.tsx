@@ -131,52 +131,75 @@ export default function SalesOrdersPage() {
         </select>
       </div>
 
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['No. Order', 'Pelanggan', 'Tanggal', 'Total', 'Status', 'Sumber', 'Aksi'].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <SkeletonTableRows cols={7} count={8} />
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Tidak ada order ditemukan</td></tr>
-              ) : filtered.map(r => (
-                <tr key={r.id}
-                  style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background .12s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-hover)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  onClick={() => router.push(`/sales/orders/${r.id}`)}>
-                  <td style={{ padding: '13px 16px', fontWeight: 700, color: C, fontSize: 12, fontFamily: 'monospace' }}>{r.kledoInvoiceId ?? r.soNumber ?? r.orderNumber ?? `#${r.id}`}</td>
-                  <td style={{ padding: '13px 16px', color: 'var(--text-primary)', fontWeight: 500 }}>{r.namaCustomer ?? r.customerName ?? r.customer?.name ?? '–'}</td>
-                  <td style={{ padding: '13px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{fmtDate(r.createdAt ?? r.tanggal)}</td>
-                  <td style={{ padding: '13px 16px', fontWeight: 700, color: 'var(--text-primary)' }}>{fmtRp(r.totalHarga ?? r.totalAmount ?? r.amount ?? 0)}</td>
-                  <td style={{ padding: '13px 16px' }}><Badge status={r.status} /></td>
-                  <td style={{ padding: '13px 16px' }}>
-                    {r.source === 'kledo' || r.kledoInvoiceId ? (
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, color: PURPLE, background: PURPLE + '12' }}>
-                        <Link2 size={9} style={{ display: 'inline', marginRight: 3 }} />Kledo
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+        {loading ? (
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ borderRadius: 12, border: '1px solid var(--border)', padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ height: 12, width: '40%', borderRadius: 6, background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div style={{ height: 14, width: '60%', borderRadius: 6, background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div style={{ height: 11, width: '30%', borderRadius: 6, background: 'var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+            Tidak ada order ditemukan
+          </div>
+        ) : (
+          filtered.map((r, idx) => {
+            const orderNo = r.kledoInvoiceId ?? r.soNumber ?? r.orderNumber ?? `#${r.id}`;
+            const customer = r.namaCustomer ?? r.customerName ?? r.customer?.name ?? '–';
+            const tanggal = fmtDate(r.createdAt ?? r.tanggal);
+            const total = fmtRp(r.totalHarga ?? r.totalAmount ?? r.amount ?? 0);
+            const isKledo = r.source === 'kledo' || r.kledoInvoiceId;
+            return (
+              <div
+                key={r.id}
+                onClick={() => router.push(`/sales/orders/${r.id}`)}
+                style={{
+                  padding: '14px 16px',
+                  borderBottom: idx < filtered.length - 1 ? '1px solid var(--border)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'background .12s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                {/* Baris 1: nomor order + badge status */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ fontWeight: 700, color: C, fontSize: 13, fontFamily: 'monospace' }}>{orderNo}</span>
+                  <Badge status={r.status} />
+                </div>
+
+                {/* Baris 2: nama customer */}
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14, lineHeight: 1.3 }}>
+                  {customer}
+                </div>
+
+                {/* Baris 3: tanggal + total + sumber */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{tanggal}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {isKledo ? (
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100, color: PURPLE, background: PURPLE + '12' }}>
+                        <Link2 size={9} style={{ display: 'inline', marginRight: 2, verticalAlign: 'middle' }} />Kledo
                       </span>
                     ) : (
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, color: C, background: C + '12' }}>ERP</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100, color: C, background: C + '12' }}>ERP</span>
                     )}
-                  </td>
-                  <td style={{ padding: '13px 16px' }} onClick={e => e.stopPropagation()}>
-                    <button onClick={() => router.push(`/sales/orders/${r.id}`)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: C, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
-                      <Eye size={12} /> Detail
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 13 }}>{total}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+
+        {/* Footer pagination */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
           <span>Menampilkan {filtered.length} dari {total} order</span>
           <div style={{ display: 'flex', gap: 8 }}>
