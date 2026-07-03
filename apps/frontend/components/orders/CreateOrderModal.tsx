@@ -95,9 +95,9 @@ const blurColor  = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.bo
 
 function Label({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
   return (
-    <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+    <label className="modal-label block font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>
       {children}
-      {optional && <span className="ml-1 font-normal text-[11px]" style={{ color: 'var(--text-muted)' }}>(opsional)</span>}
+      {optional && <span className="ml-1 font-normal" style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>(opsional)</span>}
     </label>
   );
 }
@@ -329,12 +329,34 @@ export default function CreateOrderModal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 flex items-center justify-center p-2 sm:p-4"
+      className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ backgroundColor: 'rgba(0,0,0,.55)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
     >
+      {/* Responsive font-size scaling via CSS custom property */}
+      <style>{`
+        .order-modal-root {
+          font-size: clamp(13px, 3.8vw, 15px);
+        }
+        @media (min-width: 640px) {
+          .order-modal-root { font-size: 14px; }
+        }
+        .order-modal-root .modal-label    { font-size: clamp(10px, 2.8vw, 12px); }
+        .order-modal-root .modal-section  { font-size: clamp(10px, 2.6vw, 11px); }
+        .order-modal-root .modal-heading  { font-size: clamp(14px, 4.2vw, 16px); }
+        .order-modal-root .modal-subtext  { font-size: clamp(10px, 2.8vw, 12px); }
+        .order-modal-root .modal-input    { font-size: clamp(13px, 3.5vw, 14px); }
+        .order-modal-root .modal-badge    { font-size: clamp(9px,  2.4vw, 10px); }
+        .order-modal-root .modal-btn-text { font-size: clamp(12px, 3.2vw, 14px); }
+      `}</style>
       <div
-        className="rounded-2xl w-full flex flex-col"
-        style={{ background: 'var(--surface)', maxWidth: 820, maxHeight: '96vh', boxShadow: 'var(--shadow-lg)' }}
+        className="order-modal-root rounded-t-2xl sm:rounded-2xl w-full flex flex-col"
+        style={{
+          background: 'var(--surface)',
+          maxWidth: 820,
+          maxHeight: '92dvh',
+          height: 'auto',
+          boxShadow: 'var(--shadow-lg)',
+        }}
       >
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-4 sm:px-7 py-4 sm:py-5" style={{ borderBottom: '1.5px solid var(--border)' }}>
@@ -343,8 +365,8 @@ export default function CreateOrderModal({
               <ShoppingCart className="h-5 w-5" style={{ color: COLOR }} />
             </div>
             <div>
-              <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Buat Order Baru</h2>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              <h2 className="modal-heading font-bold" style={{ color: 'var(--text-primary)' }}>Buat Order Baru</h2>
+              <p className="modal-subtext" style={{ color: 'var(--text-muted)' }}>
                 Tersimpan otomatis ke ERP + Kledo
                 {kledoStatus === 'syncing' && ' · Mengirim ke Kledo…'}
                 {kledoStatus === 'ok' && ' ✓ Tersinkron ke Kledo'}
@@ -908,14 +930,14 @@ export default function CreateOrderModal({
           )}
           <div className="flex items-center justify-end gap-3">
             <button type="button" onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+              className="modal-btn-text px-5 py-2.5 rounded-xl font-semibold transition-colors"
               style={{ color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
               Batal
             </button>
             <button type="button" onClick={handleSubmit} disabled={saving}
-              className="px-7 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
+              className="modal-btn-text px-7 py-2.5 rounded-xl font-semibold text-white transition-all disabled:opacity-60"
               style={{ background: COLOR, boxShadow: `0 4px 16px ${COLOR}50` }}>
               {saving
                 ? '⏳ Menyimpan…'
