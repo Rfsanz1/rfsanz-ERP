@@ -99,21 +99,40 @@ export async function PUT(req: NextRequest) {
     const auth  = req.headers.get('authorization') ?? '';
     const body  = await req.json() as Record<string, number | null>;
 
-    // Coba backend dulu
+    // Coba backend dulu — jika berhasil, selesai
     if (process.env.BACKEND_URL) {
-      const result = await backendPut('/api/kledo/payment-config', body, auth).catch((e) => ({ ok: false, error: e.message }));
-      if (result.ok) return NextResponse.json({ success: true });
-      // Jika backend ada tapi gagal, jangan silently fallback — kembalikan error
-      return NextResponse.json({ success: false, error: result.error ?? 'Gagal simpan ke backend' }, { status: 500 });
+      let backendResult: { ok: boolean; error?: string; httpStatus?: number } | null = null;
+      try {
+        const r = await fetch(`${resolveBackend()}/api/kledo/payment-config`, {
+          method: 'PUT',
+          headers: { Authorization: auth || '', 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(8000),
+        });
+        if (r.ok) return NextResponse.json({ success: true });
+        // Backend menjawab dengan HTTP error — jangan fallback untuk 401/403/400
+        // (auth/validation error dari backend harus dikembalikan ke client)
+        if (r.status === 401 || r.status === 403 || r.status === 400 || r.status === 422) {
+          const txt = await r.text().catch(() => '');
+          return NextResponse.json({ success: false, error: `Backend menolak (HTTP ${r.status}): ${txt.slice(0, 200)}` }, { status: r.status });
+        }
+        // 404 / 500 → backend tidak punya endpoint ini → boleh fallback ke local DB
+        const txt = await r.text().catch(() => '');
+        backendResult = { ok: false, error: `HTTP ${r.status}: ${txt.slice(0, 200)}`, httpStatus: r.status };
+      } catch (e: any) {
+        // Network/timeout error → boleh fallback ke local DB
+        backendResult = { ok: false, error: e.message };
+      }
+      console.warn('[payment-config] backend PUT tidak tersedia, fallback ke local DB:', backendResult?.error);
     }
 
-    // Fallback: local DB (hanya jika tidak ada backend)
+    // Local DB (DATABASE_URL tersedia atau tidak ada backend)
     if (process.env.DATABASE_URL) {
       await writeLocalConfig(body);
       return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json({ success: false, error: 'Tidak ada storage yang tersedia' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Tidak ada storage yang tersedia (tidak ada DATABASE_URL maupun backend yang mendukung endpoint ini)' }, { status: 500 });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
