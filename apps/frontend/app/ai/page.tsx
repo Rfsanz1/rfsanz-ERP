@@ -21,7 +21,7 @@ const AI_MODULES = [
   { href: '/ai/sales-prediction', label: 'AI Sales Prediction', desc: 'Prediksi penjualan per produk/salesman', icon: BarChart2, color: '#EC4899', bg: '#FDF2F8' },
   { href: '/ai/inventory-prediction', label: 'AI Inventory Prediction', desc: 'Prediksi kebutuhan stok & reorder', icon: Package, color: '#14B8A6', bg: '#F0FDFA' },
   { href: '/ai/financial-analysis', label: 'AI Financial Analysis', desc: 'Analisis keuangan mendalam dengan AI', icon: DollarSign, color: '#EF4444', bg: '#FEF2F2' },
-  { href: '/ai/hr-assistant', label: 'AI HR Assistant', desc: 'Bantu pengelolaan SDM & rekrutmen', icon: UserCheck, color: '#6366F1', bg: '#EEF2FF' },
+  { href: '/ai/hr-assistant', label: 'AI HR Assistant', desc: 'Bantu pengelolaan SDM & rekrutmen', icon: UserCheck, color: '#8C57FF', bg: '#EEF2FF' },
   { href: '/ai/marketplace-assistant', label: 'AI Marketplace', desc: 'Optimasi listing & harga marketplace', icon: ShoppingBag, color: '#F97316', bg: '#FFF7ED' },
   { href: '/ai/notifications', label: 'AI Notification', desc: 'Notifikasi cerdas berbasis AI trigger', icon: Bell, color: '#0EA5E9', bg: '#F0F9FF' },
   { href: '/ai/logs', label: 'AI Logs', desc: 'Riwayat semua aktivitas AI', icon: ScrollText, color: '#6B7280', bg: '#F9FAFB' },

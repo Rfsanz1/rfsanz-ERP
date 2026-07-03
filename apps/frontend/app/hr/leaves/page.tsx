@@ -87,10 +87,10 @@ export default function LeavesPage() {
           </div>
           <div className="flex gap-2">
             {tab === 'requests' && (
-              <button onClick={() => setShowForm(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Ajukan Cuti</button>
+              <button onClick={() => setShowForm(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Ajukan Cuti</button>
             )}
             {tab === 'types' && (
-              <button onClick={() => setShowTypeForm(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Jenis Cuti</button>
+              <button onClick={() => setShowTypeForm(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Jenis Cuti</button>
             )}
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function LeavesPage() {
         {stats && (
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Total Pengajuan', value: stats.total,    color: '#6366F1' },
+              { label: 'Total Pengajuan', value: stats.total,    color: '#8C57FF' },
               { label: 'Menunggu',        value: stats.pending,  color: '#F59E0B' },
               { label: 'Disetujui',       value: stats.approved, color: '#10B981' },
             ].map(s => (
@@ -116,7 +116,7 @@ export default function LeavesPage() {
           {([['requests','Pengajuan'],['types','Jenis Cuti'],['allocations','Alokasi']] as [Tab, string][]).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)}
               style={{ padding: '7px 16px', borderRadius: 9, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s',
-                background: tab === key ? '#6366F1' : 'transparent', color: tab === key ? '#fff' : 'var(--text-muted)' }}>
+                background: tab === key ? '#8C57FF' : 'transparent', color: tab === key ? '#fff' : 'var(--text-muted)' }}>
               {label}
             </button>
           ))}
@@ -252,7 +252,7 @@ export default function LeavesPage() {
               <div><label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5 }}>Alasan</label><textarea value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} rows={2} style={{ ...inputStyle, resize: 'none' as const }} /></div>
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setShowForm(false)} style={{ flex: 1, padding: '9px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
-                <button type="submit" style={{ flex: 2, padding: '9px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Ajukan</button>
+                <button type="submit" style={{ flex: 2, padding: '9px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Ajukan</button>
               </div>
             </form>
           </div>
@@ -276,7 +276,7 @@ export default function LeavesPage() {
               </label>
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setShowTypeForm(false)} style={{ flex: 1, padding: '9px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
-                <button type="submit" style={{ flex: 2, padding: '9px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Simpan</button>
+                <button type="submit" style={{ flex: 2, padding: '9px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Simpan</button>
               </div>
             </form>
           </div>

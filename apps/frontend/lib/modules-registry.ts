@@ -192,7 +192,7 @@ export const MODULES: ERP_Module[] = [
     features: ['Pengaturan Sistem', 'User & Role & Permission', 'Integrasi Third-party', 'API Management', 'Queue Monitor', 'Backup Database', 'Automation & Cronjob', 'Audit Log'],
     icon: Settings,
     color: '#475569',
-    bgColor: '#F1F5F9',
+    bgColor: '#F4F5FA',
     gradient: 'linear-gradient(135deg, #475569, #334155)',
     version: '17.0', installs: '15.0K', rating: 4.8,
     deps: [], href: '/settings', isCore: true, status: 'core',

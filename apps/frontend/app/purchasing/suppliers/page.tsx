@@ -146,7 +146,7 @@ export default function SuppliersPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           {[
             { label: 'Total Supplier', value: total, color: '#5D4037' },
-            { label: 'Dari Lokal', value: data.filter(s => s.source === 'local').length, color: '#6366F1' },
+            { label: 'Dari Lokal', value: data.filter(s => s.source === 'local').length, color: '#8C57FF' },
             { label: 'Dari Kledo', value: data.filter(s => s.source === 'kledo').length, color: '#0EA5E9' },
           ].map(s => (
             <div key={s.label} style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', padding: '16px 20px', boxShadow: 'var(--shadow-sm)' }}>
@@ -209,8 +209,8 @@ export default function SuppliersPage() {
                     onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}>
                     <td style={{ padding: '11px 14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: s.source === 'kledo' ? 'rgba(14,165,233,.12)' : 'rgba(99,102,241,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Building2 size={14} style={{ color: s.source === 'kledo' ? '#0EA5E9' : '#6366F1' }} />
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: s.source === 'kledo' ? 'rgba(14,165,233,.12)' : 'rgba(140,87,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Building2 size={14} style={{ color: s.source === 'kledo' ? '#0EA5E9' : '#8C57FF' }} />
                         </div>
                         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</span>
                       </div>
@@ -224,8 +224,8 @@ export default function SuppliersPage() {
                     <td style={{ padding: '11px 14px' }}>
                       <span style={{
                         fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100,
-                        background: s.source === 'kledo' ? 'rgba(14,165,233,.12)' : 'rgba(99,102,241,.12)',
-                        color: s.source === 'kledo' ? '#0EA5E9' : '#6366F1',
+                        background: s.source === 'kledo' ? 'rgba(14,165,233,.12)' : 'rgba(140,87,255,.12)',
+                        color: s.source === 'kledo' ? '#0EA5E9' : '#8C57FF',
                         display: 'inline-flex', alignItems: 'center', gap: 4,
                       }}>
                         {s.source === 'kledo' ? <Globe size={9} /> : null}

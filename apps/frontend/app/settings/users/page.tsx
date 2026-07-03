@@ -10,10 +10,10 @@ import {
 } from 'lucide-react';
 
 const ROLE_COLORS: Record<string, string> = {
-  admin: '#6366F1', owner: '#D97706', 'super admin': '#DC2626',
+  admin: '#8C57FF', owner: '#D97706', 'super admin': '#DC2626',
   sales: '#0891B2', gudang: '#F57C00', driver: '#1D4ED8',
 };
-const roleColor = (r: string) => ROLE_COLORS[r?.toLowerCase()] ?? '#6366F1';
+const roleColor = (r: string) => ROLE_COLORS[r?.toLowerCase()] ?? '#8C57FF';
 
 interface EUser { id: string; name: string | null; email: string; role: string; roleId: string; active: boolean; createdAt: string; }
 interface Role { id: string; name: string; description?: string }
@@ -138,7 +138,7 @@ export default function UserManagementPage() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola akun pengguna, role, dan hak akses sistem ERP</p>
           </div>
           <button onClick={openCreate}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Tambah User
           </button>
         </div>
@@ -146,7 +146,7 @@ export default function UserManagementPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Total User',    value: users.length,                         accent: '#6366F1', Icon: Users },
+            { label: 'Total User',    value: users.length,                         accent: '#8C57FF', Icon: Users },
             { label: 'Aktif',         value: users.filter(u => u.active).length,   accent: '#10B981', Icon: UserCheck },
             { label: 'Tidak Aktif',   value: users.filter(u => !u.active).length,  accent: '#94A3B8', Icon: UserX },
             { label: 'Total Role',    value: roles.length,                         accent: '#F59E0B', Icon: Shield },
@@ -171,7 +171,7 @@ export default function UserManagementPage() {
               <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama atau email…"
                 style={{ ...inputStyle, paddingLeft: 34 }}
-                onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+                onFocus={e => { e.target.style.borderColor = '#8C57FF'; }}
                 onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
             </div>
             <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
@@ -186,7 +186,7 @@ export default function UserManagementPage() {
 
           {loading ? (
             <div style={{ padding: 48, textAlign: 'center' }}>
-              <RefreshCw size={22} className="animate-spin mx-auto mb-3" style={{ color: '#6366F1' }} />
+              <RefreshCw size={22} className="animate-spin mx-auto mb-3" style={{ color: '#8C57FF' }} />
               <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Memuat data pengguna…</p>
             </div>
           ) : filtered.length === 0 ? (
@@ -236,8 +236,8 @@ export default function UserManagementPage() {
                         <td style={{ padding: '12px 16px' }}>
                           <div className="flex items-center gap-1">
                             <button onClick={() => openEdit(u)} title="Edit user"
-                              style={{ padding: 6, borderRadius: 7, border: 'none', background: 'transparent', color: '#6366F1', cursor: 'pointer' }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.10)'; }}
+                              style={{ padding: 6, borderRadius: 7, border: 'none', background: 'transparent', color: '#8C57FF', cursor: 'pointer' }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140,87,255,0.10)'; }}
                               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
                               <Edit2 size={13} />
                             </button>
@@ -265,7 +265,7 @@ export default function UserManagementPage() {
           <div style={{ background: 'var(--surface)', borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: '0 24px 64px rgba(0,0,0,.18)', border: '1px solid var(--border)' }}>
             <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2.5">
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: '#6366F1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: '#8C57FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Users size={14} style={{ color: '#fff' }} />
                 </div>
                 <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
@@ -281,13 +281,13 @@ export default function UserManagementPage() {
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Nama Lengkap <span style={{ color: '#EF4444' }}>*</span></label>
                 <input type="text" style={inputStyle} placeholder="Masukkan nama lengkap…" value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                  onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Email <span style={{ color: '#EF4444' }}>*</span></label>
                 <input type="email" style={inputStyle} placeholder="user@gentongmas.com" value={form.email}
                   onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                  onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>
@@ -298,7 +298,7 @@ export default function UserManagementPage() {
                   <input type={showPw ? 'text' : 'password'} style={{ ...inputStyle, paddingRight: 42 }}
                     placeholder={editTarget ? 'Password baru (opsional)…' : 'Min. 8 karakter…'}
                     value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                    onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                    onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
                   <button type="button" onClick={() => setShowPw(p => !p)}
                     style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>
                     {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -308,7 +308,7 @@ export default function UserManagementPage() {
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Role <span style={{ color: '#EF4444' }}>*</span></label>
                 <select style={inputStyle} value={form.roleId} onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))}
-                  onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }}>
+                  onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }}>
                   <option value="">Pilih role…</option>
                   {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
@@ -318,7 +318,7 @@ export default function UserManagementPage() {
               <button onClick={closeForm}
                 style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
               <button onClick={save} disabled={saving}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.75 : 1 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.75 : 1 }}>
                 {saving ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
                 {saving ? 'Menyimpan…' : editTarget ? 'Simpan Perubahan' : 'Tambah User'}
               </button>

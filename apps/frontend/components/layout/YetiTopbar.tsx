@@ -116,7 +116,7 @@ export function YetiTopbar({ onToggleSidebar, onToggleMobileSidebar }: TopbarPro
               className="absolute right-0 top-full mt-2 w-80 rounded-xl shadow-xl border overflow-hidden"
               style={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }}
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: '#F1F5F9' }}>
+              <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: '#F4F5FA' }}>
                 <p className="font-semibold text-sm text-slate-700">Notifikasi</p>
                 <span
                   className="text-xs font-medium px-2 py-0.5 rounded-full text-white"
@@ -142,7 +142,7 @@ export function YetiTopbar({ onToggleSidebar, onToggleMobileSidebar }: TopbarPro
                   ))}
                 </div>
               )}
-              <div className="px-4 py-2.5 border-t text-center" style={{ borderColor: '#F1F5F9' }}>
+              <div className="px-4 py-2.5 border-t text-center" style={{ borderColor: '#F4F5FA' }}>
                 <button className="text-xs font-medium" style={{ color: '#3B82F6' }}>Lihat semua notifikasi</button>
               </div>
             </div>

@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import { TrendingUp, ShoppingCart, Users, Target, RefreshCw, Link2 } from 'lucide-react';
 
 const C      = '#00ACC1';
-const PURPLE = '#6366F1';
+const PURPLE = '#8C57FF';
 
 interface SalesReport { month: string; revenue: number; orders: number; newCustomers: number; }
 

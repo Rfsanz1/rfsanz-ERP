@@ -79,7 +79,7 @@ export default function ApprovalPage() {
           ] as const).map(([key, label, Icon, count]) => (
             <button key={key} onClick={() => setTab(key as any)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 9, fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s',
-                background: tab === key ? '#6366F1' : 'transparent',
+                background: tab === key ? '#8C57FF' : 'transparent',
                 color: tab === key ? '#fff' : 'var(--text-muted)' }}>
               <Icon size={14} /> {label}
               {count > 0 && (
@@ -130,7 +130,7 @@ export default function ApprovalPage() {
                     value={notes[item.id] ?? ''}
                     onChange={e => setNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
                     style={{ flex: 1, padding: '8px 12px', borderRadius: 9, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
-                    onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }}
+                    onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }}
                   />
                   <button onClick={() => handleApprove(item.module, item.id)} disabled={processing === item.id}
                     style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 10, border: 'none', background: '#10B981', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: processing === item.id ? 0.7 : 1 }}>

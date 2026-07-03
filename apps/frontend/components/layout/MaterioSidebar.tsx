@@ -257,10 +257,10 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                 border: '1px solid #E5E7EB',
                 background: 'transparent', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#6366F1', transition: 'all 0.15s',
+                color: '#8C57FF', transition: 'all 0.15s',
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,.1)';
+                (e.currentTarget as HTMLElement).style.background = 'rgba(140,87,255,.1)';
               }}
               onMouseLeave={e => {
                 (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -271,7 +271,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
           ) : (
             <div style={{
               width: 32, height: 32, borderRadius: 9,
-              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              background: 'linear-gradient(135deg, #8C57FF, #8B5CF6)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <span style={{ color: '#fff', fontWeight: 800, fontSize: 10 }}>GM</span>
@@ -297,8 +297,8 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                 color: '#9CA3AF', transition: 'all 0.15s',
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,.08)';
-                (e.currentTarget as HTMLElement).style.color = '#6366F1';
+                (e.currentTarget as HTMLElement).style.background = 'rgba(140,87,255,.08)';
+                (e.currentTarget as HTMLElement).style.color = '#8C57FF';
               }}
               onMouseLeave={e => {
                 (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -312,9 +312,9 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
           {/* Logo mark */}
           <div style={{
             width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            background: 'linear-gradient(135deg, #8C57FF, #8B5CF6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
+            boxShadow: '0 2px 8px rgba(140,87,255,0.3)',
           }}>
             <span style={{ color: '#fff', fontWeight: 800, fontSize: 10, letterSpacing: 0.3 }}>GM</span>
           </div>
@@ -345,12 +345,12 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
             const iconEl = (
               <div style={{
                 width: 40, height: 36, borderRadius: 8,
-                background: active ? 'rgba(99,102,241,.1)' : 'transparent',
+                background: active ? 'rgba(140,87,255,.1)' : 'transparent',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto', cursor: 'pointer', transition: 'background 0.15s',
               }}>
                 <Icon size={18} strokeWidth={active ? 2.2 : 1.8}
-                  style={{ color: active ? '#6366F1' : '#9CA3AF' }} />
+                  style={{ color: active ? '#8C57FF' : '#9CA3AF' }} />
               </div>
             );
 
@@ -393,14 +393,14 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     width: '100%', padding: '11px 16px',
-                    background: active ? 'rgba(99,102,241,.06)' : 'transparent',
+                    background: active ? 'rgba(140,87,255,.06)' : 'transparent',
                     border: 'none', cursor: 'pointer',
-                    borderLeft: active ? '3px solid #6366F1' : '3px solid transparent',
+                    borderLeft: active ? '3px solid #8C57FF' : '3px solid transparent',
                     transition: 'all 0.15s',
                   }}
                 >
                   <Icon size={16} strokeWidth={active ? 2.2 : 1.8}
-                    style={{ color: active ? '#6366F1' : '#9CA3AF', flexShrink: 0 }} />
+                    style={{ color: active ? '#8C57FF' : '#9CA3AF', flexShrink: 0 }} />
                   <span style={{
                     flex: 1, textAlign: 'left', fontSize: 15,
                     fontWeight: active ? 700 : 500,
@@ -411,8 +411,8 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                   {item.badge && (
                     <span style={{
                       fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 100, flexShrink: 0,
-                      background: item.badge === 'AI' ? 'rgba(139,92,246,.12)' : 'rgba(99,102,241,.1)',
-                      color: item.badge === 'AI' ? '#8B5CF6' : '#6366F1',
+                      background: item.badge === 'AI' ? 'rgba(139,92,246,.12)' : 'rgba(140,87,255,.1)',
+                      color: item.badge === 'AI' ? '#8B5CF6' : '#8C57FF',
                     }}>{item.badge}</span>
                   )}
                   <ChevronDown size={13} strokeWidth={2}
@@ -427,15 +427,15 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       padding: '7px 16px',
-                      background: active ? 'rgba(99,102,241,.06)' : 'transparent',
-                      borderLeft: active ? '3px solid #6366F1' : '3px solid transparent',
+                      background: active ? 'rgba(140,87,255,.06)' : 'transparent',
+                      borderLeft: active ? '3px solid #8C57FF' : '3px solid transparent',
                       transition: 'all 0.15s', cursor: 'pointer',
                     }}
                     onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
                     onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
                     <Icon size={16} strokeWidth={active ? 2.2 : 1.8}
-                      style={{ color: active ? '#6366F1' : '#9CA3AF', flexShrink: 0 }} />
+                      style={{ color: active ? '#8C57FF' : '#9CA3AF', flexShrink: 0 }} />
                     <span style={{
                       flex: 1, fontSize: 13,
                       fontWeight: active ? 600 : 400,
@@ -464,7 +464,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                           style={{
                             display: 'flex', alignItems: 'center', gap: 8,
                             padding: '10px 16px 10px 44px',
-                            background: ca ? 'rgba(99,102,241,.06)' : 'transparent',
+                            background: ca ? 'rgba(140,87,255,.06)' : 'transparent',
                             transition: 'background 0.12s', cursor: 'pointer',
                           }}
                           onMouseEnter={e => { if (!ca) (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
@@ -472,11 +472,11 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                         >
                           <div style={{
                             width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-                            background: ca ? '#6366F1' : '#D1D5DB', transition: 'all 0.15s',
+                            background: ca ? '#8C57FF' : '#D1D5DB', transition: 'all 0.15s',
                           }} />
                           <span style={{
                             fontSize: 14, fontWeight: ca ? 600 : 400,
-                            color: ca ? '#6366F1' : '#4B5563',
+                            color: ca ? '#8C57FF' : '#4B5563',
                           }}>
                             {child.label}
                           </span>
@@ -503,18 +503,18 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '10px 14px', borderRadius: 12, cursor: 'pointer',
               border: '1.5px solid',
-              borderColor: sidebarMode === 'full' ? '#6366F1' : '#E5E7EB',
-              background: sidebarMode === 'full' ? 'rgba(99,102,241,.07)' : '#F9FAFB',
+              borderColor: sidebarMode === 'full' ? '#8C57FF' : '#E5E7EB',
+              background: sidebarMode === 'full' ? 'rgba(140,87,255,.07)' : '#F9FAFB',
               transition: 'all 0.2s',
             }}
           >
             {sidebarMode === 'full'
-              ? <ChevronUp size={15} strokeWidth={2.5} style={{ color: '#6366F1' }} />
+              ? <ChevronUp size={15} strokeWidth={2.5} style={{ color: '#8C57FF' }} />
               : <ChevronDown size={15} strokeWidth={2.5} style={{ color: '#6B7280' }} />
             }
             <span style={{
               fontSize: 13, fontWeight: 600,
-              color: sidebarMode === 'full' ? '#6366F1' : '#6B7280',
+              color: sidebarMode === 'full' ? '#8C57FF' : '#6B7280',
             }}>
               {sidebarMode === 'full' ? 'Mode Simpel' : 'Mode Admin (Semua Menu)'}
             </span>

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 const C = '#00ACC1';
-const PURPLE = '#6366F1';
+const PURPLE = '#8C57FF';
 
 const STATUS: Record<string, { label: string; color: string }> = {
   pending:    { label: 'Pending',      color: '#F59E0B' },
@@ -280,7 +280,7 @@ export default function OrderDetailPage() {
 
         const METODE_ICON: Record<string, any> = { transfer: Smartphone, cash: Banknote, debit: CreditCard, cod: Truck, mixed: CreditCard };
         const METODE_LABEL: Record<string, string> = { transfer: 'Transfer Bank', cash: 'Tunai', debit: 'Debit EDC', cod: 'COD', mixed: 'Campuran' };
-        const METODE_COLOR: Record<string, string> = { transfer: '#6366F1', cash: '#10B981', debit: '#F59E0B', cod: '#06B6D4', mixed: '#8B5CF6' };
+        const METODE_COLOR: Record<string, string> = { transfer: '#8C57FF', cash: '#10B981', debit: '#F59E0B', cod: '#06B6D4', mixed: '#8B5CF6' };
 
         const grandTotal = Number(order.totalHarga ?? order.totalAmount ?? 0);
         const effectiveMetode = order.metode_pembayaran ?? order.metodePembayaran ?? 'transfer';
@@ -304,7 +304,7 @@ export default function OrderDetailPage() {
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Detail Pembayaran</p>
               {isSplit && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,.1)', color: '#6366F1' }}>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(140,87,255,.1)', color: '#8C57FF' }}>
                   Split {entries.length} metode
                 </span>
               )}

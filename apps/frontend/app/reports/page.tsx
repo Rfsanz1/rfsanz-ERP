@@ -59,7 +59,7 @@ const CATEGORIES: ReportCategory[] = [
     ],
   },
   {
-    title: 'Laporan HR & Payroll', icon: Users, accent: '#6366F1',
+    title: 'Laporan HR & Payroll', icon: Users, accent: '#8C57FF',
     reports: [
       { name: 'Kehadiran Karyawan', href: '/reports/hr?type=attendance', description: 'Data absensi karyawan' },
       { name: 'Rekap Cuti',         href: '/reports/hr?type=leave',       description: 'Catatan pengambilan cuti' },

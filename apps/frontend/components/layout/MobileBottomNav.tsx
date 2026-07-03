@@ -48,7 +48,7 @@ export function MobileBottomNav() {
               padding: '10px 4px 10px',
               gap: 4,
               textDecoration: 'none',
-              color: active ? '#6366F1' : '#94A3B8',
+              color: active ? '#8C57FF' : '#94A3B8',
               transition: 'color 0.15s',
               position: 'relative',
             }}
@@ -59,7 +59,7 @@ export function MobileBottomNav() {
                 width: 36,
                 height: 3,
                 borderRadius: '0 0 6px 6px',
-                background: '#6366F1',
+                background: '#8C57FF',
                 top: 0,
               }} />
             )}

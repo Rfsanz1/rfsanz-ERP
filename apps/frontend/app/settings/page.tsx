@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 const MENU_CARDS = [
-  { href: '/settings/users',            label: 'Users & Roles',    icon: Users,      color: '#6366F1', bg: '#F0F0FE' },
+  { href: '/settings/users',            label: 'Users & Roles',    icon: Users,      color: '#8C57FF', bg: '#F0F0FE' },
   { href: '/settings/companies',        label: 'Multi Perusahaan', icon: Globe2,     color: '#0EA5E9', bg: '#F0F9FF' },
   { href: '/settings/document-numbers', label: 'Nomor Dokumen',    icon: Hash,       color: '#D97706', bg: '#FFFBEB' },
   { href: '/settings/email-gateway',    label: 'Email Gateway',    icon: Mail,       color: '#059669', bg: '#F0FDF4' },
@@ -68,7 +68,7 @@ export default function SettingsPage() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Building2 size={15} style={{ color: '#6366F1' }} />
+            <Building2 size={15} style={{ color: '#8C57FF' }} />
             <span className="font-semibold text-sm" style={{ color: '#1E1B4B' }}>Profil Perusahaan</span>
           </div>
 
@@ -83,14 +83,14 @@ export default function SettingsPage() {
             <button onClick={load}
               className="p-2 rounded-lg transition"
               style={{ background: '#F3F4F6', color: '#9CA3AF', border: 'none', cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#6366F1')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#8C57FF')}
               onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
             >
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             </button>
             <button onClick={save} disabled={saving}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-              style={{ background: '#6366F1', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer' }}
+              style={{ background: '#8C57FF', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer' }}
             >
               {saving ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
               Simpan
@@ -110,7 +110,7 @@ export default function SettingsPage() {
                   placeholder={`${f.label}…`}
                   className="w-full text-sm rounded-lg px-3 py-2 outline-none"
                   style={{ border: '1px solid #E5E7EB', background: '#FAFAFA', color: '#1E1B4B' }}
-                  onFocus={e => (e.target.style.borderColor = '#6366F1')}
+                  onFocus={e => (e.target.style.borderColor = '#8C57FF')}
                   onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
                 />
               </div>

@@ -41,7 +41,7 @@ export default function CrmActivitiesPage() {
             <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Aktivitas CRM</h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Jadwal panggilan, email, dan meeting</p>
           </div>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Aktivitas Baru
           </button>
         </div>
@@ -49,7 +49,7 @@ export default function CrmActivitiesPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Total Aktivitas', value: items.length, accent: '#6366F1' },
+            { label: 'Total Aktivitas', value: items.length, accent: '#8C57FF' },
             { label: 'Tertunda',        value: pending,       accent: '#F59E0B' },
             { label: 'Selesai',         value: done,          accent: '#10B981' },
           ].map(s => (

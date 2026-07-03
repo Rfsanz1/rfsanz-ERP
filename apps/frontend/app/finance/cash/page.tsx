@@ -35,14 +35,14 @@ export default function FinanceCashPage() {
             <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Kas &amp; Transaksi</h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola kas masuk dan kas keluar harian</p>
           </div>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Transaksi Baru
           </button>
         </div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div style={{ ...card, background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', border: 'none' }}>
+          <div style={{ ...card, background: 'linear-gradient(135deg, #8C57FF 0%, #8B5CF6 100%)', border: 'none' }}>
             <div className="flex items-center gap-3 mb-2">
               <Wallet size={18} style={{ color: 'rgba(255,255,255,0.8)' }} />
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>Saldo Kas Saat Ini</span>

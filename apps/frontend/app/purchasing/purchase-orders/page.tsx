@@ -153,7 +153,7 @@ export default function PurchaseOrdersPage() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Manajemen pembelian — lokal &amp; Kledo</p>
           </div>
           <button onClick={() => router.push('/purchasing/purchase-orders/new')}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Buat PO
           </button>
         </div>
@@ -161,7 +161,7 @@ export default function PurchaseOrdersPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {[
-            { label: 'Total PO', value: total.toLocaleString('id-ID'), icon: FileText, accent: '#6366F1' },
+            { label: 'Total PO', value: total.toLocaleString('id-ID'), icon: FileText, accent: '#8C57FF' },
             { label: 'Total Nilai', value: IDR(totalNilai), icon: DollarSign, accent: '#F59E0B', small: true },
             { label: 'Dari Lokal DB', value: localCount.toLocaleString('id-ID'), icon: Package, accent: '#94A3B8' },
             { label: 'Dari Kledo', value: kledoCount.toLocaleString('id-ID'), icon: Globe, accent: '#0EA5E9' },
@@ -240,13 +240,13 @@ export default function PurchaseOrdersPage() {
                       style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'var(--brand-hover)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}>
-                      <td style={{ padding: '13px 16px', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#6366F1' }}>{po.noPo}</td>
+                      <td style={{ padding: '13px 16px', fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#8C57FF' }}>{po.noPo}</td>
                       <td style={{ padding: '13px 16px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{po.supplierName}</td>
                       <td style={{ padding: '13px 16px', fontSize: 12, color: 'var(--text-muted)' }}>{fmtDate(po.tanggal)}</td>
                       <td style={{ padding: '13px 16px', fontSize: 12, color: 'var(--text-muted)' }}>{fmtDate(po.dueDate)}</td>
                       <td style={{ padding: '13px 16px', textAlign: 'right', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{IDR(po.totalHarga)}</td>
                       <td style={{ padding: '13px 16px', textAlign: 'center' }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: po.source === 'kledo' ? 'rgba(14,165,233,.12)' : 'rgba(99,102,241,.12)', color: po.source === 'kledo' ? '#0EA5E9' : '#6366F1', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: po.source === 'kledo' ? 'rgba(14,165,233,.12)' : 'rgba(140,87,255,.12)', color: po.source === 'kledo' ? '#0EA5E9' : '#8C57FF', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {po.source === 'kledo' && <Globe size={9} />}
                           {po.source === 'kledo' ? 'Kledo' : 'Lokal'}
                         </span>

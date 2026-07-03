@@ -43,7 +43,7 @@ export default function BankAccountsPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-              <Landmark size={18} style={{ color: '#6366F1' }} /> Bank &amp; Kas
+              <Landmark size={18} style={{ color: '#8C57FF' }} /> Bank &amp; Kas
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Rekening bank dan transaksi kas</p>
           </div>
@@ -65,7 +65,7 @@ export default function BankAccountsPage() {
                   <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{a.bankName || 'Bank'}</p>
                   <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px' }}>{a.accountName || a.name}</p>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px', fontFamily: 'monospace' }}>{a.accountNumber || '–'}</p>
-                  <p style={{ fontSize: 22, fontWeight: 800, color: '#6366F1', margin: 0 }}>{fmt(Number(a.balance || 0))}</p>
+                  <p style={{ fontSize: 22, fontWeight: 800, color: '#8C57FF', margin: 0 }}>{fmt(Number(a.balance || 0))}</p>
                 </div>
               ))}
             </div>

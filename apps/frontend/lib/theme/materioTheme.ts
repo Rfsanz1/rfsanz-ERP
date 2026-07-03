@@ -50,7 +50,7 @@ const components = (dark: boolean): Theme['components'] => ({
   MuiCssBaseline: {
     styleOverrides: {
       body: {
-        backgroundColor: dark ? '#0D1117' : '#F1F5F9',
+        backgroundColor: dark ? '#28243D' : '#F4F5FA',
         color: dark ? '#E6EDF3' : '#1E293B',
       },
     },
@@ -69,7 +69,7 @@ const components = (dark: boolean): Theme['components'] => ({
   MuiDrawer: {
     styleOverrides: {
       paper: {
-        backgroundColor: dark ? '#161B22' : '#FFFFFF',
+        backgroundColor: dark ? '#312D4B' : '#FFFFFF',
         borderRight: `1px solid ${dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`,
       },
     },
@@ -77,7 +77,7 @@ const components = (dark: boolean): Theme['components'] => ({
   MuiCard: {
     styleOverrides: {
       root: {
-        backgroundColor: dark ? '#161B22' : '#FFFFFF',
+        backgroundColor: dark ? '#312D4B' : '#FFFFFF',
         borderRadius: 16,
         border: `1px solid ${dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'}`,
         boxShadow: dark
@@ -102,12 +102,12 @@ const components = (dark: boolean): Theme['components'] => ({
         borderRadius: 8,
         marginBottom: 2,
         '&.Mui-selected': {
-          backgroundColor: 'rgba(99, 102, 241, 0.10)',
-          color: '#6366F1',
-          '&:hover': { backgroundColor: 'rgba(99, 102, 241, 0.14)' },
-          '& .MuiListItemIcon-root': { color: '#6366F1' },
+          backgroundColor: 'rgba(140, 87, 255, 0.10)',
+          color: '#8C57FF',
+          '&:hover': { backgroundColor: 'rgba(140, 87, 255, 0.14)' },
+          '& .MuiListItemIcon-root': { color: '#8C57FF' },
         },
-        '&:hover': { backgroundColor: dark ? 'rgba(255,255,255,0.05)' : 'rgba(99, 102, 241, 0.05)' },
+        '&:hover': { backgroundColor: dark ? 'rgba(255,255,255,0.05)' : 'rgba(140, 87, 255, 0.05)' },
       },
     },
   },
@@ -134,15 +134,15 @@ export function buildTheme(dark: boolean) {
   return createTheme({
     palette: {
       mode: dark ? 'dark' : 'light',
-      primary:   { main: '#6366F1', light: '#818CF8', dark: '#4F46E5', contrastText: '#FFFFFF' },
-      secondary: { main: '#64748B', light: '#94A3B8', dark: '#475569', contrastText: '#FFFFFF' },
-      success:   { main: '#10B981', light: '#34D399', dark: '#059669' },
-      warning:   { main: '#F59E0B', light: '#FCD34D', dark: '#D97706' },
-      error:     { main: '#EF4444', light: '#F87171', dark: '#DC2626' },
-      info:      { main: '#3B82F6', light: '#60A5FA', dark: '#2563EB' },
+      primary:   { main: '#8C57FF', light: '#A379FF', dark: '#7E4EE6', contrastText: '#FFFFFF' },
+      secondary: { main: '#8A8D93', light: '#A1A4A9', dark: '#7C7F84', contrastText: '#FFFFFF' },
+      success:   { main: '#56CA00', light: '#78D533', dark: '#4DB600' },
+      warning:   { main: '#FFB400', light: '#FFC333', dark: '#E6A200' },
+      error:     { main: '#FF4C51', light: '#FF7074', dark: '#E64449' },
+      info:      { main: '#16B1FF', light: '#45C1FF', dark: '#149FE6' },
       background: {
-        default: dark ? '#0D1117' : '#F1F5F9',
-        paper:   dark ? '#161B22' : '#FFFFFF',
+        default: dark ? '#28243D' : '#F4F5FA',
+        paper:   dark ? '#312D4B' : '#FFFFFF',
       },
       text: {
         primary:   dark ? '#E6EDF3' : '#1E293B',

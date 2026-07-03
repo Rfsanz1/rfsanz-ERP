@@ -69,7 +69,7 @@ interface StatCardProps {
   trend?: 'up' | 'down' | 'neutral';
 }
 
-export function StatCard({ title, value, subtitle, icon: Icon, accent = '#6366F1', loading = false, trend = 'neutral' }: StatCardProps) {
+export function StatCard({ title, value, subtitle, icon: Icon, accent = '#8C57FF', loading = false, trend = 'neutral' }: StatCardProps) {
   const light = accent + '1A';
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '18px 20px', boxShadow: 'var(--shadow-sm)' }}>
@@ -178,7 +178,7 @@ export function Btn({
   type?: 'button' | 'submit';
 }) {
   const styles: Record<string, React.CSSProperties> = {
-    primary:   { background: '#6366F1', color: '#fff', border: '1px solid #6366F1' },
+    primary:   { background: '#8C57FF', color: '#fff', border: '1px solid #8C57FF' },
     secondary: { background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' },
     danger:    { background: '#EF4444', color: '#fff', border: '1px solid #EF4444' },
     ghost:     { background: 'transparent', color: 'var(--text-secondary)', border: 'none' },
@@ -247,7 +247,7 @@ export function EmptyState({ icon: Icon, title, subtitle, action }: {
     <div style={{ textAlign: 'center', padding: '48px 24px' }}>
       {Icon && (
         <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--brand-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-          <Icon size={24} style={{ color: '#6366F1' }} strokeWidth={1.5} />
+          <Icon size={24} style={{ color: '#8C57FF' }} strokeWidth={1.5} />
         </div>
       )}
       <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>{title}</p>

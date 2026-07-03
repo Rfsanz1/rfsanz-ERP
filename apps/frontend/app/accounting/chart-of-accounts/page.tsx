@@ -71,8 +71,8 @@ function AccountRow({ acc, depth, onEdit, onDelete }: any) {
         </td>
         <td style={{ padding: '10px 16px' }}>
           <div className="flex items-center gap-1">
-            <button onClick={() => onEdit(acc)} title="Edit" style={{ padding: 5, borderRadius: 6, border: 'none', background: 'transparent', color: '#6366F1', cursor: 'pointer' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.10)'; }}
+            <button onClick={() => onEdit(acc)} title="Edit" style={{ padding: 5, borderRadius: 6, border: 'none', background: 'transparent', color: '#8C57FF', cursor: 'pointer' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140,87,255,0.10)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
               <Edit2 size={12} />
             </button>
@@ -168,12 +168,12 @@ function ChartOfAccountsPageContent() {
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-              <Layers size={20} style={{ color: '#6366F1' }} /> Bagan Akun
+              <Layers size={20} style={{ color: '#8C57FF' }} /> Bagan Akun
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola akun untuk sistem pencatatan double-entry</p>
           </div>
           <button onClick={openCreate}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Tambah Akun
           </button>
         </div>
@@ -184,7 +184,7 @@ function ChartOfAccountsPageContent() {
             ...ACCOUNT_TYPES.map(t => ({ label: TYPE_LABELS[t], val: stats.byType[t] || 0, key: t, accent: TYPE_COLORS[t] }))
           ].map(s => (
             <button key={s.key} onClick={() => setTypeFilter(s.key)}
-              style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--surface)', border: `1px solid ${typeFilter === s.key ? '#6366F1' : 'var(--border)'}`, cursor: 'pointer', textAlign: 'left', transition: 'border-color .15s', boxShadow: 'var(--shadow-sm)' }}>
+              style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--surface)', border: `1px solid ${typeFilter === s.key ? '#8C57FF' : 'var(--border)'}`, cursor: 'pointer', textAlign: 'left', transition: 'border-color .15s', boxShadow: 'var(--shadow-sm)' }}>
               <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '.04em' }}>{s.label}</p>
               <p style={{ fontSize: 20, fontWeight: 800, color: s.accent, margin: 0, letterSpacing: '-0.02em' }}>{s.val}</p>
             </button>
@@ -250,7 +250,7 @@ function ChartOfAccountsPageContent() {
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Kode Akun *</label>
                   <input style={inputStyle} placeholder="mis. 1101" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
-                    onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                    onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Tipe *</label>
@@ -262,7 +262,7 @@ function ChartOfAccountsPageContent() {
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Nama Akun *</label>
                 <input style={inputStyle} placeholder="mis. Kas" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                  onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Akun Induk</label>
@@ -285,7 +285,7 @@ function ChartOfAccountsPageContent() {
               <div className="flex justify-end gap-3" style={{ paddingTop: 8, borderTop: '1px solid var(--border)' }}>
                 <button onClick={() => setShowModal(false)} style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
                 <button onClick={handleSave} disabled={saving || !form.code || !form.name}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: (saving || !form.code || !form.name) ? 0.6 : 1 }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: (saving || !form.code || !form.name) ? 0.6 : 1 }}>
                   <Check size={13} /> {saving ? 'Menyimpan…' : 'Simpan'}
                 </button>
               </div>

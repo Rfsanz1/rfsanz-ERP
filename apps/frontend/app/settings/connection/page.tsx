@@ -211,9 +211,9 @@ export default function ConnectionPage() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '16px 20px', borderBottom: '1px solid var(--border)',
-          background: 'rgba(99,102,241,0.04)',
+          background: 'rgba(140,87,255,0.04)',
         }}>
-          <Globe size={16} style={{ color: '#6366F1' }} />
+          <Globe size={16} style={{ color: '#8C57FF' }} />
           <div>
             <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1E1B4B' }}>Konfigurasi Web Browser</p>
             <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
@@ -237,7 +237,7 @@ export default function ConnectionPage() {
           <div style={{ padding: '10px 20px', background: 'var(--surface-sunken)', borderBottom: '1px solid var(--border)' }}>
             <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
               URL aktif saat ini:{' '}
-              <code style={{ fontSize: 11, color: '#6366F1', background: 'rgba(99,102,241,0.08)', padding: '1px 6px', borderRadius: 4 }}>
+              <code style={{ fontSize: 11, color: '#8C57FF', background: 'rgba(140,87,255,0.08)', padding: '1px 6px', borderRadius: 4 }}>
                 {webConfig.effectiveUrl}
               </code>
             </p>
@@ -290,7 +290,7 @@ export default function ConnectionPage() {
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '8px 16px', borderRadius: 10,
               border: 'none',
-              background: webUrl.trim() ? '#6366F1' : '#94A3B8',
+              background: webUrl.trim() ? '#8C57FF' : '#94A3B8',
               color: '#fff', fontSize: 13, fontWeight: 600,
               cursor: webSaving || !webUrl.trim() ? 'not-allowed' : 'pointer',
             }}
@@ -335,9 +335,9 @@ export default function ConnectionPage() {
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '16px 20px', borderBottom: '1px solid var(--border)',
-            background: 'rgba(99,102,241,0.04)',
+            background: 'rgba(140,87,255,0.04)',
           }}>
-            <Smartphone size={16} style={{ color: '#6366F1' }} />
+            <Smartphone size={16} style={{ color: '#8C57FF' }} />
             <div>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1E1B4B' }}>Konfigurasi Mobile (Native)</p>
               <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
@@ -373,7 +373,7 @@ export default function ConnectionPage() {
             <button
               onClick={handleNativeSave}
               disabled={nativeSaving || !nativeIsDirty || !nativeUrl.trim()}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: nativeIsDirty ? '#6366F1' : '#94A3B8', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: nativeIsDirty ? '#8C57FF' : '#94A3B8', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
             >
               <Save size={13} />
               {nativeSaving ? 'Menyimpan…' : 'Simpan'}

@@ -22,7 +22,7 @@ const AI_LOGS = [
 const MODULE_COLORS: Record<string, string> = {
   'AI Chat': '#5B52D1', 'AI Automation': '#22C55E', 'AI Forecast': '#3B82F6',
   'AI Notification': '#F59E0B', 'AI Report': '#8B5CF6', 'AI Marketplace': '#F97316',
-  'AI Inventory': '#14B8A6', 'AI HR': '#6366F1',
+  'AI Inventory': '#14B8A6', 'AI HR': '#8C57FF',
 };
 
 export default function AiLogsPage() {

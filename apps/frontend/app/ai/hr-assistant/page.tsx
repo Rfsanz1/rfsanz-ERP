@@ -52,7 +52,7 @@ export default function AiHrAssistantPage() {
     <OdooLayout title="AI HR Assistant" subtitle="Asisten cerdas untuk manajemen sumber daya manusia">
       <div className="space-y-6">
         {/* Banner */}
-        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #6366F1, #4338CA)', color: 'white' }}>
+        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #8C57FF, #4338CA)', color: 'white' }}>
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
               <UserCheck className="h-6 w-6 text-white" />
@@ -83,7 +83,7 @@ export default function AiHrAssistantPage() {
           <div className="rounded-2xl" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
             <div className="px-5 py-4" style={{ borderBottom: '1px solid #EDE9FE' }}>
               <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#1E1B4B' }}>
-                <AlertCircle className="h-4 w-4" style={{ color: '#6366F1' }} /> AI HR Recommendations
+                <AlertCircle className="h-4 w-4" style={{ color: '#8C57FF' }} /> AI HR Recommendations
               </h3>
             </div>
             <div className="p-5 space-y-3">
@@ -106,7 +106,7 @@ export default function AiHrAssistantPage() {
           <div className="rounded-2xl" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
             <div className="px-5 py-4" style={{ borderBottom: '1px solid #EDE9FE' }}>
               <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#1E1B4B' }}>
-                <CalendarCheck className="h-4 w-4" style={{ color: '#6366F1' }} /> Kehadiran Hari Ini per Departemen
+                <CalendarCheck className="h-4 w-4" style={{ color: '#8C57FF' }} /> Kehadiran Hari Ini per Departemen
               </h3>
             </div>
             <div className="overflow-x-auto">
@@ -144,7 +144,7 @@ export default function AiHrAssistantPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Lihat Data Karyawan', href: '/hr/employees', icon: Users, color: '#6366F1' },
+            { label: 'Lihat Data Karyawan', href: '/hr/employees', icon: Users, color: '#8C57FF' },
             { label: 'Rekap Absensi', href: '/hr/attendances', icon: CalendarCheck, color: '#22C55E' },
             { label: 'Proses Payroll', href: '/hr/payrolls/batch', icon: FileText, color: '#F59E0B' },
             { label: 'Chat AI HR', href: '/ai/chatbot', icon: MessageSquare, color: '#5B52D1' },

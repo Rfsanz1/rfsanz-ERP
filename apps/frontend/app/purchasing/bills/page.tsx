@@ -149,7 +149,7 @@ export default function BillsPage() {
           {[
             { label: 'Total Bill', value: total.toLocaleString('id-ID'), color: '#5D4037' },
             { label: 'Total Hutang AP', value: IDR(totalHutang), color: '#C62828', small: true },
-            { label: 'Dari Lokal DB', value: localCount.toLocaleString('id-ID'), color: '#6366F1' },
+            { label: 'Dari Lokal DB', value: localCount.toLocaleString('id-ID'), color: '#8C57FF' },
             { label: 'Dari Kledo', value: kledoCount.toLocaleString('id-ID'), color: '#0EA5E9' },
           ].map(s => (
             <div key={s.label} style={{ background: 'var(--surface)', borderRadius: 12, padding: '16px 18px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
@@ -232,7 +232,7 @@ export default function BillsPage() {
                       <td style={{ padding: '11px 14px', fontSize: 13, fontWeight: 700, color: outstanding > 0 ? '#C62828' : '#388E3C' }}>{IDR(outstanding)}</td>
                       <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-muted)' }}>{fmtDate(bill.dueDate)}</td>
                       <td style={{ padding: '11px 14px' }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: bill.source === 'kledo' ? 'rgba(14,165,233,.12)' : 'rgba(99,102,241,.12)', color: bill.source === 'kledo' ? '#0EA5E9' : '#6366F1', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: bill.source === 'kledo' ? 'rgba(14,165,233,.12)' : 'rgba(140,87,255,.12)', color: bill.source === 'kledo' ? '#0EA5E9' : '#8C57FF', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {bill.source === 'kledo' && <Globe size={9} />}
                           {bill.source === 'kledo' ? 'Kledo' : 'Lokal'}
                         </span>

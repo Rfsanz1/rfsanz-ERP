@@ -113,7 +113,7 @@ function DashboardSkeleton() {
                 style={{
                   height: `${h}%`, borderRadius: '4px 4px 2px 2px',
                   background: i === 11
-                    ? 'rgba(99,102,241,0.25)'
+                    ? 'rgba(140,87,255,0.25)'
                     : 'linear-gradient(90deg, #E2E8F0 25%, #EEF2FF 50%, #E2E8F0 75%)',
                   backgroundSize: '200% 100%',
                   animation: 'skel-shimmer 1.6s ease-in-out infinite',

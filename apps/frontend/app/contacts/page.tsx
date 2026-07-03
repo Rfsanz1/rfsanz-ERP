@@ -53,12 +53,12 @@ export default function ContactsPage() {
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-              <Users size={20} style={{ color: '#6366F1' }} /> Kontak
+              <Users size={20} style={{ color: '#8C57FF' }} /> Kontak
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Manajemen pelanggan, pemasok &amp; kontak bisnis terpadu</p>
           </div>
           <button onClick={() => router.push('/contacts/new')}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Tambah Kontak
           </button>
         </div>
@@ -67,7 +67,7 @@ export default function ContactsPage() {
         {summary && (
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Total Kontak', value: summary.total,    accent: '#6366F1' },
+              { label: 'Total Kontak', value: summary.total,    accent: '#8C57FF' },
               { label: 'Aktif',        value: summary.active,   accent: '#10B981' },
               { label: 'Nonaktif',     value: summary.inactive, accent: '#94A3B8' },
             ].map(s => (
@@ -85,7 +85,7 @@ export default function ContactsPage() {
             {TYPE_FILTERS.map(f => (
               <button key={f.value} onClick={() => { setTypeFilter(f.value); setPage(1); }}
                 style={{ padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s',
-                  background: typeFilter === f.value ? '#6366F1' : 'transparent',
+                  background: typeFilter === f.value ? '#8C57FF' : 'transparent',
                   color: typeFilter === f.value ? '#fff' : 'var(--text-muted)' }}>
                 {f.label}
               </button>
@@ -97,7 +97,7 @@ export default function ContactsPage() {
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
               placeholder="Cari nama, kode, telepon, email…"
               style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 9, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
-              onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+              onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
           </div>
 
           <button onClick={load}

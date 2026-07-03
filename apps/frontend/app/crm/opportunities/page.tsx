@@ -182,7 +182,7 @@ export default function OpportunitiesPage() {
               {(['kanban', 'list'] as const).map(m => (
                 <button key={m} onClick={() => setViewMode(m)}
                   style={{ padding: '7px 14px', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all .15s',
-                    background: viewMode === m ? '#6366F1' : 'var(--surface-sunken)',
+                    background: viewMode === m ? '#8C57FF' : 'var(--surface-sunken)',
                     color: viewMode === m ? '#fff' : 'var(--text-muted)',
                     display: 'flex', alignItems: 'center', gap: 5 }}>
                   {m === 'kanban' ? <LayoutGrid size={13} /> : <List size={13} />}
@@ -191,7 +191,7 @@ export default function OpportunitiesPage() {
               ))}
             </div>
             <button onClick={openAdd}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               <Plus size={14} /> Tambah
             </button>
           </div>
@@ -200,7 +200,7 @@ export default function OpportunitiesPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Total Deal',    value: items.length,   accent: '#6366F1', icon: <TrendingUp size={16} /> },
+            { label: 'Total Deal',    value: items.length,   accent: '#8C57FF', icon: <TrendingUp size={16} /> },
             { label: 'Aktif',         value: activeDeals,    accent: '#3B82F6', icon: <TrendingUp size={16} /> },
             { label: 'Menang',        value: won,            accent: '#10B981', icon: <TrendingUp size={16} /> },
             { label: 'Win Rate',      value: `${winRate}%`,  accent: '#F59E0B', icon: <TrendingUp size={16} /> },
@@ -214,7 +214,7 @@ export default function OpportunitiesPage() {
         </div>
 
         {/* Revenue summary */}
-        <div style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ background: 'linear-gradient(135deg, #8C57FF 0%, #8B5CF6 100%)', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '.05em' }}>Total Potensi Pendapatan</p>
             <p style={{ fontSize: 26, fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.03em' }}>{fmtRpFull(totalRevenue)}</p>
@@ -243,9 +243,9 @@ export default function OpportunitiesPage() {
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {['', ...STAGES].map(s => (
               <button key={s || 'all'} onClick={() => setStageFilter(s)}
-                style={{ padding: '5px 12px', borderRadius: 20, border: `1px solid ${stageFilter === s ? (STAGE_META[s]?.color ?? '#6366F1') : 'var(--border)'}`,
-                  background: stageFilter === s ? (STAGE_META[s]?.color ?? '#6366F1') + '18' : 'var(--surface-sunken)',
-                  color: stageFilter === s ? (STAGE_META[s]?.color ?? '#6366F1') : 'var(--text-muted)',
+                style={{ padding: '5px 12px', borderRadius: 20, border: `1px solid ${stageFilter === s ? (STAGE_META[s]?.color ?? '#8C57FF') : 'var(--border)'}`,
+                  background: stageFilter === s ? (STAGE_META[s]?.color ?? '#8C57FF') + '18' : 'var(--surface-sunken)',
+                  color: stageFilter === s ? (STAGE_META[s]?.color ?? '#8C57FF') : 'var(--text-muted)',
                   fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' }}>
                 {s || 'Semua'}
               </button>
@@ -292,7 +292,7 @@ export default function OpportunitiesPage() {
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>{f.label}</label>
                   <input type={f.type ?? 'text'} style={inputStyle} placeholder={f.placeholder ?? ''} value={(form as any)[f.key]}
                     onChange={e => setForm(fv => ({ ...fv, [f.key]: e.target.value }))}
-                    onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+                    onFocus={e => { e.target.style.borderColor = '#8C57FF'; }}
                     onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
                 </div>
               ))}
@@ -308,7 +308,7 @@ export default function OpportunitiesPage() {
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Probabilitas (%)</label>
                   <input type="number" min={0} max={100} style={inputStyle} value={form.probability}
                     onChange={e => setForm(f => ({ ...f, probability: +e.target.value }))}
-                    onFocus={e => { e.target.style.borderColor = '#6366F1'; }}
+                    onFocus={e => { e.target.style.borderColor = '#8C57FF'; }}
                     onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
                 </div>
               </div>
@@ -323,7 +323,7 @@ export default function OpportunitiesPage() {
                   Batal
                 </button>
                 <button onClick={save} disabled={saving || !form.name.trim()}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving ? 'wait' : 'pointer', opacity: (!form.name.trim() || saving) ? 0.65 : 1 }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving ? 'wait' : 'pointer', opacity: (!form.name.trim() || saving) ? 0.65 : 1 }}>
                   {saving ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />}
                   {saving ? 'Menyimpan…' : 'Simpan'}
                 </button>

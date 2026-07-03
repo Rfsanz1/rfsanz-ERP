@@ -48,7 +48,7 @@ const DEMO_NOTIFICATIONS = [
 ];
 
 const CATEGORY_META: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-  order:   { icon: <ShoppingCart size={14} />, color: '#6366F1', label: 'Order' },
+  order:   { icon: <ShoppingCart size={14} />, color: '#8C57FF', label: 'Order' },
   invoice: { icon: <FileText size={14} />,     color: '#3B82F6', label: 'Invoice' },
   stock:   { icon: <Package size={14} />,      color: '#F59E0B', label: 'Stok' },
   crm:     { icon: <TrendingUp size={14} />,   color: '#8B5CF6', label: 'CRM' },
@@ -141,7 +141,7 @@ export function NotificationList() {
           {TABS.map(t => (
             <button key={t.key} onClick={() => setFilter(t.key)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, border: 'none',
-                background: filter === t.key ? '#6366F1' : 'var(--surface-sunken)',
+                background: filter === t.key ? '#8C57FF' : 'var(--surface-sunken)',
                 color: filter === t.key ? '#fff' : 'var(--text-muted)',
                 fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' }}>
               {t.label}

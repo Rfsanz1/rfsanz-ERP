@@ -42,11 +42,11 @@ export default function JournalEntriesPage() {
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-              <DollarSign size={20} style={{ color: '#6366F1' }} /> Jurnal Akuntansi
+              <DollarSign size={20} style={{ color: '#8C57FF' }} /> Jurnal Akuntansi
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola jurnal entri dan transaksi keuangan</p>
           </div>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Buat Jurnal
           </button>
         </div>
@@ -55,7 +55,7 @@ export default function JournalEntriesPage() {
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Total Jurnal', value: stats.totalJurnals,             accent: '#6366F1', large: true },
+              { label: 'Total Jurnal', value: stats.totalJurnals,             accent: '#8C57FF', large: true },
               { label: 'Saldo Bank',   value: fmt(stats.totalBankBalance??0), accent: '#3B82F6' },
               { label: 'Kas Masuk',   value: fmt(stats.cashIn??0),            accent: '#10B981' },
               { label: 'Kas Keluar',  value: fmt(stats.cashOut??0),           accent: '#EF4444' },
@@ -75,7 +75,7 @@ export default function JournalEntriesPage() {
               <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Cari nomor jurnal…"
                 style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 8, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
-                onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
             </div>
             <button onClick={load} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
@@ -99,7 +99,7 @@ export default function JournalEntriesPage() {
                   <tr key={j.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
                     onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-                    <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#6366F1' }}>{j.noJurnal}</td>
+                    <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#8C57FF' }}>{j.noJurnal}</td>
                     <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{new Date(j.tanggal).toLocaleDateString('id-ID')}</td>
                     <td style={{ padding: '12px 16px', color: 'var(--text-primary)', fontSize: 13 }}>{j.keterangan || '–'}</td>
                     <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{j.type}</td>

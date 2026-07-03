@@ -38,7 +38,7 @@ export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
 
   function hoverOn(e: React.MouseEvent<HTMLButtonElement>) {
     (e.currentTarget as HTMLElement).style.background = 'var(--brand-light)';
-    (e.currentTarget as HTMLElement).style.color = '#6366F1';
+    (e.currentTarget as HTMLElement).style.color = '#8C57FF';
   }
   function hoverOff(e: React.MouseEvent<HTMLButtonElement>) {
     (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -162,7 +162,7 @@ export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
             {[...Array(Math.min(unread, 4))].map((_, i) => (
               <ListItem key={i} divider sx={{ gap: 1, py: 1.25, px: 2, cursor: 'pointer', '&:hover': { background: 'var(--brand-hover)' } }}>
                 <ListItemAvatar sx={{ minWidth: 40 }}>
-                  <Avatar sx={{ width: 34, height: 34, background: 'rgba(99,102,241,0.10)', color: '#6366F1', fontSize: 14 }}>
+                  <Avatar sx={{ width: 34, height: 34, background: 'rgba(140,87,255,0.10)', color: '#8C57FF', fontSize: 14 }}>
                     <Bell size={15} />
                   </Avatar>
                 </ListItemAvatar>
@@ -176,7 +176,7 @@ export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
         )}
         <Divider />
         <div style={{ padding: 8, textAlign: 'center' }}>
-          <Button size="small" sx={{ fontSize: 12, color: '#6366F1', fontWeight: 600 }}>
+          <Button size="small" sx={{ fontSize: 12, color: '#8C57FF', fontWeight: 600 }}>
             Lihat semua notifikasi
           </Button>
         </div>

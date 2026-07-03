@@ -523,7 +523,7 @@ function ConfigModal({
         </div>
 
         <p className="text-[11px] text-center rounded-xl px-4 py-2"
-          style={{ background: 'rgba(99,102,241,.05)', color: '#6366F1' }}>
+          style={{ background: 'rgba(140,87,255,.05)', color: '#8C57FF' }}>
           💡 Disimpan di database — tidak perlu edit <code className="font-mono bg-white rounded px-1">.env</code> di server.
         </p>
       </div>

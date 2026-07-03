@@ -60,7 +60,7 @@ export default function TransfersPage() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Pindahkan stok antar gudang atau area produksi</p>
           </div>
           <button onClick={() => setShowForm(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Buat Transfer
           </button>
         </div>
@@ -68,7 +68,7 @@ export default function TransfersPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {[
-            { label: 'Total Transfer',  value: items.length,                               accent: '#6366F1' },
+            { label: 'Total Transfer',  value: items.length,                               accent: '#8C57FF' },
             { label: 'Draf',            value: items.filter(i=>i.status==='draft').length,  accent: '#94A3B8' },
             { label: 'Siap Transfer',   value: items.filter(i=>i.status==='ready').length,  accent: '#3B82F6' },
             { label: 'Selesai',         value: items.filter(i=>i.status==='done').length,   accent: '#10B981' },
@@ -114,11 +114,11 @@ export default function TransfersPage() {
                     <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-                      <td style={{ padding: '12px 14px', fontWeight: 700, fontSize: 11, fontFamily: 'monospace', color: '#6366F1' }}>{item.number}</td>
+                      <td style={{ padding: '12px 14px', fontWeight: 700, fontSize: 11, fontFamily: 'monospace', color: '#8C57FF' }}>{item.number}</td>
                       <td style={{ padding: '12px 14px', fontWeight: 600, color: 'var(--text-primary)', fontSize: 12 }}>{item.from}</td>
                       <td style={{ padding: '12px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>
                         <div className="flex items-center gap-1.5">
-                          <ArrowLeftRight size={12} style={{ color: '#6366F1', flexShrink: 0 }} />
+                          <ArrowLeftRight size={12} style={{ color: '#8C57FF', flexShrink: 0 }} />
                           {item.to}
                         </div>
                       </td>
@@ -184,7 +184,7 @@ export default function TransfersPage() {
                   <div className="flex items-center justify-between mb-2">
                     <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Item Transfer</label>
                     <button onClick={() => setForm(f => ({ ...f, lines: [...f.lines, { product:'', qty:1, uom:'pcs' }] }))}
-                      style={{ fontSize: 11, fontWeight: 600, color: '#6366F1', background: 'transparent', border: 'none', cursor: 'pointer' }}>+ Tambah Baris</button>
+                      style={{ fontSize: 11, fontWeight: 600, color: '#8C57FF', background: 'transparent', border: 'none', cursor: 'pointer' }}>+ Tambah Baris</button>
                   </div>
                   <div style={{ borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
@@ -218,7 +218,7 @@ export default function TransfersPage() {
                   <button onClick={() => setShowForm(false)}
                     style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
                   <button onClick={save}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                     <ArrowLeftRight size={13} /> Simpan Transfer
                   </button>
                 </div>

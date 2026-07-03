@@ -50,7 +50,7 @@ export default function BankReconciliationPage() {
             <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               <Upload size={14} /> Import Statement
             </button>
-            <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               <RefreshCw size={14} /> Auto Match
             </button>
           </div>
@@ -81,7 +81,7 @@ export default function BankReconciliationPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {[
-            { label: 'Total Transaksi', value: String(statements.length), accent: '#6366F1' },
+            { label: 'Total Transaksi', value: String(statements.length), accent: '#8C57FF' },
             { label: 'Sudah Cocok',     value: String(matched),           accent: '#10B981' },
             { label: 'Belum Cocok',     value: String(unmatched),         accent: '#EF4444' },
             { label: 'Net Saldo',       value: fmtRp(totalIn - totalOut), accent: totalIn >= totalOut ? '#10B981' : '#EF4444', small: true },
@@ -151,11 +151,11 @@ export default function BankReconciliationPage() {
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '12px 14px', fontSize: 11, fontWeight: 700, color: '#6366F1', fontFamily: 'monospace' }}>{s.erp_ref ?? '–'}</td>
+                    <td style={{ padding: '12px 14px', fontSize: 11, fontWeight: 700, color: '#8C57FF', fontFamily: 'monospace' }}>{s.erp_ref ?? '–'}</td>
                     <td style={{ padding: '12px 14px' }}>
                       {!s.matched && (
                         <button onClick={() => matchItem(s.id)}
-                          style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, border: 'none', background: 'rgba(99,102,241,0.10)', color: '#6366F1', cursor: 'pointer' }}>
+                          style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, border: 'none', background: 'rgba(140,87,255,0.10)', color: '#8C57FF', cursor: 'pointer' }}>
                           Cocokkan
                         </button>
                       )}

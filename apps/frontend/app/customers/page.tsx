@@ -167,7 +167,7 @@ export default function CustomersPage() {
           <button
             onClick={openModal}
             disabled={klConnected === false}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: klConnected === false ? '#94A3B8' : '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: klConnected === false ? 'not-allowed' : 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: klConnected === false ? '#94A3B8' : '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: klConnected === false ? 'not-allowed' : 'pointer' }}
           >
             <Plus size={14} /> Tambah Pelanggan
           </button>
@@ -187,7 +187,7 @@ export default function CustomersPage() {
 
         {/* Stats */}
         <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', padding: '18px 20px', boxShadow: 'var(--shadow-sm)' }}>
-          <p style={{ fontSize: 28, fontWeight: 800, color: '#6366F1', margin: 0, letterSpacing: '-0.02em' }}>{total}</p>
+          <p style={{ fontSize: 28, fontWeight: 800, color: '#8C57FF', margin: 0, letterSpacing: '-0.02em' }}>{total}</p>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>Total Pelanggan di Kledo</p>
         </div>
 
@@ -237,7 +237,7 @@ export default function CustomersPage() {
                     {loading ? (
                       <tr>
                         <td colSpan={5} style={{ padding: 48, textAlign: 'center' }}>
-                          <Loader2 size={24} style={{ color: '#6366F1', margin: '0 auto', display: 'block', animation: 'spin .7s linear infinite' }} />
+                          <Loader2 size={24} style={{ color: '#8C57FF', margin: '0 auto', display: 'block', animation: 'spin .7s linear infinite' }} />
                           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '10px 0 0' }}>Memuat kontak dari Kledo…</p>
                         </td>
                       </tr>
@@ -259,7 +259,7 @@ export default function CustomersPage() {
                       >
                         <td style={{ padding: '13px 16px' }}>
                           <div className="flex items-center gap-2.5">
-                            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#6366F11A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#6366F1', flexShrink: 0 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#8C57FF1A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#8C57FF', flexShrink: 0 }}>
                               {c.name?.charAt(0)?.toUpperCase() ?? '?'}
                             </div>
                             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</span>
@@ -271,7 +271,7 @@ export default function CustomersPage() {
                           <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.address || '–'}</span>
                         </td>
                         <td style={{ padding: '13px 16px' }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, color: '#6366F1', background: 'rgba(99,102,241,0.10)' }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, color: '#8C57FF', background: 'rgba(140,87,255,0.10)' }}>
                             #{c.id}
                           </span>
                         </td>
@@ -342,7 +342,7 @@ export default function CustomersPage() {
                       required
                     />
                     {suggestLoading && (
-                      <Loader2 size={13} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#6366F1', animation: 'spin .7s linear infinite' }} />
+                      <Loader2 size={13} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#8C57FF', animation: 'spin .7s linear infinite' }} />
                     )}
 
                     {suggestOpen && suggest.length > 0 && (
@@ -395,7 +395,7 @@ export default function CustomersPage() {
                     Batal
                   </button>
                   <button type="submit" disabled={saving || !form.name.trim()}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving || !form.name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.name.trim() ? 0.6 : 1 }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving || !form.name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.name.trim() ? 0.6 : 1 }}>
                     {saving ? <><Loader2 size={13} style={{ animation: 'spin .7s linear infinite' }} /> Menyimpan…</> : 'Simpan ke Kledo'}
                   </button>
                 </div>

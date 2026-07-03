@@ -21,7 +21,7 @@ const DEFAULT_BANGUNAN = [
   'lem keramik', 'talang', 'list plafon',
 ];
 
-const ACCENT = { elektronik: '#6366F1', bahan_bangunan: '#0891B2' } as const;
+const ACCENT = { elektronik: '#8C57FF', bahan_bangunan: '#0891B2' } as const;
 const BG     = { elektronik: '#F0F0FE',  bahan_bangunan: '#F0F9FF'  } as const;
 
 export default function KeywordsPage() {
@@ -109,7 +109,7 @@ export default function KeywordsPage() {
           <button onClick={load}
             className="p-2 rounded-lg"
             style={{ background: '#F3F4F6', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#6366F1')}
+            onMouseEnter={e => (e.currentTarget.style.color = '#8C57FF')}
             onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
           >
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
@@ -131,7 +131,7 @@ export default function KeywordsPage() {
             placeholder="Contoh: mesin bor, lemari kaca, pipa galvanis..."
             className="flex-1 text-sm rounded-xl px-4 py-2.5 outline-none"
             style={{ border: '1.5px solid #E5E7EB', background: '#FAFAFA', color: '#1E1B4B', minWidth: 200 }}
-            onFocus={e => (e.target.style.borderColor = '#6366F1')}
+            onFocus={e => (e.target.style.borderColor = '#8C57FF')}
             onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
           />
           {/* Kategori toggle */}
@@ -162,7 +162,7 @@ export default function KeywordsPage() {
             disabled={adding || !newKw.trim()}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
             style={{
-              background: adding || !newKw.trim() ? '#D1D5DB' : '#6366F1',
+              background: adding || !newKw.trim() ? '#D1D5DB' : '#8C57FF',
               border: 'none',
               cursor: adding || !newKw.trim() ? 'not-allowed' : 'pointer',
               flexShrink: 0,

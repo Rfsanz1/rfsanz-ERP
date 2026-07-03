@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 const C = '#00ACC1';
-const PURPLE = '#6366F1';
+const PURPLE = '#8C57FF';
 
 const STATUS_CFG: Record<string, { label: string; color: string }> = {
   pending:    { label: 'Pending',      color: '#F59E0B' },

@@ -12,7 +12,7 @@ import ProductSearchDropdown, { type ProductOption } from '@/components/ui/Produ
 import SalesDropdown from '@/components/ui/SalesDropdown';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 
-const ACCENT = '#6366F1';
+const ACCENT = '#8C57FF';
 const fmtRp = (v: number) => `Rp ${v.toLocaleString('id-ID')}`;
 
 const card: React.CSSProperties = {

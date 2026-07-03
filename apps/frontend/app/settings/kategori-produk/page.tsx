@@ -14,7 +14,7 @@ interface Category {
 
 const UNIT_OPTS: { value: Category['unitBisnis']; label: string; color: string; bg: string; icon: React.ReactNode }[] = [
   { value: null,             label: 'Tidak ditentukan', color: '#6B7280', bg: '#F9FAFB',  icon: null },
-  { value: 'elektronik',    label: 'KAS ELEKTRONIK',   color: '#6366F1', bg: '#F0F0FE',  icon: <Zap className="h-3.5 w-3.5" /> },
+  { value: 'elektronik',    label: 'KAS ELEKTRONIK',   color: '#8C57FF', bg: '#F0F0FE',  icon: <Zap className="h-3.5 w-3.5" /> },
   { value: 'bahan_bangunan',label: 'KAS SULAWESI',     color: '#0891B2', bg: '#F0F9FF',  icon: <Building2 className="h-3.5 w-3.5" /> },
 ];
 

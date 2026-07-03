@@ -74,7 +74,7 @@ export default function RFQPage() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Permintaan penawaran harga ke supplier</p>
           </div>
           <button onClick={() => setShowForm(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Buat RFQ
           </button>
         </div>
@@ -82,7 +82,7 @@ export default function RFQPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Total RFQ',     value: items.length,                                 accent: '#6366F1' },
+            { label: 'Total RFQ',     value: items.length,                                 accent: '#8C57FF' },
             { label: 'Draf',          value: items.filter(i => i.status === 'draft').length,     accent: '#94A3B8' },
             { label: 'Terkirim',      value: items.filter(i => i.status === 'sent').length,      accent: '#3B82F6' },
             { label: 'Dikonfirmasi',  value: items.filter(i => i.status === 'confirmed').length, accent: '#10B981' },
@@ -124,7 +124,7 @@ export default function RFQPage() {
                     <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#6366F1', fontSize: 11, fontFamily: 'monospace' }}>{item.number}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#8C57FF', fontSize: 11, fontFamily: 'monospace' }}>{item.number}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 500, color: 'var(--text-primary)', fontSize: 13 }}>{item.supplier}</td>
                       <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{fmtDate(item.date)}</td>
                       <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{fmtDate(item.deadline)}</td>
@@ -178,7 +178,7 @@ export default function RFQPage() {
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Supplier *</label>
                     <input style={inputStyle} placeholder="Nama supplier…" value={form.supplier}
                       onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))}
-                      onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                      onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Deadline Penawaran</label>
@@ -190,7 +190,7 @@ export default function RFQPage() {
                 <div>
                   <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
                     <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Item yang Diminta</label>
-                    <button onClick={addLine} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#6366F1', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                    <button onClick={addLine} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#8C57FF', border: 'none', background: 'transparent', cursor: 'pointer' }}>
                       <Plus size={12} /> Tambah Item
                     </button>
                   </div>

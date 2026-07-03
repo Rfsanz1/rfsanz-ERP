@@ -107,12 +107,12 @@ function JournalEntryPageContent() {
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-              <BookOpen size={20} style={{ color: '#6366F1' }} /> Jurnal Akuntansi
+              <BookOpen size={20} style={{ color: '#8C57FF' }} /> Jurnal Akuntansi
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Buat dan kelola jurnal double-entry dengan validasi otomatis</p>
           </div>
           <button onClick={() => { setError(''); setShowCreate(true); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Buat Jurnal
           </button>
         </div>
@@ -124,7 +124,7 @@ function JournalEntryPageContent() {
               <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Cari nomor atau deskripsi…"
                 style={{ ...inputCls, paddingLeft: 34 }}
-                onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
             </div>
             <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ ...inputCls, width: 'auto' }}>
               <option value="">Semua Status</option>
@@ -157,7 +157,7 @@ function JournalEntryPageContent() {
                       onClick={() => setViewJournal(j)}
                       onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-                      <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#6366F1' }}>{j.nomor}</td>
+                      <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#8C57FF' }}>{j.nomor}</td>
                       <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 12 }}>{new Date(j.tanggal).toLocaleDateString('id-ID')}</td>
                       <td style={{ padding: '12px 16px', color: 'var(--text-primary)', fontSize: 13 }}>{j.deskripsi || '—'}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text-primary)', fontSize: 13 }}>
@@ -215,7 +215,7 @@ function JournalEntryPageContent() {
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>{f.l}</label>
                   <input type={f.t} style={inputCls} placeholder={f.p} value={(form as any)[f.k]}
                     onChange={e => setForm(fv => ({ ...fv, [f.k]: e.target.value }))}
-                    onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                    onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
                 </div>
               ))}
             </div>
@@ -224,7 +224,7 @@ function JournalEntryPageContent() {
             <div>
               <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Baris Jurnal</label>
-                <button onClick={addLine} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#6366F1', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                <button onClick={addLine} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#8C57FF', border: 'none', background: 'transparent', cursor: 'pointer' }}>
                   <Plus size={12} /> Tambah Baris
                 </button>
               </div>
@@ -289,7 +289,7 @@ function JournalEntryPageContent() {
             <div className="flex justify-end gap-3" style={{ paddingTop: 8, borderTop: '1px solid var(--border)' }}>
               <button onClick={() => setShowCreate(false)} style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
               <button onClick={handleSave} disabled={saving || !isBalanced || !form.deskripsi}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: (saving || !isBalanced || !form.deskripsi) ? 0.6 : 1 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: (saving || !isBalanced || !form.deskripsi) ? 0.6 : 1 }}>
                 <Check size={13} /> {saving ? 'Menyimpan…' : 'Simpan sebagai Draf'}
               </button>
             </div>

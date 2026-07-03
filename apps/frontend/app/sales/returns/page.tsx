@@ -97,7 +97,7 @@ export default function SalesReturnsPage() {
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             </button>
             <button onClick={() => setShowForm(!showForm)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               <Plus size={14} /> Buat Retur
             </button>
           </div>
@@ -118,7 +118,7 @@ export default function SalesReturnsPage() {
         {showForm && (
           <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 20, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RotateCcw size={14} style={{ color: '#6366F1' }} /> Form Retur Penjualan
+              <RotateCcw size={14} style={{ color: '#8C57FF' }} /> Form Retur Penjualan
             </h3>
             <form onSubmit={createReturn} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -138,7 +138,7 @@ export default function SalesReturnsPage() {
               </div>
               <div style={{ gridColumn: '1 / -1' }} className="flex gap-2 justify-end">
                 <button type="button" onClick={() => setShowForm(false)} style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
-                <button type="submit" disabled={creating} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating ? 0.7 : 1 }}>
+                <button type="submit" disabled={creating} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: creating ? 0.7 : 1 }}>
                   {creating ? 'Menyimpan…' : 'Simpan Retur'}
                 </button>
               </div>
@@ -183,7 +183,7 @@ export default function SalesReturnsPage() {
                     <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#6366F1', fontSize: 11, fontFamily: 'monospace' }}>{r.noReturn}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#8C57FF', fontSize: 11, fontFamily: 'monospace' }}>{r.noReturn}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 500, color: 'var(--text-primary)', fontSize: 13 }}>{r.customer?.name ?? '–'}</td>
                       <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: 12, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.reason || '–'}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text-primary)', fontSize: 13 }}>{fmt(r.totalAmount)}</td>

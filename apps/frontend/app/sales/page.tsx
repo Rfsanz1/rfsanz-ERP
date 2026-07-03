@@ -22,12 +22,12 @@ export default function SalesDashboardPage() {
   }, []);
 
   const KPI = [
-    { label: 'Order Bulan Ini',    value: loading ? '…' : String(stats.total_orders),   icon: ShoppingCart, color: '#6366F1', bg: '#EEF2FF' },
+    { label: 'Order Bulan Ini',    value: loading ? '…' : String(stats.total_orders),   icon: ShoppingCart, color: '#8C57FF', bg: '#EEF2FF' },
     { label: 'Pendapatan Bulan Ini', value: loading ? '…' : FMT(stats.total_revenue),   icon: TrendingUp,   color: '#10B981', bg: '#ECFDF5' },
   ];
 
   const ACTIONS = [
-    { label: 'BUAT ORDER BARU',  sub: 'Catat penjualan baru',   href: '/sales/smart-order', icon: PlusCircle,    color: '#6366F1', bg: 'linear-gradient(135deg,#6366F1,#8B5CF6)' },
+    { label: 'BUAT ORDER BARU',  sub: 'Catat penjualan baru',   href: '/sales/smart-order', icon: PlusCircle,    color: '#8C57FF', bg: 'linear-gradient(135deg,#8C57FF,#8B5CF6)' },
     { label: 'DAFTAR PESANAN',   sub: 'Lihat semua pesanan',    href: '/sales/orders',      icon: ClipboardList, color: '#0EA5E9', bg: 'linear-gradient(135deg,#0EA5E9,#38BDF8)' },
     { label: 'DATA PELANGGAN',   sub: 'Cari info pelanggan',    href: '/sales/customers',   icon: Users,         color: '#10B981', bg: 'linear-gradient(135deg,#10B981,#34D399)' },
     { label: 'LAPORAN PENJUALAN',sub: 'Rekap hasil penjualan',  href: '/sales/reports',     icon: BarChart2,     color: '#F59E0B', bg: 'linear-gradient(135deg,#F59E0B,#FCD34D)' },
@@ -37,7 +37,7 @@ export default function SalesDashboardPage() {
     <div style={{ maxWidth: 720, margin: '0 auto' }} className="space-y-6">
 
       {/* Sapaan */}
-      <div style={{ background: 'linear-gradient(135deg,#6366F1,#8B5CF6)', borderRadius: 20, padding: '24px 28px', color: '#fff' }}>
+      <div style={{ background: 'linear-gradient(135deg,#8C57FF,#8B5CF6)', borderRadius: 20, padding: '24px 28px', color: '#fff' }}>
         <p style={{ margin: 0, fontSize: 13, opacity: 0.85, fontWeight: 500 }}>Selamat datang,</p>
         <h1 style={{ margin: '4px 0 0', fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em' }}>
           {user?.name?.split(' ')[0] || 'Sales'} 👋

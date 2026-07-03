@@ -51,7 +51,7 @@ export default function SalesTeamsPage() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola tim penjualan dan pantau performa masing-masing anggota</p>
           </div>
           <button onClick={() => setShowForm(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Tambah Tim
           </button>
         </div>
@@ -61,10 +61,10 @@ export default function SalesTeamsPage() {
           {teams.map(team => {
             const achPct   = Math.round(team.total_achieved / team.total_target * 100);
             const isActive = selected?.id === team.id;
-            const accent   = achPct >= 100 ? '#10B981' : achPct >= 80 ? '#6366F1' : '#F59E0B';
+            const accent   = achPct >= 100 ? '#10B981' : achPct >= 80 ? '#8C57FF' : '#F59E0B';
             return (
               <div key={team.id} onClick={() => setSelected(team)}
-                style={{ background: 'var(--surface)', borderRadius: 14, padding: 20, border: `2px solid ${isActive ? '#6366F1' : 'var(--border)'}`, cursor: 'pointer', transition: 'border-color .15s', boxShadow: isActive ? '0 4px 20px rgba(99,102,241,.15)' : 'var(--shadow-sm)' }}>
+                style={{ background: 'var(--surface)', borderRadius: 14, padding: 20, border: `2px solid ${isActive ? '#8C57FF' : 'var(--border)'}`, cursor: 'pointer', transition: 'border-color .15s', boxShadow: isActive ? '0 4px 20px rgba(140,87,255,.15)' : 'var(--shadow-sm)' }}>
                 <div className="flex items-start justify-between" style={{ marginBottom: 12 }}>
                   <div>
                     <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', margin: '0 0 3px' }}>{team.name}</p>
@@ -104,7 +104,7 @@ export default function SalesTeamsPage() {
                 <tbody>
                   {selected.members.map((m: any, i: number) => {
                     const pct   = Math.round(m.achieved / m.target * 100);
-                    const color = pct >= 100 ? '#10B981' : pct >= 80 ? '#6366F1' : '#F59E0B';
+                    const color = pct >= 100 ? '#10B981' : pct >= 80 ? '#8C57FF' : '#F59E0B';
                     const isTop = i === 0;
                     return (
                       <tr key={m.name} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
@@ -113,7 +113,7 @@ export default function SalesTeamsPage() {
                         <td style={{ padding: '12px 16px' }}>
                           <div className="flex items-center gap-2">
                             {isTop && <Award size={14} style={{ color: '#F59E0B', flexShrink: 0 }} />}
-                            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#6366F1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{m.name.charAt(0)}</div>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#8C57FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{m.name.charAt(0)}</div>
                             <span style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: 13 }}>{m.name}</span>
                           </div>
                         </td>
@@ -155,7 +155,7 @@ export default function SalesTeamsPage() {
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>{f.label}</label>
                     <input style={inputStyle} placeholder={f.placeholder} value={(form as any)[f.key]}
                       onChange={e => setForm(fv => ({ ...fv, [f.key]: e.target.value }))}
-                      onFocus={el => { el.target.style.borderColor = '#6366F1'; }} onBlur={el => { el.target.style.borderColor = 'var(--border)'; }} />
+                      onFocus={el => { el.target.style.borderColor = '#8C57FF'; }} onBlur={el => { el.target.style.borderColor = 'var(--border)'; }} />
                   </div>
                 ))}
                 <div className="flex justify-end gap-3" style={{ paddingTop: 8, borderTop: '1px solid var(--border)' }}>
@@ -165,7 +165,7 @@ export default function SalesTeamsPage() {
                       setTeams(t => [...t, { id: t.length + 1, name: form.name, leader: form.leader, members: [], total_target: 0, total_achieved: 0 }]);
                       setShowForm(false); setForm({ name: '', leader: '' });
                     }
-                  }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                     <Users size={13} /> Simpan Tim
                   </button>
                 </div>

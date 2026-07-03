@@ -101,7 +101,7 @@ export default function InventoryProductsPage() {
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer' }}>
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             </button>
-            <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               <Plus size={14} /> Produk Baru
             </button>
           </div>
@@ -188,8 +188,8 @@ export default function InventoryProductsPage() {
                       onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}>
                       <td style={{ padding: '11px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(99,102,241,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Package size={13} style={{ color: '#6366F1' }} />
+                          <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(140,87,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Package size={13} style={{ color: '#8C57FF' }} />
                           </div>
                           <div>
                             <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</p>
@@ -246,7 +246,7 @@ export default function InventoryProductsPage() {
                   <button key={n} onClick={() => goPage(n as number)}
                     style={{
                       ...btnBase,
-                      background: page === n ? '#6366F1' : 'var(--surface)',
+                      background: page === n ? '#8C57FF' : 'var(--surface)',
                       color:      page === n ? '#fff'     : 'var(--text-primary)',
                       border:     page === n ? 'none'     : '1px solid var(--border)',
                       fontWeight: page === n ? 700 : 400,

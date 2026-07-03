@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import { Search, RefreshCw, AlertTriangle, Link2, Plus } from 'lucide-react';
 
 const C      = '#00ACC1';
-const PURPLE = '#6366F1';
+const PURPLE = '#8C57FF';
 
 const STATUS_CFG: Record<string, { label: string; color: string }> = {
   paid:      { label: 'Lunas',        color: '#22C55E' },

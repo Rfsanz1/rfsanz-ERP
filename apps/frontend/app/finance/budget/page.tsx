@@ -86,7 +86,7 @@ export default function BudgetPage() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola anggaran per departemen dan periode</p>
           </div>
           <button onClick={() => setShowForm(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Buat Anggaran
           </button>
         </div>
@@ -105,7 +105,7 @@ export default function BudgetPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Total Anggaran', value: fmt(totalBudget),          accent: '#6366F1' },
+            { label: 'Total Anggaran', value: fmt(totalBudget),          accent: '#8C57FF' },
             { label: 'Terpakai',       value: fmt(totalUsed),            accent: '#F59E0B' },
             { label: 'Sisa Anggaran',  value: fmt(Math.max(0, totalBudget - totalUsed)), accent: '#10B981' },
           ].map(s => (
@@ -137,7 +137,7 @@ export default function BudgetPage() {
                   const isActive = selected?.id === b.id;
                   return (
                     <div key={b.id} onClick={() => setSelected(b)}
-                      style={{ padding: '14px 16px', borderRadius: 12, cursor: 'pointer', border: `2px solid ${isActive ? '#6366F1' : 'var(--border)'}`, transition: 'border-color .15s' }}>
+                      style={{ padding: '14px 16px', borderRadius: 12, cursor: 'pointer', border: `2px solid ${isActive ? '#8C57FF' : 'var(--border)'}`, transition: 'border-color .15s' }}>
                       <div className="flex items-start justify-between" style={{ marginBottom: 8 }}>
                         <div>
                           <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>{b.name}</p>
@@ -150,10 +150,10 @@ export default function BudgetPage() {
                       </div>
                       <div className="flex justify-between" style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5 }}>
                         <span>{fmt(used)}</span>
-                        <span style={{ fontWeight: 700, color: warn ? '#F59E0B' : '#6366F1' }}>{pct}%</span>
+                        <span style={{ fontWeight: 700, color: warn ? '#F59E0B' : '#8C57FF' }}>{pct}%</span>
                       </div>
                       <div style={{ height: 5, borderRadius: 3, background: 'var(--surface-sunken)', overflow: 'hidden', marginBottom: 3 }}>
-                        <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: warn ? '#F59E0B' : '#6366F1', borderRadius: 3, transition: 'width .3s' }} />
+                        <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: warn ? '#F59E0B' : '#8C57FF', borderRadius: 3, transition: 'width .3s' }} />
                       </div>
                       <p style={{ fontSize: 10, textAlign: 'right', color: 'var(--text-muted)', margin: 0 }}>dari {fmt(total)}</p>
                     </div>
@@ -191,7 +191,7 @@ export default function BudgetPage() {
                           <tr key={i} style={{ borderBottom: '1px solid var(--border)', transition: 'background .12s' }}
                             onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-hover)'; }}
                             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-                            <td style={{ padding: '10px 14px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#6366F1' }}>{line.account?.code ?? '–'}</td>
+                            <td style={{ padding: '10px 14px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: '#8C57FF' }}>{line.account?.code ?? '–'}</td>
                             <td style={{ padding: '10px 14px', color: 'var(--text-primary)', fontSize: 12 }}>{line.account?.name ?? line.name ?? '–'}</td>
                             <td style={{ padding: '10px 14px', color: 'var(--text-secondary)', fontSize: 12 }}>{fmt(budget)}</td>
                             <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 500, color: pct > 95 ? '#EF4444' : 'var(--text-primary)' }}>{fmt(actual)}</td>
@@ -227,7 +227,7 @@ export default function BudgetPage() {
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>{f.label}</label>
                     <input style={inputStyle} placeholder={f.placeholder} value={(form as any)[f.key]}
                       onChange={e => setForm(fv => ({ ...fv, [f.key]: e.target.value }))}
-                      onFocus={el => { el.target.style.borderColor = '#6366F1'; }} onBlur={el => { el.target.style.borderColor = 'var(--border)'; }} />
+                      onFocus={el => { el.target.style.borderColor = '#8C57FF'; }} onBlur={el => { el.target.style.borderColor = 'var(--border)'; }} />
                   </div>
                 ))}
                 <div className="grid grid-cols-2 gap-4">
@@ -243,7 +243,7 @@ export default function BudgetPage() {
                 <div className="flex justify-end gap-3" style={{ paddingTop: 8, borderTop: '1px solid var(--border)' }}>
                   <button onClick={() => setShowForm(false)} style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Batal</button>
                   <button onClick={submitBudget} disabled={submitting}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: submitting ? 0.7 : 1 }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: submitting ? 0.7 : 1 }}>
                     <Plus size={13} /> {submitting ? 'Menyimpan…' : 'Simpan Anggaran'}
                   </button>
                 </div>

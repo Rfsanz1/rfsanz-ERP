@@ -46,20 +46,20 @@ export default function SettingsLayoutInner({ children }: { children: React.Reac
                   style={{
                     display: 'flex', alignItems: 'center', gap: 9,
                     padding: '8px 10px', borderRadius: 10, marginBottom: 2,
-                    background: active ? 'rgba(99,102,241,.08)' : 'transparent',
-                    borderLeft: active ? '3px solid #6366F1' : '3px solid transparent',
+                    background: active ? 'rgba(140,87,255,.08)' : 'transparent',
+                    borderLeft: active ? '3px solid #8C57FF' : '3px solid transparent',
                     transition: 'all .14s', cursor: 'pointer',
                   }}
                   onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
                   onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                 >
                   <Icon size={15} strokeWidth={active ? 2.2 : 1.8}
-                    style={{ color: active ? '#6366F1' : '#9CA3AF', flexShrink: 0 }} />
+                    style={{ color: active ? '#8C57FF' : '#9CA3AF', flexShrink: 0 }} />
                   <span style={{ fontSize: 12.5, fontWeight: active ? 600 : 400,
                     color: active ? '#1E1B4B' : '#374151', flex: 1 }}>
                     {item.label}
                   </span>
-                  {active && <ChevronRight size={12} style={{ color: '#6366F1', flexShrink: 0 }} />}
+                  {active && <ChevronRight size={12} style={{ color: '#8C57FF', flexShrink: 0 }} />}
                 </div>
               </Link>
             );

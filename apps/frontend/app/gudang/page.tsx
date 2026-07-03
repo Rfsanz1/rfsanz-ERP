@@ -26,7 +26,7 @@ export default function GudangDashboardPage() {
     { label: 'Barang Masuk',  value: stats.incoming,   icon: ArrowDownRight, accent: '#3B82F6', href: '/gudang/inbound' },
     { label: 'Barang Keluar', value: stats.outgoing,   icon: ArrowUpRight,   accent: '#10B981', href: '/gudang/outbound' },
     { label: 'Transfer Stok', value: stats.transfers,  icon: ArrowLeftRight, accent: '#8B5CF6', href: '/gudang/transfer' },
-    { label: 'Stok Opname',   value: stats.stockOpname,icon: ClipboardCheck, accent: '#6366F1', href: '/gudang/stock-opname' },
+    { label: 'Stok Opname',   value: stats.stockOpname,icon: ClipboardCheck, accent: '#8C57FF', href: '/gudang/stock-opname' },
     { label: 'Order Pending', value: stats.pending,    icon: Clock,          accent: '#EF4444', href: '/gudang/picking' },
   ];
 

@@ -240,7 +240,7 @@ export function YetiSidebar({ collapsed, mobileOpen, onMobileClose }: SidebarPro
       >
         <div
           className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg font-bold text-white text-sm"
-          style={{ background: 'linear-gradient(135deg, #3B82F6, #6366F1)' }}
+          style={{ background: 'linear-gradient(135deg, #3B82F6, #8C57FF)' }}
         >
           GM
         </div>

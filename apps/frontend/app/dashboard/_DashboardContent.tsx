@@ -78,7 +78,7 @@ function BarChart({ data }: { data: { month: string; revenue: number }[] }) {
                 height: `${pct}%`,
                 borderRadius: '4px 4px 2px 2px',
                 background: isLast
-                  ? 'linear-gradient(180deg, #818CF8 0%, #6366F1 100%)'
+                  ? 'linear-gradient(180deg, #A379FF 0%, #8C57FF 100%)'
                   : 'var(--border-strong)',
                 minHeight: 3,
                 transition: 'height 0.4s ease',
@@ -99,7 +99,7 @@ function BarChart({ data }: { data: { month: string; revenue: number }[] }) {
 
 /* ── Quick actions ─────────────────────────────────────────────────── */
 const QUICK_ACTIONS = [
-  { label: 'Buat Order',      href: '/sales/orders',               icon: FileText,  color: '#6366F1', bg: 'rgba(99,102,241,0.10)',  modal: true },
+  { label: 'Buat Order',      href: '/sales/orders',               icon: FileText,  color: '#8C57FF', bg: 'rgba(140,87,255,0.10)',  modal: true },
   { label: 'Transfer Stok',   href: '/inventory/transfers',        icon: Package,   color: '#8B5CF6', bg: 'rgba(139,92,246,0.10)' },
   { label: 'Purchase Order',  href: '/purchasing/purchase-orders', icon: Truck,     color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
   { label: 'Lap. Penjualan',  href: '/reports/sales',              icon: BarChart2, color: '#3B82F6', bg: 'rgba(59,130,246,0.10)' },
@@ -136,8 +136,8 @@ export default function DashboardContent() {
       sub:    revenueSub,
       up:     true,
       icon:   DollarSign,
-      accent: '#6366F1',
-      light:  'rgba(99,102,241,0.10)',
+      accent: '#8C57FF',
+      light:  'rgba(140,87,255,0.10)',
     },
     {
       title:  kledoConnected ? 'Total Invoice Kledo' : 'Total Orders',
@@ -452,8 +452,8 @@ export default function DashboardContent() {
             </div>
             <div
               style={{
-                fontSize: 11, fontWeight: 700, color: '#6366F1',
-                background: 'rgba(99,102,241,0.10)', borderRadius: 8,
+                fontSize: 11, fontWeight: 700, color: '#8C57FF',
+                background: 'rgba(140,87,255,0.10)', borderRadius: 8,
                 padding: '4px 10px',
               }}
             >
@@ -471,7 +471,7 @@ export default function DashboardContent() {
             style={{ borderTop: '1px solid var(--border)' }}
           >
             {[
-              { label: 'Bulan ini',            val: formatRp(summary.monthRevenue),  accent: '#6366F1' },
+              { label: 'Bulan ini',            val: formatRp(summary.monthRevenue),  accent: '#8C57FF' },
               { label: 'Tahun ini',             val: formatRp(summary.yearRevenue),   accent: '#10B981' },
               { label: 'Pengeluaran',           val: formatRp(summary.monthExpense),  accent: '#F59E0B' },
             ].map(({ label, val, accent }) => (
@@ -504,7 +504,7 @@ export default function DashboardContent() {
             style={{
               borderRadius: 14,
               padding: '16px 18px',
-              background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+              background: 'linear-gradient(135deg, #8C57FF 0%, #8B5CF6 100%)',
               marginBottom: 16,
             }}
           >
@@ -570,7 +570,7 @@ export default function DashboardContent() {
               href={kledoConnected ? '/invoice/list' : '/sales/orders'}
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
-                fontSize: 12, fontWeight: 600, color: '#6366F1',
+                fontSize: 12, fontWeight: 600, color: '#8C57FF',
                 textDecoration: 'none',
               }}
             >
@@ -702,7 +702,7 @@ export default function DashboardContent() {
               {[
                 { Icon: CheckCircle, label: 'Revenue hari ini',    val: formatRp(summary.todayRevenue),        color: '#10B981', bg: 'rgba(16,185,129,0.10)' },
                 { Icon: Clock,       label: 'Invoice jatuh tempo', val: String(summary.overdueInvoiceCount),   color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
-                { Icon: Truck,       label: 'PO pending',           val: String(summary.pendingPOCount),        color: '#6366F1', bg: 'rgba(99,102,241,0.10)' },
+                { Icon: Truck,       label: 'PO pending',           val: String(summary.pendingPOCount),        color: '#8C57FF', bg: 'rgba(140,87,255,0.10)' },
               ].map(({ Icon, label, val, color, bg }) => (
                 <div key={label} className="flex items-center gap-3">
                   <div style={{ width: 30, height: 30, borderRadius: 8, background: bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -734,7 +734,7 @@ export default function DashboardContent() {
             href="/reports/sales"
             style={{
               display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 12, fontWeight: 600, color: '#6366F1', textDecoration: 'none',
+              fontSize: 12, fontWeight: 600, color: '#8C57FF', textDecoration: 'none',
             }}
           >
             Lihat semua <ArrowUpRight size={13} />
@@ -768,7 +768,7 @@ export default function DashboardContent() {
                           style={{
                             width: `${(p.totalRevenue / maxR) * 100}%`,
                             height: '100%', borderRadius: 100,
-                            background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+                            background: 'linear-gradient(90deg, #8C57FF, #8B5CF6)',
                           }}
                         />
                       </div>

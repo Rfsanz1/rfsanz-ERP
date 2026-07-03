@@ -111,7 +111,7 @@ export default function SalesDropdown({
   }, []);
 
   const avatarColor = (name: string) => {
-    const colors = ['#00ACC1','#6366F1','#F59E0B','#22C55E','#EF4444','#8B5CF6','#06B6D4','#EC4899','#F97316'];
+    const colors = ['#00ACC1','#8C57FF','#F59E0B','#22C55E','#EF4444','#8B5CF6','#06B6D4','#EC4899','#F97316'];
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];

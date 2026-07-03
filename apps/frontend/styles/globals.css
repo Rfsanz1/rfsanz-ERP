@@ -6,12 +6,12 @@
 /* ─── Design tokens: Light mode ─────────────────────────────────────── */
 :root {
   /* Brand */
-  --brand:          #6366F1;
-  --brand-light:    rgba(99, 102, 241, 0.10);
-  --brand-hover:    rgba(99, 102, 241, 0.06);
+  --brand:          #8C57FF;
+  --brand-light:    rgba(140, 87, 255, 0.10);
+  --brand-hover:    rgba(140, 87, 255, 0.06);
 
   /* Surfaces */
-  --bg:             #F1F5F9;
+  --bg:             #F4F5FA;
   --surface:        #FFFFFF;
   --surface-raised: #FFFFFF;
   --surface-sunken: #F8FAFC;
@@ -102,7 +102,7 @@ select:focus-visible {
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.18);
+  background: rgba(140, 87, 255, 0.18);
 }
 
 /* ─── Scrollbars ─────────────────────────────────────────────────────── */

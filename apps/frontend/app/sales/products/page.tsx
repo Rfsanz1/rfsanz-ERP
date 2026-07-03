@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { Package, Search, RefreshCw, Link2, Layers } from 'lucide-react';
 
 const C      = '#00ACC1';
-const PURPLE = '#6366F1';
+const PURPLE = '#8C57FF';
 
 interface Product {
   id: string;

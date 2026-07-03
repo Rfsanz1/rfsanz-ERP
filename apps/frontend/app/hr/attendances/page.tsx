@@ -40,11 +40,11 @@ export default function AttendancesPage() {
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <h1 className="flex items-center gap-2" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-              <Calendar size={18} style={{ color: '#6366F1' }} /> Absensi Karyawan
+              <Calendar size={18} style={{ color: '#8C57FF' }} /> Absensi Karyawan
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Rekap kehadiran karyawan</p>
           </div>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Tambah Absensi
           </button>
         </div>
@@ -57,7 +57,7 @@ export default function AttendancesPage() {
               <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Cari karyawan…"
                 style={{ width: '100%', padding: '8px 12px 8px 32px', borderRadius: 9, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
-                onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
             </div>
             <button onClick={load} style={{ padding: '8px 10px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>
               <RefreshCw size={13} />
@@ -86,7 +86,7 @@ export default function AttendancesPage() {
                     <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center' }}>{a.checkIn || '–'}</td>
                     <td style={{ padding: '12px 20px', fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center' }}>{a.checkOut || '–'}</td>
                     <td style={{ padding: '12px 20px' }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(99,102,241,0.1)', color: '#6366F1' }}>{a.status || 'hadir'}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: 'rgba(140,87,255,0.1)', color: '#8C57FF' }}>{a.status || 'hadir'}</span>
                     </td>
                   </tr>
                 ))}

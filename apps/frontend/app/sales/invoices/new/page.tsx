@@ -454,7 +454,7 @@ export default function NewInvoicePage() {
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${C}14`, color: C }}>{it.unit}</span>
                         )}
                         {it.kledoProductId && (
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'rgba(99,102,241,.1)', color: '#6366F1' }}>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'rgba(140,87,255,.1)', color: '#8C57FF' }}>
                             <Link2 className="h-2.5 w-2.5" /> Kledo
                           </span>
                         )}

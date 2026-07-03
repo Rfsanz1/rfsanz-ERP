@@ -369,7 +369,7 @@ export default function ProductSearchDropdown({
             >
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0"
-                style={{ background: `linear-gradient(135deg,#6366F1,#8B5CF6)` }}
+                style={{ background: `linear-gradient(135deg,#8C57FF,#8B5CF6)` }}
               >
                 <Package className="h-3.5 w-3.5 text-white" />
               </div>

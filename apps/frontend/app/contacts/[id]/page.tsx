@@ -85,14 +85,14 @@ export default function ContactDetailPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <button onClick={() => router.push('/contacts')}
-              style={{ padding: 8, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: '#6366F1', cursor: 'pointer', display: 'flex' }}>
+              style={{ padding: 8, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: '#8C57FF', cursor: 'pointer', display: 'flex' }}>
               <ArrowLeft size={15} />
             </button>
             {contact && (
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{contact.name}</h1>
-                  <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: 'rgba(99,102,241,0.10)', color: '#6366F1' }}>{contact.code}</span>
+                  <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: 'rgba(140,87,255,0.10)', color: '#8C57FF' }}>{contact.code}</span>
                   {(contact.type || []).map((t: string) => {
                     const cfg = TYPE_BADGE[t] ?? TYPE_BADGE.other;
                     return (
@@ -106,7 +106,7 @@ export default function ContactDetailPage() {
           </div>
           {contact && (
             <button onClick={() => router.push(`/contacts/${id}/edit`)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               <Edit2 size={13} /> Edit
             </button>
           )}
@@ -121,7 +121,7 @@ export default function ContactDetailPage() {
               {TABS.map(({ key, label, icon: Icon }) => (
                 <button key={key} onClick={() => handleTab(key)}
                   style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 9, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all .15s',
-                    background: tab === key ? '#6366F1' : 'transparent',
+                    background: tab === key ? '#8C57FF' : 'transparent',
                     color: tab === key ? '#fff' : 'var(--text-muted)' }}>
                   <Icon size={13} /> {label}
                 </button>
@@ -163,7 +163,7 @@ export default function ContactDetailPage() {
                 ].map(({ title, icon: Icon, rows }) => (
                   <div key={title} style={{ background: 'var(--surface)', borderRadius: 14, padding: 20, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }} className="space-y-3">
                     <div className="flex items-center gap-2" style={{ paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
-                      <Icon size={14} style={{ color: '#6366F1' }} />
+                      <Icon size={14} style={{ color: '#8C57FF' }} />
                       <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
                     </div>
                     {rows.map(r => <InfoRow key={r.label} label={r.label} value={r.value} />)}

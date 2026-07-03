@@ -43,7 +43,7 @@ export default function CrmLeadsPage() {
             <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Prospek (Leads)</h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Kelola pipeline prospek penjualan Anda</p>
           </div>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={15} /> Prospek Baru
           </button>
         </div>
@@ -51,7 +51,7 @@ export default function CrmLeadsPage() {
         {/* Summary pills */}
         <div className="flex gap-2 flex-wrap">
           {[
-            { label: 'Semua',        count: LEADS.length,                                        color: '#6366F1' },
+            { label: 'Semua',        count: LEADS.length,                                        color: '#8C57FF' },
             { label: 'Proposal',     count: LEADS.filter(l => l.stage === 'Proposal').length,    color: '#F59E0B' },
             { label: 'Negosiasi',    count: LEADS.filter(l => l.stage === 'Negosiasi').length,   color: '#8B5CF6' },
             { label: 'Kualifikasi',  count: LEADS.filter(l => l.stage === 'Kualifikasi').length, color: '#3B82F6' },
@@ -92,7 +92,7 @@ export default function CrmLeadsPage() {
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
                       <td style={{ padding: '13px 16px' }}>
                         <div className="flex items-center gap-2.5">
-                          <div style={{ width: 32, height: 32, borderRadius: 10, background: '#6366F11A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#6366F1', flexShrink: 0 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 10, background: '#8C57FF1A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#8C57FF', flexShrink: 0 }}>
                             {l.name.charAt(0)}
                           </div>
                           <div>

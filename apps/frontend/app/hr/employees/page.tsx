@@ -61,7 +61,7 @@ export default function EmployeesPage() {
             <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>Data Karyawan</h1>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Manajemen informasi dan data karyawan</p>
           </div>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: '#8C57FF', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Tambah Karyawan
           </button>
         </div>
@@ -69,7 +69,7 @@ export default function EmployeesPage() {
         {stats && (
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {[
-              { label: 'Total Karyawan', value: stats.total,    icon: Users,     accent: '#6366F1' },
+              { label: 'Total Karyawan', value: stats.total,    icon: Users,     accent: '#8C57FF' },
               { label: 'Aktif',          value: stats.aktif,    icon: UserCheck, accent: '#10B981' },
               { label: 'Cuti',           value: stats.cuti,     icon: Users,     accent: '#F59E0B' },
               { label: 'Total Gaji',     value: fmtRp(stats.totalGaji), icon: DollarSign, accent: '#EF4444', small: true },
@@ -95,7 +95,7 @@ export default function EmployeesPage() {
               <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Cari nama karyawan…"
                 style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 10, border: '1px solid var(--border)', outline: 'none', fontSize: 13, background: 'var(--surface-sunken)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
-                onFocus={e => { e.target.style.borderColor = '#6366F1'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
+                onFocus={e => { e.target.style.borderColor = '#8C57FF'; }} onBlur={e => { e.target.style.borderColor = 'var(--border)'; }} />
             </div>
             <button onClick={load}
               style={{ padding: '8px 10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-sunken)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}>

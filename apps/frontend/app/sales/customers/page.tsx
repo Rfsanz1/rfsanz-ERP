@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import { Search, RefreshCw, Plus, MapPin, Phone, Link2, User } from 'lucide-react';
 
 const C = '#00ACC1';
-const PURPLE = '#6366F1';
+const PURPLE = '#8C57FF';
 
 export default function CustomersPage() {
   const router = useRouter();
