@@ -8,7 +8,6 @@ import {
   RefreshCw, Truck, Target, ChevronRight, Wallet, ArrowUpRight,
   Zap,
 } from 'lucide-react';
-import CreateOrderModal from '../../components/orders/CreateOrderModal';
 import { useDashboardData } from '../../lib/hooks/useDashboardData';
 
 /* ── Formatters ─────────────────────────────────────────────────────── */
@@ -98,7 +97,7 @@ function BarChart({ data }: { data: { month: string; revenue: number }[] }) {
 
 /* ── Quick actions ──────────────────────────────────────────────────── */
 const QUICK_ACTIONS = [
-  { label: 'Buat Order',         href: '/sales/orders',                icon: ShoppingCart, color: '#8C57FF', bg: 'rgba(140,87,255,0.12)', desc: 'Input sales order baru',     modal: true },
+  { label: 'Buat Order',         href: '/sales/orders/new',            icon: ShoppingCart, color: '#8C57FF', bg: 'rgba(140,87,255,0.12)', desc: 'Input sales order baru'     },
   { label: 'Buat Penawaran',     href: '/sales/quotations',            icon: FileText,     color: '#3B82F6', bg: 'rgba(59,130,246,0.12)',  desc: 'Kirim quotation ke customer' },
   { label: 'Buat Invoice',       href: '/sales/invoices/new',          icon: DollarSign,   color: '#10B981', bg: 'rgba(16,185,129,0.12)',  desc: 'Tagih ke pelanggan'          },
   { label: 'Data Pelanggan',     href: '/customers',                   icon: Users,        color: '#06B6D4', bg: 'rgba(6,182,212,0.12)',   desc: 'Kelola data pelanggan'       },
@@ -109,7 +108,6 @@ const QUICK_ACTIONS = [
 /* ═══════════════════════════════════════════════════════════════════ */
 export default function DashboardContent() {
   const [tab, setTab] = useState<'today' | 'week' | 'month'>('month');
-  const [showOrder, setShowOrder] = useState(false);
   const { data, loading, refresh } = useDashboardData();
   const { summary, revenueChart, topProducts, lowStock, recentOrders, adminStats, kledoConnected, totalInvoiceCount } = data;
 
@@ -363,12 +361,6 @@ export default function DashboardContent() {
               el.style.boxShadow = 'none';
             };
 
-            if (a.modal) return (
-              <button key={a.label} onClick={() => setShowOrder(true)}
-                style={base} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-                {inner}
-              </button>
-            );
             return (
               <Link key={a.label} href={a.href}
                 style={base} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
@@ -817,12 +809,6 @@ export default function DashboardContent() {
 
     </div>
 
-    {showOrder && (
-      <CreateOrderModal
-        onClose={() => setShowOrder(false)}
-        onSuccess={() => { setShowOrder(false); refresh(); }}
-      />
-    )}
     </>
   );
 }

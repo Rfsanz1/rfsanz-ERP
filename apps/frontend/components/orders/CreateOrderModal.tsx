@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  ShoppingCart, Plus, X, Trash2, Package,
+  ShoppingCart, Plus, X, Trash2, Package, ArrowLeft,
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
   CreditCard, Banknote, Smartphone, Wallet, Copy, Check, ChevronDown,
 } from 'lucide-react';
@@ -113,9 +113,11 @@ const METODE_OPTIONS = [
 export default function CreateOrderModal({
   onClose,
   onSuccess,
+  mode = 'modal',
 }: {
   onClose: () => void;
   onSuccess: () => void;
+  mode?: 'modal' | 'page';
 }) {
   const { user } = useAuthStore();
 
@@ -327,60 +329,70 @@ export default function CreateOrderModal({
     }
   };
 
-  const modalContent = (
+  const sharedStyle = (
+    <style>{`
+      .order-modal-root {
+        font-size: clamp(13px, 3.8vw, 15px);
+      }
+      @media (min-width: 640px) {
+        .order-modal-root { font-size: 14px; }
+      }
+      .order-modal-root .modal-label    { font-size: clamp(10px, 2.8vw, 12px); }
+      .order-modal-root .modal-section  { font-size: clamp(10px, 2.6vw, 11px); }
+      .order-modal-root .modal-heading  { font-size: clamp(14px, 4.2vw, 16px); }
+      .order-modal-root .modal-subtext  { font-size: clamp(10px, 2.8vw, 12px); }
+      .order-modal-root .modal-input    { font-size: clamp(13px, 3.5vw, 14px); }
+      .order-modal-root .modal-badge    { font-size: clamp(9px,  2.4vw, 10px); }
+      .order-modal-root .modal-btn-text { font-size: clamp(12px, 3.2vw, 14px); }
+    `}</style>
+  );
+
+  const innerBox = (
     <div
-      className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,.55)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
+      className={`order-modal-root flex flex-col ${mode === 'page' ? 'w-full' : 'rounded-t-2xl sm:rounded-2xl w-full'}`}
+      style={{
+        background: 'var(--surface)',
+        maxWidth: mode === 'page' ? 860 : 820,
+        maxHeight: mode === 'page' ? 'none' : '92dvh',
+        height: mode === 'page' ? 'auto' : 'auto',
+        boxShadow: mode === 'page' ? 'none' : 'var(--shadow-lg)',
+        margin: mode === 'page' ? '0 auto' : undefined,
+      }}
     >
-      {/* Responsive font-size scaling via CSS custom property */}
-      <style>{`
-        .order-modal-root {
-          font-size: clamp(13px, 3.8vw, 15px);
-        }
-        @media (min-width: 640px) {
-          .order-modal-root { font-size: 14px; }
-        }
-        .order-modal-root .modal-label    { font-size: clamp(10px, 2.8vw, 12px); }
-        .order-modal-root .modal-section  { font-size: clamp(10px, 2.6vw, 11px); }
-        .order-modal-root .modal-heading  { font-size: clamp(14px, 4.2vw, 16px); }
-        .order-modal-root .modal-subtext  { font-size: clamp(10px, 2.8vw, 12px); }
-        .order-modal-root .modal-input    { font-size: clamp(13px, 3.5vw, 14px); }
-        .order-modal-root .modal-badge    { font-size: clamp(9px,  2.4vw, 10px); }
-        .order-modal-root .modal-btn-text { font-size: clamp(12px, 3.2vw, 14px); }
-      `}</style>
-      <div
-        className="order-modal-root rounded-t-2xl sm:rounded-2xl w-full flex flex-col"
-        style={{
-          background: 'var(--surface)',
-          maxWidth: 820,
-          maxHeight: '92dvh',
-          height: 'auto',
-          boxShadow: 'var(--shadow-lg)',
-        }}
-      >
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between px-4 sm:px-7 py-4 sm:py-5" style={{ borderBottom: '1.5px solid var(--border)' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${COLOR}18` }}>
-              <ShoppingCart className="h-5 w-5" style={{ color: COLOR }} />
-            </div>
-            <div>
-              <h2 className="modal-heading font-bold" style={{ color: 'var(--text-primary)' }}>Buat Order Baru</h2>
-              <p className="modal-subtext" style={{ color: 'var(--text-muted)' }}>
-                Tersimpan otomatis ke ERP + Kledo
-                {kledoStatus === 'syncing' && ' · Mengirim ke Kledo…'}
-                {kledoStatus === 'ok' && ' ✓ Tersinkron ke Kledo'}
-                {kledoStatus === 'error' && ' · Kledo tidak terjangkau'}
-              </p>
-            </div>
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-4 sm:px-7 py-4 sm:py-5"
+        style={{ borderBottom: mode === 'page' ? 'none' : '1.5px solid var(--border)' }}>
+        <div className="flex items-center gap-2.5">
+          {mode === 'page' ? (
+            <button onClick={onClose} className="p-2 rounded-xl transition-colors mr-1"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          ) : null}
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${COLOR}18` }}>
+            <ShoppingCart className="h-5 w-5" style={{ color: COLOR }} />
           </div>
+          <div>
+            <h2 className="modal-heading font-bold" style={{ color: 'var(--text-primary)' }}>Buat Order Baru</h2>
+            <p className="modal-subtext" style={{ color: 'var(--text-muted)' }}>
+              Tersimpan otomatis ke ERP + Kledo
+              {kledoStatus === 'syncing' && ' · Mengirim ke Kledo…'}
+              {kledoStatus === 'ok' && ' ✓ Tersinkron ke Kledo'}
+              {kledoStatus === 'error' && ' · Kledo tidak terjangkau'}
+            </p>
+          </div>
+        </div>
+        {mode === 'modal' && (
           <button onClick={onClose} className="p-2 rounded-xl transition-colors"
             style={{ color: 'var(--text-muted)' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
             <X className="h-4 w-4" />
           </button>
-        </div>
+        )}
+      </div>
 
         {/* ── Error Banner (sticky di atas body) ── */}
         {error && (
@@ -909,8 +921,11 @@ export default function CreateOrderModal({
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex flex-col gap-2 px-4 sm:px-7 py-4 sm:py-5" style={{ borderTop: '1.5px solid var(--border)', flexShrink: 0 }}>
-          {/* Error banner di footer agar selalu terlihat di mobile */}
+        <div className="flex flex-col gap-2 px-4 sm:px-7 py-4 sm:py-5"
+          style={{
+            borderTop: '1.5px solid var(--border)', flexShrink: 0,
+            ...(mode === 'page' ? { position: 'sticky', bottom: 0, background: 'var(--surface)', zIndex: 10 } : {}),
+          }}>
           {error && (
             <div className="rounded-xl px-4 py-2.5 text-sm flex items-start gap-2 w-full"
               style={{ background: 'var(--danger-light,#fef2f2)', color: 'var(--danger,#dc2626)', border: '1.5px solid rgba(239,68,68,.2)' }}>
@@ -934,7 +949,7 @@ export default function CreateOrderModal({
               style={{ color: 'var(--text-secondary)', border: '1.5px solid var(--border)' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-sunken)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-              Batal
+              {mode === 'page' ? 'Kembali' : 'Batal'}
             </button>
             <button type="button" onClick={handleSubmit} disabled={saving}
               className="modal-btn-text px-7 py-2.5 rounded-xl font-semibold text-white transition-all disabled:opacity-60"
@@ -948,6 +963,26 @@ export default function CreateOrderModal({
           </div>
         </div>
       </div>
+  );
+
+  /* ── Page mode: render langsung tanpa portal ── */
+  if (mode === 'page') {
+    return (
+      <>
+        {sharedStyle}
+        {innerBox}
+      </>
+    );
+  }
+
+  /* ── Modal mode: render dengan overlay + portal ── */
+  const modalContent = (
+    <div
+      className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,.55)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
+    >
+      {sharedStyle}
+      {innerBox}
     </div>
   );
 
