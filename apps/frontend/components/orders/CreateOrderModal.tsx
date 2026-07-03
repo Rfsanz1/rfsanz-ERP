@@ -6,6 +6,7 @@ import {
   ShoppingCart, Plus, X, Trash2, Package, ArrowLeft,
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
   CreditCard, Banknote, Smartphone, Wallet, Copy, Check, ChevronDown,
+  ImagePlus,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { api } from '../../lib/api';
@@ -134,8 +135,8 @@ export default function CreateOrderModal({
   const [ongkir, setOngkir]                   = useState(0);
 
   type PembayaranMetode = 'transfer' | 'cash' | 'debit' | 'cod';
-  interface PembayaranEntry { id: string; metode: PembayaranMetode; jumlah: number; bankPilihan: string | null; edcPilihan: string | null; autoFill: boolean; }
-  const newPembayaran = (m: PembayaranMetode = 'transfer'): PembayaranEntry => ({ id: Math.random().toString(36).slice(2), metode: m, jumlah: 0, bankPilihan: null, edcPilihan: null, autoFill: true });
+  interface PembayaranEntry { id: string; metode: PembayaranMetode; jumlah: number; bankPilihan: string | null; edcPilihan: string | null; autoFill: boolean; buktiTransfer: File | null; buktiPreviewUrl: string | null; }
+  const newPembayaran = (m: PembayaranMetode = 'transfer'): PembayaranEntry => ({ id: Math.random().toString(36).slice(2), metode: m, jumlah: 0, bankPilihan: null, edcPilihan: null, autoFill: true, buktiTransfer: null, buktiPreviewUrl: null });
   const [pembayaranList, setPembayaranList]   = useState<PembayaranEntry[]>([newPembayaran()]);
   const [copiedBank, setCopiedBank]           = useState<string | null>(null);
   const [openBankDrop, setOpenBankDrop]       = useState<string | null>(null);
@@ -231,6 +232,34 @@ export default function CreateOrderModal({
     setSaving(true);
     setKledoStatus('syncing');
 
+    /* Helper: upload bukti transfer ke Kledo (dipanggil di semua success path) */
+    const uploadBuktiIfAvailable = async (kledoInvoiceId: number | string | null | undefined) => {
+      if (!kledoInvoiceId) return;
+      const transferEntries = pembayaranList.filter(p => p.metode === 'transfer' && p.buktiTransfer);
+      for (const entry of transferEntries) {
+        if (!entry.buktiTransfer) continue;
+        try {
+          const fd = new FormData();
+          fd.append('invoiceId', String(kledoInvoiceId));
+          fd.append('file', entry.buktiTransfer, entry.buktiTransfer.name);
+          const token = typeof window !== 'undefined' ? localStorage.getItem('gm_auth_token') ?? '' : '';
+          const r = await fetch('/api/kledo/invoice-attachment', {
+            method: 'POST',
+            body: fd,
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const d = await r.json().catch(() => ({}));
+          if (d.ok) {
+            console.log('[bukti-transfer] Upload OK ke Kledo invoice', kledoInvoiceId);
+          } else {
+            console.warn('[bukti-transfer] Upload gagal:', d.error);
+          }
+        } catch (e: any) {
+          console.warn('[bukti-transfer] Upload exception:', e.message);
+        }
+      }
+    };
+
     /* ── RETRY MODE: order sudah tersimpan lokal, cukup kirim ulang ke Kledo ── */
     if (savedOrderId !== null) {
       try {
@@ -238,6 +267,8 @@ export default function CreateOrderModal({
         const kledoResult = (res.data as any)?.kledo;
         if (kledoResult?.ok) {
           setKledoStatus('ok');
+          // Upload bukti transfer jika retry berhasil dan ada invoiceId
+          uploadBuktiIfAvailable(kledoResult?.invoiceId).catch(() => {});
           setTimeout(onSuccess, 800);
         } else {
           setKledoStatus('error');
@@ -301,6 +332,7 @@ export default function CreateOrderModal({
         /* Backend versi lama yang memang kembalikan { kledo } */
         if (kledoResult?.ok) {
           setKledoStatus('ok');
+          uploadBuktiIfAvailable(kledoResult?.invoiceId).catch(() => {});
           // Cek apakah auto-lunas berhasil — tampilkan warning jika tidak
           if (!kledoResult?.paid && kledoResult?.paidError) {
             setError(`Invoice masuk Kledo ✓ — Lunas GAGAL: ${kledoResult.paidError}. Tandai manual di Kledo atau cek konfigurasi akun di Integrasi > Kledo.`);
@@ -313,8 +345,11 @@ export default function CreateOrderModal({
           setError(`Order tersimpan ✓ — Kledo: ${kledoErr}. Klik "Coba Ulang" untuk kirim ulang.`);
         }
       } else {
-        /* Backend mengembalikan order langsung — Kledo dipush async di server */
+        /* Backend mengembalikan order langsung — Kledo dipush async di server.
+           Coba ambil kledoInvoiceId dari data order jika ada. */
         setKledoStatus('ok');
+        const asyncInvoiceId = (res.data as any)?.data?.kledoInvoiceId ?? (res.data as any)?.kledoInvoiceId;
+        uploadBuktiIfAvailable(asyncInvoiceId).catch(() => {});
         onSuccess();
       }
     } catch (e: any) {
@@ -784,6 +819,78 @@ export default function CreateOrderModal({
                                   </div>
                                 );
                               })()}
+
+                              {/* Upload bukti transfer */}
+                              <div className="space-y-1.5">
+                                <label className="block text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
+                                  Bukti Transfer <span className="font-normal" style={{ color: 'var(--text-muted)' }}>— foto/screenshot dikirim ke Kledo</span>
+                                </label>
+
+                                {entry.buktiTransfer && entry.buktiPreviewUrl ? (
+                                  /* Preview gambar yang sudah dipilih */
+                                  <div className="relative rounded-xl overflow-hidden"
+                                    style={{ border: `1.5px solid ${COLOR}50` }}>
+                                    <img
+                                      src={entry.buktiPreviewUrl}
+                                      alt="Bukti Transfer"
+                                      className="w-full object-cover"
+                                      style={{ maxHeight: 180 }}
+                                    />
+                                    <div className="absolute inset-0 flex items-end p-2 justify-between"
+                                      style={{ background: 'linear-gradient(to top, rgba(0,0,0,.5) 0%, transparent 60%)' }}>
+                                      <span className="text-white text-[10px] font-semibold truncate max-w-[70%]">
+                                        {entry.buktiTransfer.name}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (entry.buktiPreviewUrl) URL.revokeObjectURL(entry.buktiPreviewUrl);
+                                          updateEntry({ buktiTransfer: null, buktiPreviewUrl: null });
+                                        }}
+                                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-white text-[10px] font-bold"
+                                        style={{ background: 'rgba(239,68,68,.85)' }}>
+                                        <X className="h-3 w-3" /> Hapus
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  /* Tombol pilih gambar */
+                                  <label
+                                    className="flex flex-col items-center justify-center gap-2 py-4 rounded-xl cursor-pointer transition-all active:scale-[.98]"
+                                    style={{
+                                      border: `2px dashed var(--border)`,
+                                      background: 'var(--surface-sunken)',
+                                    }}
+                                    onMouseEnter={e => {
+                                      (e.currentTarget as HTMLElement).style.borderColor = COLOR;
+                                      (e.currentTarget as HTMLElement).style.background = `${COLOR}08`;
+                                    }}
+                                    onMouseLeave={e => {
+                                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+                                      (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)';
+                                    }}>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={e => {
+                                        const f = e.target.files?.[0] ?? null;
+                                        if (entry.buktiPreviewUrl) URL.revokeObjectURL(entry.buktiPreviewUrl);
+                                        const previewUrl = f ? URL.createObjectURL(f) : null;
+                                        updateEntry({ buktiTransfer: f, buktiPreviewUrl: previewUrl });
+                                        e.target.value = '';
+                                      }}
+                                    />
+                                    <ImagePlus className="h-5 w-5" style={{ color: 'var(--text-muted)' }} />
+                                    <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>
+                                      Pilih foto bukti transfer
+                                    </span>
+                                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                      JPG, PNG, WEBP — maks. 10 MB
+                                    </span>
+                                  </label>
+                                )}
+                              </div>
                             </div>
                           );
                         })()}

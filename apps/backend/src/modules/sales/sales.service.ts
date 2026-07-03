@@ -81,10 +81,14 @@ export class SalesService {
         unitBisnis:       dto.unitBisnis        ?? null,
         totalHarga:       dto.totalHarga != null ? Number(dto.totalHarga) : Number(orderData.totalHarga ?? 0),
       });
-      kledoResult = { ok: result.success, error: result.success ? undefined : (result.message ?? 'Gagal kirim ke Kledo') };
+      kledoResult = {
+        ok: result.success,
+        error: result.success ? undefined : (result.message ?? 'Gagal kirim ke Kledo'),
+        invoiceId: result.kledoInvoiceId ?? null,
+      };
       if (result.success) {
         kledoInvoiceNumber = (result as any).kledoTransNo ?? result.kledoInvoiceId?.toString() ?? null;
-        this.logger.log(`Kledo invoice dibuat: ${kledoInvoiceNumber} untuk order #${order.id}`);
+        this.logger.log(`Kledo invoice dibuat: ${kledoInvoiceNumber} (id=${result.kledoInvoiceId}) untuk order #${order.id}`);
       } else {
         this.logger.warn(`Kledo push gagal untuk order #${order.id}: ${result.message}`);
       }
@@ -179,7 +183,7 @@ export class SalesService {
     });
     if (!order) return { data: null, kledo: { ok: false, error: 'Order tidak ditemukan' } };
     const result = await this.pushInvoiceToKledo(order, order.orderItems);
-    return { data: { orderId: id }, kledo: { ok: result.success, error: result.message } };
+    return { data: { orderId: id }, kledo: { ok: result.success, error: result.message, invoiceId: result.kledoInvoiceId ?? null } };
   }
 
   async updateOrder(id: number, dto: any) { return this.prisma.order.update({ where: { id }, data: dto }); }
