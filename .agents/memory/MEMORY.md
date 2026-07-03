@@ -14,3 +14,4 @@
 - [Backend integration Replit](backend-integration.md) — bcrypt native tidak bisa dicompile di Replit; ganti ke bcryptjs; auth.service.ts baca ADMIN_EMAIL+ADMIN_PASSWORD dari env var; wajib set agar cocok dengan frontend; PORT=3000 backend, BACKEND_URL=http://localhost:3000
 - [CasaOS deploy autologin](casaos-autologin.md) — useAuthStore hardcode ADMIN_EMAIL/PASSWORD → login gagal jika env berbeda; fix: baca dari NEXT_PUBLIC_ADMIN_EMAIL/PASSWORD; wajib pass sebagai Docker build ARG + ENV
 - [createOrder response format](create-order-response.md) — backend awalnya return order langsung; frontend expect {data,kledo}; fix: backend return {data:order, kledo:{ok,error}} synchronous; Kledo push harus sync agar frontend tahu status akurat
+- [Kledo payment account config](kledo-payment-config.md) — auto-lunas pakai saved COA account ID (AppSetting/localDb) bukan keyword search; UI di /integrations/kledo untuk konfigurasi per metode bayar

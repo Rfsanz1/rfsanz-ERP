@@ -190,4 +190,33 @@ export class KledoController {
     try { return ok(res, await this.svc.getSyncLogs(q)); }
     catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil log sync'); }
   }
+
+  /* ── COA Accounts — untuk dropdown pilih akun pembayaran ────────────── */
+  @Get('coa-accounts')
+  @UseGuards(JwtAuthGuard)
+  async getCoaAccounts(@Res() res: Response) {
+    try {
+      const data = await this.svc.listCoaAccounts();
+      return ok(res, { data, total: data.length });
+    }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil akun COA Kledo'); }
+  }
+
+  /* ── Payment config — mapping metode bayar → akun Kledo ────────────── */
+  @Get('payment-config')
+  @UseGuards(JwtAuthGuard)
+  async getPaymentConfig(@Res() res: Response) {
+    try { return ok(res, await this.svc.getPaymentConfig()); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil konfigurasi akun pembayaran'); }
+  }
+
+  @Put('payment-config')
+  @UseGuards(JwtAuthGuard)
+  async savePaymentConfig(@Body() dto: Record<string, number | null>, @Res() res: Response) {
+    try {
+      await this.svc.savePaymentConfig(dto);
+      return ok(res, { success: true });
+    }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal menyimpan konfigurasi akun pembayaran'); }
+  }
 }

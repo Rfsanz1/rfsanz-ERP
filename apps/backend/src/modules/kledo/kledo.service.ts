@@ -326,12 +326,84 @@ export class KledoService {
     return all;
   }
 
+  /* ── Payment-config: baca/simpan ID akun pembayaran di AppSetting ─── */
+  private readonly PAYMENT_ACCOUNT_KEYS: Record<string, string> = {
+    kas: 'kledo_payment_kas_id', elektronik: 'kledo_payment_elektronik_id',
+    bahan_bangunan: 'kledo_payment_bahan_bangunan_id',
+    bca: 'kledo_payment_bca_id', bri: 'kledo_payment_bri_id',
+    mandiri: 'kledo_payment_mandiri_id', bni: 'kledo_payment_bni_id',
+    bca_edc: 'kledo_payment_bca_edc_id', bri_edc: 'kledo_payment_bri_edc_id',
+    bni_edc: 'kledo_payment_bni_edc_id',
+    transfer: 'kledo_payment_transfer_id', edc: 'kledo_payment_edc_id',
+  };
+
+  /** Baca ID akun yang sudah dikonfigurasi user (dari AppSetting) */
+  private async getSavedPaymentAccountId(bankKey: string): Promise<number | null> {
+    const sk = this.PAYMENT_ACCOUNT_KEYS[bankKey.toLowerCase()];
+    if (!sk) return null;
+    try {
+      const row = await this.prisma.appSetting.findUnique({ where: { key: sk } });
+      const val = (row?.value ?? '').trim();
+      return val && val !== '0' ? Number(val) : null;
+    } catch { return null; }
+  }
+
+  /** Return semua mapping bankKey → accountId dari AppSetting */
+  async getPaymentConfig(): Promise<Record<string, number | null>> {
+    const out: Record<string, number | null> = {};
+    for (const [bankKey, sk] of Object.entries(this.PAYMENT_ACCOUNT_KEYS)) {
+      try {
+        const row = await this.prisma.appSetting.findUnique({ where: { key: sk } });
+        const val = (row?.value ?? '').trim();
+        out[bankKey] = val && val !== '0' ? Number(val) : null;
+      } catch { out[bankKey] = null; }
+    }
+    return out;
+  }
+
+  /** Simpan mapping bankKey → accountId ke AppSetting */
+  async savePaymentConfig(config: Record<string, number | null>): Promise<void> {
+    const tenant = await this.getOrCreateTenant();
+    const tenantId = tenant.id;
+    // Jalankan semua upsert — propagate error jika salah satu gagal
+    await Promise.all(
+      Object.entries(config).map(async ([bankKey, accountId]) => {
+        const sk = this.PAYMENT_ACCOUNT_KEYS[bankKey.toLowerCase()];
+        if (!sk) return;
+        const value = accountId ? String(accountId) : '';
+        await this.prisma.appSetting.upsert({
+          where: { key: sk },
+          update: { value },
+          create: { key: sk, value, tenantId },
+        });
+      }),
+    );
+  }
+
+  /** Kembalikan semua akun COA Kledo (untuk dropdown di UI) */
+  async listCoaAccounts(): Promise<any[]> {
+    const headers = await this.getHeaders();
+    const baseUrl = await this.getBaseUrl();
+    const accounts = await this.fetchAllKledoAccounts(headers, baseUrl);
+    return accounts.map((a: any) => ({ id: a.id, name: a.name, code: a.code ?? null }));
+  }
+
   /** Cari finance account Kledo berdasarkan bank key */
   private async getBankAccountId(headers: any, baseUrl: string, bankKey: string): Promise<number | null> {
+    // Prioritas 1: gunakan ID yang sudah dikonfigurasi user
+    const savedId = await this.getSavedPaymentAccountId(bankKey);
+    if (savedId) {
+      this.logger.log(`[Kledo] getBankAccountId DARI SETTING key="${bankKey}" → id=${savedId}`);
+      return savedId;
+    }
+
+    // Fallback: cari by keyword di COA Kledo
     const keywords = this.BANK_KEYWORDS[bankKey.toLowerCase()] ?? [bankKey.toLowerCase()];
     try {
       const accounts = await this.fetchAllKledoAccounts(headers, baseUrl);
       this.logger.debug(`[Kledo] getBankAccountId key="${bankKey}" keywords=${JSON.stringify(keywords)} total=${accounts.length}`);
+      // Log semua nama akun agar mudah debug
+      this.logger.debug(`[Kledo] COA akun: ${accounts.map((a: any) => `${a.id}:${a.name}`).join(' | ')}`);
       for (const kw of keywords) {
         const match = accounts.find((a: any) => (a.name ?? '').toLowerCase().includes(kw));
         if (match) {
@@ -339,7 +411,7 @@ export class KledoService {
           return Number(match.id);
         }
       }
-      this.logger.warn(`[Kledo] getBankAccountId TIDAK KETEMU untuk key="${bankKey}"`);
+      this.logger.warn(`[Kledo] getBankAccountId TIDAK KETEMU untuk key="${bankKey}" — konfigurasikan di Integrasi > Kledo > Akun Pembayaran`);
       return null;
     } catch (e: any) {
       this.logger.error(`[Kledo] getBankAccountId error: ${e.message}`);

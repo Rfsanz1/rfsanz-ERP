@@ -7,7 +7,7 @@ import { OdooLayout } from '../../../components/layout/OdooLayout';
 import { kledoService, type KledoProduct, type KledoContact, type KledoInvoice, type KledoSyncLog } from '../../../lib/services';
 import {
   RefreshCw, CheckCircle, XCircle, BarChart2, Package, Users,
-  FileText, Zap, Clock, AlertCircle, Search, ChevronRight, Timer,
+  FileText, Zap, Clock, AlertCircle, Search, ChevronRight, Timer, CreditCard,
 } from 'lucide-react';
 
 type Tab = 'overview' | 'products' | 'contacts' | 'invoices' | 'sync-logs';
@@ -39,6 +39,10 @@ export default function KledoPage() {
   const [invoices, setInvoices] = useState<KledoInvoice[]>([]);
   const [syncLogs, setSyncLogs] = useState<KledoSyncLog[]>([]);
   const [spmBrands, setSpmBrands] = useState<{ brand: string; pic: string }[]>([]);
+  const [coaAccounts, setCoaAccounts] = useState<{ id: number; name: string; code?: string | null }[]>([]);
+  const [paymentConfig, setPaymentConfig] = useState<Record<string, number | null>>({});
+  const [paymentConfigSaving, setPaymentConfigSaving] = useState(false);
+  const [paymentConfigSaved, setPaymentConfigSaved] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ success: boolean; synced: number; productsImported?: number; productsUpdated?: number; contactsImported?: number; contactsUpdated?: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +56,31 @@ export default function KledoPage() {
   const autoSyncTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const [paymentConfigError, setPaymentConfigError] = useState<string | null>(null);
+
+  const savePaymentConfig = useCallback(async () => {
+    setPaymentConfigSaving(true);
+    setPaymentConfigError(null);
+    try {
+      const res = await fetch('/api/kledo/payment-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentConfig),
+      });
+      if (res.ok) {
+        setPaymentConfigSaved(true);
+        setTimeout(() => setPaymentConfigSaved(false), 3000);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setPaymentConfigError(data?.error ?? `Gagal menyimpan (HTTP ${res.status})`);
+      }
+    } catch (e: any) {
+      setPaymentConfigError(e.message ?? 'Koneksi gagal');
+    } finally {
+      setPaymentConfigSaving(false);
+    }
+  }, [paymentConfig]);
+
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
@@ -62,11 +91,13 @@ export default function KledoPage() {
       setStatus(st);
       setSpmBrands(brands);
       if (st.connected) {
-        const [prods, conts, invs, logs] = await Promise.allSettled([
+        const [prods, conts, invs, logs, coa, pcfg] = await Promise.allSettled([
           kledoService.getProducts({ per_page: 500 }),
           kledoService.getContacts({ per_page: 500, type: 'customer' }),
           kledoService.getInvoices({ per_page: 50 }),
           kledoService.getSyncLogs({ limit: 20 }),
+          fetch('/api/kledo/coa-accounts').then(r => r.json()),
+          fetch('/api/kledo/payment-config').then(r => r.json()),
         ]);
         if (prods.status === 'fulfilled') setProducts(prods.value?.data ?? []);
         if (conts.status === 'fulfilled') setContacts(conts.value?.data ?? []);
@@ -77,6 +108,10 @@ export default function KledoPage() {
           // Cari last sync sukses
           const lastOk = logData.find(l => l.status === 'success');
           if (lastOk) setLastSyncAt(new Date(lastOk.createdAt));
+        }
+        if (coa.status === 'fulfilled') setCoaAccounts(coa.value?.data ?? []);
+        if (pcfg.status === 'fulfilled' && typeof pcfg.value === 'object' && !pcfg.value?.error) {
+          setPaymentConfig(pcfg.value ?? {});
         }
       } else {
         const logs = await kledoService.getSyncLogs({ limit: 20 }).catch(() => ({ data: [] }));
@@ -452,6 +487,79 @@ export default function KledoPage() {
                 ))}
               </div>
             </div>
+
+            {/* ── Konfigurasi Akun Pembayaran ── */}
+            {status?.connected && (
+              <div className="rounded-2xl p-5" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <CreditCard className="h-4 w-4 flex-shrink-0" style={{ color: '#5B52D1' }} />
+                  <h3 className="font-bold text-sm" style={{ color: '#1E1B4B' }}>Akun Pembayaran — Auto-Lunas Kledo</h3>
+                </div>
+                <p className="text-xs mb-4" style={{ color: '#9CA3AF' }}>
+                  Pilih akun COA Kledo untuk setiap metode pembayaran. Ini digunakan untuk otomatis tandai invoice sebagai <b>Lunas</b> saat order dibuat.
+                  {coaAccounts.length === 0 && <span className="text-amber-500 ml-1">⚠ Daftar akun kosong — pastikan Kledo terhubung.</span>}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                  {[
+                    { key: 'kas',            label: '💵 Cash / Tunai (default)', hint: 'Untuk semua pembayaran cash' },
+                    { key: 'elektronik',     label: '📺 Cash — Elektronik',       hint: 'Kas unit bisnis elektronik' },
+                    { key: 'bahan_bangunan', label: '🏠 Cash — Bahan Bangunan',   hint: 'Kas unit bisnis bahan bangunan' },
+                    { key: 'bca',            label: '🏦 Transfer BCA',            hint: 'Rekening Giro BCA' },
+                    { key: 'bri',            label: '🏦 Transfer BRI',            hint: 'Rekening BRI / EDC BRI' },
+                    { key: 'mandiri',        label: '🏦 Transfer Mandiri',        hint: 'Rekening Mandiri' },
+                    { key: 'bni',            label: '🏦 Transfer BNI',            hint: 'Rekening BNI' },
+                    { key: 'bca_edc',        label: '💳 Debit BCA EDC',           hint: 'EDC BCA terpisah dari Giro' },
+                    { key: 'bri_edc',        label: '💳 Debit BRI EDC',           hint: 'EDC BRI' },
+                  ].map(({ key, label, hint }) => {
+                    const val = paymentConfig[key] ?? '';
+                    const hasValue = !!val;
+                    return (
+                      <div key={key}>
+                        <label className="text-[11px] font-semibold block mb-1" style={{ color: hasValue ? '#5B52D1' : '#6B7280' }}>
+                          {label}
+                        </label>
+                        <select
+                          value={val}
+                          onChange={e => setPaymentConfig(prev => ({ ...prev, [key]: e.target.value ? Number(e.target.value) : null }))}
+                          className="w-full text-xs rounded-lg px-2.5 py-2 outline-none"
+                          style={{
+                            border: `1.5px solid ${hasValue ? '#C4B5FD' : '#EDE9FE'}`,
+                            color: '#1E1B4B', background: hasValue ? '#F5F3FF' : '#FAFAFA',
+                          }}
+                        >
+                          <option value="">— Pilih akun COA Kledo —</option>
+                          {coaAccounts.map(acc => (
+                            <option key={acc.id} value={acc.id}>
+                              {acc.code ? `[${acc.code}] ` : ''}{acc.name}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-[10px] mt-0.5" style={{ color: '#9CA3AF' }}>{hint}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={savePaymentConfig}
+                    disabled={paymentConfigSaving}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-50"
+                    style={{ background: paymentConfigSaved ? '#22C55E' : '#5B52D1', color: '#fff' }}
+                  >
+                    {paymentConfigSaving
+                      ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Menyimpan...</>
+                      : paymentConfigSaved
+                      ? <><CheckCircle className="h-3.5 w-3.5" /> Tersimpan!</>
+                      : <><Zap className="h-3.5 w-3.5" /> Simpan Konfigurasi</>}
+                  </button>
+                  {paymentConfigError && (
+                    <span className="text-xs font-semibold flex items-center gap-1" style={{ color: '#EF4444' }}>
+                      <AlertCircle className="h-3.5 w-3.5" /> {paymentConfigError}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {spmBrands.length > 0 && (
               <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>

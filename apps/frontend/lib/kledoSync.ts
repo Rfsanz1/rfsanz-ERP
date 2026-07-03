@@ -287,20 +287,55 @@ async function fetchAllKledoAccounts(baseUrl: string, token: string): Promise<an
   return all;
 }
 
+/**
+ * Baca ID akun pembayaran yang sudah dikonfigurasi user.
+ * - Jika DATABASE_URL tersedia (local/dev): baca dari local_settings
+ * - Jika BACKEND_URL tersedia (production): baca via backend API
+ */
+async function getSavedPaymentAccountId(bankKey: string): Promise<number | null> {
+  const sk = `kledo_payment_${bankKey.toLowerCase()}_id`;
+  try {
+    // Local DB path
+    if (process.env.DATABASE_URL) {
+      const { getLocalSetting, ensureTables } = await import('./localDb');
+      await ensureTables();
+      const val = await getLocalSetting(sk);
+      return val && val !== '0' ? Number(val) : null;
+    }
+    // Backend API path — gunakan BACKEND yang sudah dinormalisasi (dengan https://)
+    if (BACKEND) {
+      const r = await fetch(`${BACKEND}/api/kledo/payment-config`, {
+        signal: AbortSignal.timeout(4000),
+      }).catch(() => null);
+      if (r?.ok) {
+        const data = await r.json();
+        return data?.[bankKey] ? Number(data[bankKey]) : null;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 /** Cari finance account Kledo berdasarkan nama bank/kas (semua halaman) */
 export async function getBankAccountId(
   baseUrl: string,
   token: string,
   bankKey: string,
 ): Promise<number | null> {
+  // Prioritas 1: gunakan ID yang sudah dikonfigurasi user
+  const savedId = await getSavedPaymentAccountId(bankKey);
+  if (savedId) {
+    console.log(`[kledo] getBankAccountId DARI SETTING key="${bankKey}" → id=${savedId}`);
+    return savedId;
+  }
+
+  // Fallback: cari by keyword di COA Kledo
   try {
     const accounts = await fetchAllKledoAccounts(baseUrl, token);
     const keywords = BANK_KEYWORDS[bankKey.toLowerCase()] ?? [bankKey.toLowerCase()];
     console.log(`[kledo] getBankAccountId key="${bankKey}" keywords=${JSON.stringify(keywords)} total_accounts=${accounts.length}`);
-    // Cetak nama akun hanya saat development (tidak dump di production)
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[kledo] akun tersedia:`, accounts.map(a => `${a.id}:${a.name}`).join(' | '));
-    }
+    // Log nama akun agar mudah debug
+    console.log(`[kledo] COA: ${accounts.map((a: any) => `${a.id}:${a.name}`).join(' | ')}`);
 
     for (const kw of keywords) {
       const match = accounts.find((a: any) =>
@@ -311,7 +346,7 @@ export async function getBankAccountId(
         return Number(match.id);
       }
     }
-    console.warn(`[kledo] getBankAccountId TIDAK KETEMU untuk key="${bankKey}" — cek nama akun di Kledo`);
+    console.warn(`[kledo] getBankAccountId TIDAK KETEMU untuk key="${bankKey}" — konfigurasikan di Integrasi > Kledo > Akun Pembayaran`);
     return null;
   } catch (e: any) {
     console.error('[kledo] getBankAccountId error:', e.message);
