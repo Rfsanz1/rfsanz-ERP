@@ -35,21 +35,11 @@ const navGroups: NavGroup[] = [
     label: 'MENU UTAMA',
     items: [
       { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/notifications', label: 'Notifikasi', icon: Bell, badge: '5', badgeColor: '#EA5455' },
     ],
   },
   {
-    label: 'CRM & PENJUALAN',
+    label: 'PENJUALAN',
     items: [
-      {
-        label: 'CRM', icon: Users,
-        children: [
-          { href: '/crm/leads', label: 'Leads' },
-          { href: '/crm/pipeline', label: 'Pipeline' },
-          { href: '/crm/opportunities', label: 'Opportunity' },
-          { href: '/crm/activities', label: 'Aktivitas' },
-        ],
-      },
       {
         label: 'Penjualan', icon: ShoppingCart,
         children: [
@@ -59,6 +49,16 @@ const navGroups: NavGroup[] = [
           { href: '/sales/teams', label: 'Sales Team' },
           { href: '/sales/targets', label: 'Sales Target' },
           { href: '/sales/commission', label: 'Komisi Sales' },
+          { href: '/reports/sales', label: 'Laporan' },
+        ],
+      },
+      {
+        label: 'Pembelian', icon: Truck,
+        children: [
+          { href: '/purchasing/purchase-orders', label: 'Purchase Orders' },
+          { href: '/purchasing/rfq', label: 'RFQ' },
+          { href: '/purchasing/suppliers', label: 'Supplier' },
+          { href: '/purchasing/reports', label: 'Laporan' },
         ],
       },
       {
@@ -72,12 +72,6 @@ const navGroups: NavGroup[] = [
           { href: '/invoice/credit-notes', label: 'Kredit Nota' },
         ],
       },
-      { href: '/customers', label: 'Pelanggan', icon: UserCheck },
-    ],
-  },
-  {
-    label: 'OPERASIONAL',
-    items: [
       {
         label: 'Inventory', icon: Package,
         children: [
@@ -87,77 +81,97 @@ const navGroups: NavGroup[] = [
           { href: '/inventory/stock-opnames', label: 'Stock Opname' },
           { href: '/inventory/warehouses', label: 'Multi Gudang' },
           { href: '/inventory/reorder-rules', label: 'Reorder Rules' },
+          { href: '/inventory/reports', label: 'Laporan' },
         ],
       },
-      {
-        label: 'Pembelian', icon: Truck,
-        children: [
-          { href: '/purchasing/purchase-orders', label: 'Purchase Orders' },
-          { href: '/purchasing/vendors', label: 'Vendor' },
-          { href: '/purchasing/rfq', label: 'RFQ' },
-        ],
-      },
-      { href: '/pos/orders', label: 'Point of Sale', icon: CreditCard },
       { href: '/gudang', label: 'Gudang', icon: Building2 },
-      {
-        label: 'Armada & TMS', icon: Car,
-        children: [
-          { href: '/fleet/tms',       label: 'Dashboard TMS' },
-          { href: '/fleet/drivers',   label: 'Manajemen Driver' },
-          { href: '/fleet/shipments', label: 'Shipment' },
-          { href: '/fleet/vehicles',  label: 'Kendaraan' },
-          { href: '/fleet/fuel-tracking', label: 'Tracking BBM' },
-          { href: '/fleet/gps',       label: 'GPS Tracking' },
-        ],
-      },
+      { href: '/inventory/deliveries', label: 'Pengiriman', icon: Navigation },
     ],
   },
   {
     label: 'KEUANGAN',
     items: [
       {
-        label: 'Finance', icon: DollarSign,
+        label: 'Keuangan', icon: DollarSign,
         children: [
-          { href: '/finance/journal', label: 'Jurnal' },
-          { href: '/accounting', label: 'Chart of Accounts' },
-          { href: '/finance/bank-reconciliation', label: 'Rekonsiliasi Bank' },
+          { href: '/finance/journal-entries', label: 'Jurnal' },
+          { href: '/accounting/chart-of-accounts', label: 'Bagan Akun' },
+          { href: '/keuangan/rekonsiliasi', label: 'Rekonsiliasi Bank' },
           { href: '/finance/cash', label: 'Kas & Bank' },
           { href: '/finance/budget', label: 'Anggaran' },
+          { href: '/finance/fixed-assets', label: 'Aset Tetap' },
+          { href: '/finance/expenses', label: 'Pengeluaran' },
         ],
       },
       {
         label: 'Laporan', icon: BarChart2,
         children: [
-          { href: '/reports/sales', label: 'Laporan Penjualan' },
+          { href: '/keuangan/laporan/laba-rugi', label: 'Laba & Rugi' },
+          { href: '/keuangan/laporan/neraca', label: 'Neraca' },
+          { href: '/keuangan/laporan/arus-kas', label: 'Arus Kas' },
+          { href: '/keuangan/laporan/buku-besar', label: 'Buku Besar' },
           { href: '/finance/reports', label: 'Laporan Keuangan' },
-          { href: '/reports/inventory', label: 'Laporan Stok' },
         ],
       },
     ],
   },
   {
-    label: 'HR & PAYROLL',
+    label: 'SDM & OPERASI',
     items: [
-      { href: '/hr', label: 'Karyawan', icon: Users },
-      { href: '/payroll', label: 'Payroll', icon: BookOpen },
+      {
+        label: 'Karyawan', icon: Users,
+        children: [
+          { href: '/hr/employees', label: 'Data Karyawan' },
+          { href: '/hr/attendances', label: 'Absensi' },
+          { href: '/hr/leaves', label: 'Cuti & Izin' },
+          { href: '/hr/organization', label: 'Struktur Organisasi' },
+          { href: '/hr/reports', label: 'Laporan SDM' },
+        ],
+      },
+      {
+        label: 'Payroll', icon: BookOpen,
+        children: [
+          { href: '/hr/payrolls/periods', label: 'Periode Gaji' },
+          { href: '/hr/payrolls/slips', label: 'Slip Gaji' },
+          { href: '/hr/payrolls/batch', label: 'Slip Massal' },
+          { href: '/hr/payrolls/bank-export', label: 'Export Bank' },
+          { href: '/hr/payrolls/reports', label: 'Laporan Payroll' },
+        ],
+      },
+      { href: '/pos/cashier', label: 'Point of Sale', icon: CreditCard },
+      {
+        label: 'CRM', icon: Target,
+        children: [
+          { href: '/crm/leads', label: 'Leads' },
+          { href: '/crm/pipeline', label: 'Pipeline' },
+          { href: '/crm/opportunities', label: 'Opportunity' },
+          { href: '/crm/activities', label: 'Aktivitas' },
+          { href: '/customers', label: 'Pelanggan' },
+        ],
+      },
     ],
   },
   {
-    label: 'LAINNYA',
+    label: 'DIGITAL',
     items: [
       { href: '/ai', label: 'AI Assistant', icon: Brain, badge: 'AI', badgeColor: '#8B5CF6' },
       { href: '/marketing', label: 'Marketing', icon: Megaphone },
       { href: '/website', label: 'Website', icon: Globe },
+      { href: '/notifications', label: 'Notifikasi', icon: Bell, badge: '5', badgeColor: '#EA5455' },
+    ],
+  },
+  {
+    label: 'SISTEM',
+    items: [
       {
         label: 'Pengaturan', icon: Settings,
         children: [
           { href: '/settings', label: 'Umum' },
-          { href: '/settings/users', label: 'Users & Roles' },
+          { href: '/settings/roles', label: 'Users & Roles' },
           { href: '/settings/companies', label: 'Multi Perusahaan' },
           { href: '/settings/document-numbers', label: 'Nomor Dokumen' },
           { href: '/settings/email-gateway', label: 'Email Gateway' },
           { href: '/settings/wa-gateway', label: 'WA Gateway' },
-          { href: '/settings/api-integration', label: 'API & Integrasi' },
           { href: '/settings/backup', label: 'Backup & Restore' },
           { href: '/settings/audit-log', label: 'Audit Log' },
         ],
@@ -366,6 +380,21 @@ export function YetiSidebar({ collapsed, mobileOpen, onMobileClose }: SidebarPro
           </div>
         ))}
       </nav>
+
+      {/* Mode Simpel Button */}
+      {!collapsed && (
+        <div className="flex-shrink-0 p-3 border-t" style={{ borderColor: '#243447' }}>
+          <button
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150"
+            style={{ backgroundColor: '#243447', color: '#94A3B8' }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2D3F55'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#243447'; }}
+          >
+            <ChevronDown className="h-4 w-4" />
+            <span>Mode Simpel</span>
+          </button>
+        </div>
+      )}
 
     </aside>
   );

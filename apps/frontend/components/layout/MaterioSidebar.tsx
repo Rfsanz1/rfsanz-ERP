@@ -169,8 +169,8 @@ const LS_MODE_KEY = 'erp_sidebar_mode';
 function loadMode(): 'simple' | 'full' {
   try {
     const v = typeof window !== 'undefined' ? window.localStorage.getItem(LS_MODE_KEY) : null;
-    return v === 'full' ? 'full' : 'simple';
-  } catch { return 'simple'; }
+    return v === 'simple' ? 'simple' : 'full';
+  } catch { return 'full'; }
 }
 function saveMode(m: 'simple' | 'full') {
   if (typeof window !== 'undefined') window.localStorage.setItem(LS_MODE_KEY, m);
