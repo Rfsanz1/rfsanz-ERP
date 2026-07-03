@@ -281,19 +281,21 @@ export default function DashboardContent() {
               <div className="flex items-center justify-between">
                 <div
                   style={{
-                    width: 40, height: 40, borderRadius: 12,
-                    background: k.light,
+                    width: 42, height: 42, borderRadius: 10,
+                    background: k.accent,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,
                   }}
                 >
-                  <Icon size={18} style={{ color: k.accent }} strokeWidth={2} />
+                  <Icon size={20} style={{ color: '#fff' }} strokeWidth={2} />
                 </div>
                 <span
                   style={{
                     display: 'flex', alignItems: 'center', gap: 3,
-                    fontSize: 11, fontWeight: 600,
-                    color: k.up ? '#10B981' : '#EF4444',
+                    padding: '3px 8px', borderRadius: 6,
+                    fontSize: 11, fontWeight: 700,
+                    color: k.up ? '#56CA00' : '#FF4C51',
+                    background: k.up ? 'rgba(86,202,0,0.12)' : 'rgba(255,76,81,0.12)',
                   }}
                 >
                   {k.up

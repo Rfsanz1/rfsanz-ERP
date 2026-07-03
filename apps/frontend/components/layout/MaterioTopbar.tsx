@@ -12,9 +12,11 @@ import ListItemText from '@mui/material/ListItemText';
 import Popover from '@mui/material/Popover';
 import Avatar from '@mui/material/Avatar';
 import {
-  Menu as MenuIcon, Search, Bell, Settings, HelpCircle,
+  Menu as MenuIcon, Search, Bell, Settings, HelpCircle, Sun, Moon,
 } from 'lucide-react';
 import { useNotificationStore } from '../../lib/store/useNotificationStore';
+import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useThemeMode } from '../../lib/theme/ThemeContext';
 
 interface TopbarProps {
   collapsed: boolean;
@@ -23,10 +25,14 @@ interface TopbarProps {
 
 export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
   const { notifications } = useNotificationStore();
+  const { user } = useAuthStore();
+  const { mode, toggle } = useThemeMode();
   const [query, setQuery]    = useState('');
   const [notifAnchor, setNA] = useState<null | HTMLElement>(null);
 
   const unread = notifications?.length ?? 0;
+  const userName = user?.name ?? 'Admin';
+  const userInitial = userName.charAt(0).toUpperCase();
 
   const iconBtnStyle: React.CSSProperties = {
     width: 36, height: 36, borderRadius: 9, border: 'none',
@@ -91,12 +97,31 @@ export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
             '& input::placeholder': { color: 'var(--text-muted)', opacity: 1 },
           }}
         />
+        <span style={{
+          flexShrink: 0, fontSize: 10, fontWeight: 700, color: 'var(--text-muted)',
+          border: '1px solid var(--border)', borderRadius: 5, padding: '2px 5px',
+          background: 'var(--surface)', lineHeight: 1,
+        }}>
+          ⌘K
+        </span>
       </div>
 
       <div style={{ flex: 1 }} />
 
       {/* Right actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggle}
+          title={mode === 'dark' ? 'Mode terang' : 'Mode gelap'}
+          style={iconBtnStyle}
+          onMouseEnter={hoverOn} onMouseLeave={hoverOff}
+        >
+          {mode === 'dark'
+            ? <Sun size={18} strokeWidth={1.8} />
+            : <Moon size={18} strokeWidth={1.8} />}
+        </button>
 
         {/* Help */}
         <button
@@ -131,6 +156,27 @@ export function MaterioTopbar({ onToggleMobileSidebar }: TopbarProps) {
             }} />
           )}
         </button>
+
+        {/* Divider */}
+        <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 4px', flexShrink: 0 }} />
+
+        {/* Avatar */}
+        <div style={{ position: 'relative', flexShrink: 0, cursor: 'pointer' }} title={userName}>
+          <Avatar
+            sx={{
+              width: 36, height: 36, fontSize: 14, fontWeight: 700,
+              background: 'linear-gradient(135deg, #8C57FF, #7E4EE6)',
+              color: '#fff',
+            }}
+          >
+            {userInitial}
+          </Avatar>
+          <span style={{
+            position: 'absolute', bottom: -1, right: -1,
+            width: 10, height: 10, borderRadius: '50%',
+            background: '#56CA00', border: '2px solid var(--surface)',
+          }} />
+        </div>
 
       </div>
 
