@@ -15,3 +15,4 @@
 - [CasaOS deploy autologin](casaos-autologin.md) — useAuthStore hardcode ADMIN_EMAIL/PASSWORD → login gagal jika env berbeda; fix: baca dari NEXT_PUBLIC_ADMIN_EMAIL/PASSWORD; wajib pass sebagai Docker build ARG + ENV
 - [createOrder response format](create-order-response.md) — backend awalnya return order langsung; frontend expect {data,kledo}; fix: backend return {data:order, kledo:{ok,error}} synchronous; Kledo push harus sync agar frontend tahu status akurat
 - [Kledo payment account config](kledo-payment-config.md) — auto-lunas pakai saved COA account ID (AppSetting/localDb) bukan keyword search; UI di /integrations/kledo untuk konfigurasi per metode bayar
+- [Kledo auto-lunas fix](kledo-autolunas-fix.md) — 7 root cause: format pay_from[].id harus pertama, amount harus Math.round(), BANK_KEYWORDS diperluas, bank_pilihan/edc_pilihan disimpan ke DB, retry load dari DB, edcPilihan/unitBisnis diteruskan ke pushOrderToKledo

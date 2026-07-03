@@ -58,6 +58,13 @@ export async function POST(req: NextRequest) {
     const o = orderRes.rows[0];
     const authHeader = req.headers.get('authorization') ?? '';
 
+    // Parse pembayaran_list jika ada (lebih lengkap dari single metode)
+    let pembayaranList: any[] | undefined;
+    try {
+      const raw = o.pembayaran_list;
+      if (raw) pembayaranList = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    } catch { /* ignore */ }
+
     const result = await pushOrderToKledo(authHeader, {
       soNumber:         o.so_number,
       salesName:        o.sales_name ?? null,
@@ -73,7 +80,10 @@ export async function POST(req: NextRequest) {
       ongkir:           Number(o.ongkir ?? 0),
       totalHarga:       Number(o.total_harga ?? 0),
       metodePembayaran: o.metode_pembayaran ?? 'transfer',
+      bankPilihan:      o.bank_pilihan ?? null,
+      edcPilihan:       o.edc_pilihan ?? null,
       unitBisnis:       o.unit_bisnis ?? null,
+      pembayaranList:   pembayaranList,
       items:            (o.items ?? []).map((it: any) => ({
         nama:           it.nama,
         qty:            Number(it.qty ?? 1),
@@ -94,7 +104,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       data: { orderId },
       error: null,
-      kledo: { ok: result.ok, invoiceId: result.kledoInvoiceId, error: result.error },
+      kledo: {
+        ok: result.ok,
+        invoiceId: result.kledoInvoiceId,
+        error: result.error,
+        paid: result.kledoPaid ?? false,
+        paidError: result.kledoPaidError,
+      },
     });
   } catch (e: any) {
     console.error('[POST /api/sales/orders/kledo-retry]', e);

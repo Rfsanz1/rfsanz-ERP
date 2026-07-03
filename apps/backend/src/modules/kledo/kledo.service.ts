@@ -289,13 +289,13 @@ export class KledoService {
 
   /* ── BANK_KEYWORDS: mapping key → kata kunci nama akun di COA Kledo ── */
   private readonly BANK_KEYWORDS: Record<string, string[]> = {
-    bca:            ['bca giro', 'giro bca'],
-    bri:            ['bri edc', 'edc bri', 'bri'],
-    mandiri:        ['mandiri'],
-    bni:            ['bni'],
-    bca_edc:        ['bca edc', 'edc bca'],
-    bri_edc:        ['bri edc', 'edc bri'],
-    bni_edc:        ['bni'],
+    bca:            ['bca giro', 'giro bca', 'bank bca', 'bca tabungan', 'bca'],
+    bri:            ['bri edc', 'edc bri', 'bank bri', 'bri tabungan', 'bri'],
+    mandiri:        ['bank mandiri', 'mandiri tabungan', 'mandiri giro', 'mandiri'],
+    bni:            ['bank bni', 'bni tabungan', 'bni giro', 'bni'],
+    bca_edc:        ['bca edc', 'edc bca', 'bca'],
+    bri_edc:        ['bri edc', 'edc bri', 'bri'],
+    bni_edc:        ['bni edc', 'edc bni', 'bni'],
     elektronik:     ['kas elektronik', 'elektronik'],
     bahan_bangunan: ['kas sulawesi', 'sulawesi'],
     kas:            ['kas masuk', 'kas tunai', 'petty cash', 'kas'],
@@ -439,6 +439,9 @@ export class KledoService {
       return { ok: false, error: msg };
     }
 
+    // Selalu bulatkan amount ke integer (Kledo tidak accept desimal)
+    const amountInt = Math.round(amount);
+
     const tryPost = async (label: string, payload: any) => {
       try {
         const r = await this.http.axiosRef.post(
@@ -457,16 +460,16 @@ export class KledoService {
       }
     };
 
-    // Variasi 1 — format paling umum: items[].finance_id (Kledo API v1)
-    const v1 = await tryPost('v1[items.finance_id]', { ...base, items: [{ finance_id: invoiceId, amount }] });
+    // Variasi 1 — format benar Kledo: pay_from[].id (invoice ID yg dilunasi)
+    const v1 = await tryPost('v1[pay_from.id]', { ...base, pay_from: [{ id: invoiceId, amount: amountInt }] });
     if (v1.ok) return v1;
 
-    // Variasi 2 — format lama: pay_from[].id
-    const v2 = await tryPost('v2[pay_from.id]', { ...base, pay_from: [{ id: invoiceId, amount }] });
+    // Variasi 2 — format alternatif: items[].invoice_id
+    const v2 = await tryPost('v2[items.invoice_id]', { ...base, items: [{ invoice_id: invoiceId, amount: amountInt }] });
     if (v2.ok) return v2;
 
-    // Variasi 3 — format alternatif: items[].invoice_id
-    const v3 = await tryPost('v3[items.invoice_id]', { ...base, items: [{ invoice_id: invoiceId, amount }] });
+    // Variasi 3 — format lama: items[].finance_id
+    const v3 = await tryPost('v3[items.finance_id]', { ...base, items: [{ finance_id: invoiceId, amount: amountInt }] });
     if (v3.ok) return v3;
 
     const msg = v1.error ?? v2.error ?? v3.error ?? 'Gagal tandai lunas di Kledo';
@@ -660,7 +663,7 @@ export class KledoService {
           if (bankAccountId) {
             const paid = await this.markInvoicePaid(
               headers, baseUrl, Number(kledoId),
-              bankAccountId, totalAmt, transDate,
+              bankAccountId, Math.round(totalAmt), transDate,
               `Pembayaran ${metode.toUpperCase()} — ${dto.noInvoice ?? dto.orderId ?? ''}`.trim(),
             );
             kledoPaid      = paid.ok;

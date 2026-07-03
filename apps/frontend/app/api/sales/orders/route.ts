@@ -108,8 +108,9 @@ export async function POST(req: NextRequest) {
       `INSERT INTO local_orders
         (nama_customer, no_hp, alamat, catatan, sales_name, tanggal,
          diskon_total, pajak, ongkir, total_harga, status, customer_id, so_number,
-         metode_pembayaran, uang_muka, kledo_contact_id, pembayaran_list)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         metode_pembayaran, uang_muka, kledo_contact_id, pembayaran_list,
+         bank_pilihan, edc_pilihan, unit_bisnis)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
        RETURNING *`,
       [
         namaCustomer, noHp ?? null, alamat ?? null, catatan ?? null,
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
         totalHarga ?? 0, status, customerId ?? null, soNumber,
         effectiveMetode, uangMuka ?? 0, kledoContactId ?? null,
         pembayaranList ? JSON.stringify(pembayaranList) : null,
+        bankPilihan ?? null, edcPilihan ?? null, unitBisnis ?? null,
       ],
     );
     const order = orderRes.rows[0];
@@ -146,6 +148,9 @@ export async function POST(req: NextRequest) {
     let kledoInvoiceId: number | null = null;
     let kledoError: string | undefined;
 
+    let kledoPaid = false;
+    let kledoPaidError: string | undefined;
+
     try {
       const result = await pushOrderToKledo(authHeader, {
         soNumber,
@@ -171,6 +176,8 @@ export async function POST(req: NextRequest) {
       kledoOk = result.ok;
       kledoInvoiceId = result.kledoInvoiceId;
       kledoError = result.error;
+      kledoPaid = result.kledoPaid ?? false;
+      kledoPaidError = result.kledoPaidError;
 
       if (kledoOk && kledoInvoiceId) {
         await db.query(
@@ -210,7 +217,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       data: fullOrder,
       error: null,
-      kledo: { ok: kledoOk, invoiceId: kledoInvoiceId, error: kledoError },
+      kledo: { ok: kledoOk, invoiceId: kledoInvoiceId, error: kledoError, paid: kledoPaid, paidError: kledoPaidError },
       wa: waResult,
     });
   } catch (e: any) {
@@ -313,6 +320,9 @@ export function normalizeOrder(r: any) {
     totalHarga:      Number(r.total_harga   ?? 0),
     uangMuka:        Number(r.uang_muka     ?? 0),
     metodePembayaran: r.metode_pembayaran ?? 'transfer',
+    bankPilihan:     r.bank_pilihan ?? null,
+    edcPilihan:      r.edc_pilihan  ?? null,
+    unitBisnis:      r.unit_bisnis  ?? null,
     status:          r.status,
     statusPengiriman: r.status_pengiriman,
     customerId:      r.customer_id,

@@ -109,6 +109,9 @@ export async function ensureTables(): Promise<void> {
     `ALTER TABLE local_order_items ADD COLUMN IF NOT EXISTS diskon           NUMERIC(14,2) DEFAULT 0`,
     `ALTER TABLE local_order_items ADD COLUMN IF NOT EXISTS unit             VARCHAR(50)`,
     `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS pembayaran_list JSONB`,
+    `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS bank_pilihan    VARCHAR(50)`,
+    `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS edc_pilihan     VARCHAR(50)`,
+    `ALTER TABLE local_orders ADD COLUMN IF NOT EXISTS unit_bisnis     VARCHAR(50)`,
   ];
 
   for (const sql of migrations) {

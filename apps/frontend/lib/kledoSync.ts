@@ -236,16 +236,16 @@ export async function findOrCreateKledoContact(
  *   Cash Sulawesi    → "KAS SULAWESI"
  */
 const BANK_KEYWORDS: Record<string, string[]> = {
-  /* Transfer Bank spesifik */
-  bca:            ['bca giro', 'giro bca'],
-  bri:            ['bri edc', 'edc bri', 'bri'],
-  mandiri:        ['mandiri'],
-  bni:            ['bni'],
+  /* Transfer Bank spesifik — urutan dari paling spesifik ke paling umum */
+  bca:            ['bca giro', 'giro bca', 'bank bca', 'bca tabungan', 'bca'],
+  bri:            ['bri edc', 'edc bri', 'bank bri', 'bri tabungan', 'bri'],
+  mandiri:        ['bank mandiri', 'mandiri tabungan', 'mandiri giro', 'mandiri'],
+  bni:            ['bank bni', 'bni tabungan', 'bni giro', 'bni'],
 
   /* Debit EDC spesifik */
-  bca_edc:        ['bca edc', 'edc bca'],
-  bri_edc:        ['bri edc', 'edc bri'],
-  bni_edc:        ['bni'],
+  bca_edc:        ['bca edc', 'edc bca', 'bca'],
+  bri_edc:        ['bri edc', 'edc bri', 'bri'],
+  bni_edc:        ['bni edc', 'edc bni', 'bni'],
 
   /* Cash unit bisnis */
   elektronik:     ['kas elektronik', 'elektronik'],
@@ -409,17 +409,26 @@ export async function markKledoInvoicePaid(
     return { ok: res.ok, data };
   };
 
+  // Selalu bulatkan amount ke integer (Kledo tidak accept desimal)
+  const amountInt = Math.round(amount);
+
+  if (invoiceId <= 0 || financeAccountId <= 0 || amountInt <= 0) {
+    const msg = `input tidak valid: invoiceId=${invoiceId} accountId=${financeAccountId} amount=${amountInt}`;
+    console.warn(`[kledo] markKledoInvoicePaid SKIP — ${msg}`);
+    return { ok: false, error: msg };
+  }
+
   try {
-    // Variasi 1 — format paling umum: items[].finance_id (Kledo API v1)
-    const r1 = await tryPost('v1[items.finance_id]', { ...base, items: [{ finance_id: invoiceId, amount }] });
+    // Variasi 1 — format benar Kledo: pay_from[].id (invoice ID yg mau dilunasi)
+    const r1 = await tryPost('v1[pay_from.id]', { ...base, pay_from: [{ id: invoiceId, amount: amountInt }] });
     if (r1.ok) { console.log('[kledo] markKledoInvoicePaid BERHASIL v1'); return { ok: true }; }
 
-    // Variasi 2 — format lama: pay_from[].id
-    const r2 = await tryPost('v2[pay_from.id]', { ...base, pay_from: [{ id: invoiceId, amount }] });
+    // Variasi 2 — format alternatif: items[].invoice_id
+    const r2 = await tryPost('v2[items.invoice_id]', { ...base, items: [{ invoice_id: invoiceId, amount: amountInt }] });
     if (r2.ok) { console.log('[kledo] markKledoInvoicePaid BERHASIL v2'); return { ok: true }; }
 
-    // Variasi 3 — format alternatif: items[].invoice_id
-    const r3 = await tryPost('v3[items.invoice_id]', { ...base, items: [{ invoice_id: invoiceId, amount }] });
+    // Variasi 3 — format lama: items[].finance_id
+    const r3 = await tryPost('v3[items.finance_id]', { ...base, items: [{ finance_id: invoiceId, amount: amountInt }] });
     if (r3.ok) { console.log('[kledo] markKledoInvoicePaid BERHASIL v3'); return { ok: true }; }
 
     const msg = r1.data?.message ?? r2.data?.message ?? r3.data?.message ?? 'Gagal tandai lunas di Kledo';

@@ -87,6 +87,8 @@ export async function POST(req: NextRequest) {
       items        = [],
       metodePembayaran = 'transfer',
       bankPilihan  = null,
+      edcPilihan   = null,
+      unitBisnis   = null,
     } = body;
 
     if (!namaCustomer?.trim()) {
@@ -105,14 +107,15 @@ export async function POST(req: NextRequest) {
       `INSERT INTO local_orders
         (so_number, nama_customer, no_hp, catatan, sales_name, tanggal,
          diskon_total, pajak, ongkir, total_harga, status,
-         customer_id, kledo_contact_id, metode_pembayaran)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending',$11,$12,$13)
+         customer_id, kledo_contact_id, metode_pembayaran, bank_pilihan, edc_pilihan, unit_bisnis)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending',$11,$12,$13,$14,$15,$16)
        RETURNING *`,
       [
         invNo, namaCustomer.trim(), noHp ?? null, notes ?? null,
         salesName ?? null, tanggalFinal,
         diskonTotal, pajak, ongkir, grandTotal,
         customerId ?? null, kledoContactId ?? null, metodePembayaran,
+        bankPilihan ?? null, edcPilihan ?? null, unitBisnis ?? null,
       ],
     );
     const order = orderRes.rows[0];
@@ -157,6 +160,8 @@ export async function POST(req: NextRequest) {
         totalHarga:        grandTotal,
         metodePembayaran,
         bankPilihan:       bankPilihan ?? null,
+        edcPilihan:        edcPilihan ?? null,
+        unitBisnis:        unitBisnis ?? null,
         items: savedItems.map(it => ({
           nama:           it.nama,
           qty:            Number(it.qty ?? 1),
