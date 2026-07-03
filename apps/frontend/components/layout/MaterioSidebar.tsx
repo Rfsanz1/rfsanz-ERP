@@ -351,7 +351,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                   <Icon size={16} strokeWidth={active ? 2.2 : 1.8}
                     style={{ color: active ? '#8C57FF' : '#9CA3AF', flexShrink: 0 }} />
                   <span style={{
-                    flex: 1, textAlign: 'left', fontSize: 15,
+                    flex: 1, textAlign: 'left', fontSize: 13,
                     fontWeight: active ? 700 : 500,
                     color: active ? '#1E1B4B' : '#374151',
                   }}>
@@ -424,8 +424,8 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
                             background: ca ? '#8C57FF' : '#D1D5DB', transition: 'all 0.15s',
                           }} />
                           <span style={{
-                            fontSize: 14, fontWeight: ca ? 600 : 400,
-                            color: ca ? '#8C57FF' : '#4B5563',
+                            fontSize: 12, fontWeight: ca ? 600 : 400,
+                            color: ca ? '#8C57FF' : '#6B7280',
                           }}>
                             {child.label}
                           </span>
