@@ -22,12 +22,18 @@ Auto-lunas Kledo sebelumnya gagal karena keyword search (`['kas masuk', 'kas tun
 2. Jika tidak ada saved ID → fallback ke keyword search di COA Kledo
 3. Keyword search log semua nama akun (juga di production) untuk debug
 
+## Format payload invoicepayments yang benar
+Urutan fallback (tiga variasi dicoba berurutan):
+1. **`items: [{ finance_id, amount }]`** — format Kledo API v1, PALING BENAR, coba ini dulu
+2. `pay_from: [{ id, amount }]` — format lama
+3. `items: [{ invoice_id, amount }]` — format alternatif
+
+**Why:** `invoice_id` dan `pay_from` sering gagal di Kledo production. Field yang benar adalah `finance_id` di dalam array `items`. Logging error body lengkap (bukan hanya `.message`) penting untuk debug variasi yang gagal.
+
 ## UI
 Halaman `/integrations/kledo` (Overview tab) — section "Akun Pembayaran — Auto-Lunas Kledo":
 - Dropdown per metode (9 baris: kas, elektronik, bahan_bangunan, bca, bri, mandiri, bni, bca_edc, bri_edc)
 - Dropdown option diambil dari GET /api/kledo/coa-accounts
 - Tombol "Simpan" cek response.ok, tampilkan error jika gagal
-
-**Why:** Nama akun COA di Kledo setiap perusahaan berbeda — keyword guessing tidak reliable. Konfigurasi eksplisit lebih aman dan tidak perlu maintenance.
 
 **How to apply:** Setelah deploy, user harus ke Integrasi > Kledo > Overview > "Akun Pembayaran", pilih akun COA dari dropdown, klik Simpan. Setelah itu auto-lunas akan gunakan ID yang dipilih langsung.

@@ -419,7 +419,7 @@ export class KledoService {
     }
   }
 
-  /** Tandai invoice Kledo sebagai lunas — coba dua variasi payload */
+  /** Tandai invoice Kledo sebagai lunas — coba tiga variasi payload */
   private async markInvoicePaid(
     headers: any,
     baseUrl: string,
@@ -430,33 +430,48 @@ export class KledoService {
     memo: string,
   ): Promise<{ ok: boolean; error?: string }> {
     const base = { trans_date: date, finance_account_id: financeAccountId, memo };
-    this.logger.log(`[Kledo] markInvoicePaid invoiceId=${invoiceId} accountId=${financeAccountId} amount=${amount}`);
-    try {
-      // Variasi 1 — format pay_from
-      const r1 = await this.http.axiosRef.post(
-        `${baseUrl}/finance/invoicepayments`,
-        { ...base, pay_from: [{ id: invoiceId, amount }] },
-        { headers, timeout: 10000 },
-      );
-      this.logger.log(`[Kledo] markInvoicePaid v1 status=${r1.status} → BERHASIL`);
-      return { ok: true };
-    } catch (e1: any) {
-      this.logger.warn(`[Kledo] markInvoicePaid v1 gagal (${e1.response?.status}): ${e1.response?.data?.message ?? e1.message}`);
+    this.logger.log(`[Kledo] markInvoicePaid invoiceId=${invoiceId} accountId=${financeAccountId} amount=${amount} date=${date}`);
+
+    // Guard: skip jika input tidak valid
+    if (invoiceId <= 0 || financeAccountId <= 0 || amount <= 0) {
+      const msg = `input tidak valid: invoiceId=${invoiceId} accountId=${financeAccountId} amount=${amount}`;
+      this.logger.warn(`[Kledo] markInvoicePaid SKIP — ${msg}`);
+      return { ok: false, error: msg };
+    }
+
+    const tryPost = async (label: string, payload: any) => {
       try {
-        // Variasi 2 — format items
-        const r2 = await this.http.axiosRef.post(
+        const r = await this.http.axiosRef.post(
           `${baseUrl}/finance/invoicepayments`,
-          { ...base, items: [{ invoice_id: invoiceId, amount }] },
+          payload,
           { headers, timeout: 10000 },
         );
-        this.logger.log(`[Kledo] markInvoicePaid v2 status=${r2.status} → BERHASIL`);
-        return { ok: true };
-      } catch (e2: any) {
-        const msg = e2.response?.data?.message ?? e1.response?.data?.message ?? 'Gagal tandai lunas di Kledo';
-        this.logger.error(`[Kledo] markInvoicePaid GAGAL kedua variasi: ${msg}`);
-        return { ok: false, error: msg };
+        this.logger.log(`[Kledo] markInvoicePaid ${label} status=${r.status} → BERHASIL`);
+        return { ok: true as const };
+      } catch (e: any) {
+        const responseData = e.response?.data;
+        const bodyStr = responseData ? JSON.stringify(responseData) : null;
+        const msg = responseData?.message ?? bodyStr ?? e.message ?? 'unknown error';
+        this.logger.warn(`[Kledo] markInvoicePaid ${label} gagal (${e.response?.status ?? e.code}): ${msg}`);
+        return { ok: false as const, error: msg };
       }
-    }
+    };
+
+    // Variasi 1 — format paling umum: items[].finance_id (Kledo API v1)
+    const v1 = await tryPost('v1[items.finance_id]', { ...base, items: [{ finance_id: invoiceId, amount }] });
+    if (v1.ok) return v1;
+
+    // Variasi 2 — format lama: pay_from[].id
+    const v2 = await tryPost('v2[pay_from.id]', { ...base, pay_from: [{ id: invoiceId, amount }] });
+    if (v2.ok) return v2;
+
+    // Variasi 3 — format alternatif: items[].invoice_id
+    const v3 = await tryPost('v3[items.invoice_id]', { ...base, items: [{ invoice_id: invoiceId, amount }] });
+    if (v3.ok) return v3;
+
+    const msg = v1.error ?? v2.error ?? v3.error ?? 'Gagal tandai lunas di Kledo';
+    this.logger.error(`[Kledo] markInvoicePaid GAGAL semua variasi: ${msg}`);
+    return { ok: false, error: msg };
   }
 
   /** Resolve bank key dari metode + pilihan bank/edc/unit */

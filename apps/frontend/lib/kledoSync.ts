@@ -354,7 +354,7 @@ export async function getBankAccountId(
   }
 }
 
-/** Tandai invoice Kledo sebagai lunas — coba dua variasi payload */
+/** Tandai invoice Kledo sebagai lunas — coba tiga variasi payload */
 export async function markKledoInvoicePaid(
   baseUrl: string,
   token: string,
@@ -375,33 +375,32 @@ export async function markKledoInvoicePaid(
   };
 
   console.log(`[kledo] markKledoInvoicePaid invoiceId=${invoiceId} accountId=${financeAccountId} amount=${amount} date=${date}`);
-  try {
-    // Variasi 1 — format pay_from (Kledo versi lama)
+
+  const tryPost = async (label: string, payload: object) => {
     const res = await fetch(`${baseUrl}/finance/invoicepayments`, {
       method: 'POST', headers,
-      body: JSON.stringify({ ...base, pay_from: [{ id: invoiceId, amount }] }),
+      body: JSON.stringify(payload),
     });
-    const data = await res.json();
-    console.log(`[kledo] invoicepayments v1 status=${res.status} ok=${res.ok} msg=${data?.message ?? '-'}`);
-    if (res.ok) {
-      console.log(`[kledo] markKledoInvoicePaid BERHASIL v1`);
-      return { ok: true };
-    }
+    const data = await res.json().catch(() => ({}));
+    console.log(`[kledo] invoicepayments ${label} status=${res.status} ok=${res.ok} msg=${data?.message ?? JSON.stringify(data)}`);
+    return { ok: res.ok, data };
+  };
 
-    // Variasi 2 — format items dengan invoice_id (Kledo versi baru)
-    const res2 = await fetch(`${baseUrl}/finance/invoicepayments`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ ...base, items: [{ invoice_id: invoiceId, amount }] }),
-    });
-    const data2 = await res2.json();
-    console.log(`[kledo] invoicepayments v2 status=${res2.status} ok=${res2.ok} msg=${data2?.message ?? '-'}`);
-    if (res2.ok) {
-      console.log(`[kledo] markKledoInvoicePaid BERHASIL v2`);
-      return { ok: true };
-    }
+  try {
+    // Variasi 1 — format paling umum: items[].finance_id (Kledo API v1)
+    const r1 = await tryPost('v1[items.finance_id]', { ...base, items: [{ finance_id: invoiceId, amount }] });
+    if (r1.ok) { console.log('[kledo] markKledoInvoicePaid BERHASIL v1'); return { ok: true }; }
 
-    const msg = data?.message ?? data2?.message ?? 'Gagal tandai lunas di Kledo';
-    console.error(`[kledo] markKledoInvoicePaid GAGAL kedua variasi: ${msg}`);
+    // Variasi 2 — format lama: pay_from[].id
+    const r2 = await tryPost('v2[pay_from.id]', { ...base, pay_from: [{ id: invoiceId, amount }] });
+    if (r2.ok) { console.log('[kledo] markKledoInvoicePaid BERHASIL v2'); return { ok: true }; }
+
+    // Variasi 3 — format alternatif: items[].invoice_id
+    const r3 = await tryPost('v3[items.invoice_id]', { ...base, items: [{ invoice_id: invoiceId, amount }] });
+    if (r3.ok) { console.log('[kledo] markKledoInvoicePaid BERHASIL v3'); return { ok: true }; }
+
+    const msg = r1.data?.message ?? r2.data?.message ?? r3.data?.message ?? 'Gagal tandai lunas di Kledo';
+    console.error(`[kledo] markKledoInvoicePaid GAGAL semua variasi: ${msg}`);
     return { ok: false, error: msg };
   } catch (e: any) {
     console.error('[kledo] markKledoInvoicePaid exception:', e.message);
