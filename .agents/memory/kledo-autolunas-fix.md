@@ -19,6 +19,6 @@ description: Root causes dan fix untuk auto-lunas (auto payment settlement) ke K
 
 7. **`kledoPaid`/`kledoPaidError` hilang di response orders** — sehingga frontend tidak bisa tahu apakah lunas berhasil. Sekarang dikembalikan di response.
 
-**Why:** Kledo API untuk invoice payment menggunakan `pay_from: [{id, amount}]` sebagai format utama, bukan items array.
+**Why:** Endpoint `/finance/invoicepayments` tidak ada (404) di api.kledo.com. Endpoint resmi dari OpenAPI spec Kledo adalah `/finance/bankTrans/invoicePayment`. Field body juga berbeda: `bank_account_id` (bukan `finance_account_id`), `business_tran_id` (bukan `pay_from[].id`). Format yang benar: `{ trans_date, bank_account_id, business_tran_id, amount, memo }`.
 
-**How to apply:** Semua fix ada di: `kledoSync.ts`, `kledo.service.ts`, `localDb.ts` (ensureTables), `sales/orders/route.ts`, `sales/orders/kledo-retry/route.ts`, `sales/invoices/route.ts`.
+**How to apply:** Fix ada di `kledoSync.ts` fungsi `markKledoInvoicePaid`. Base URL tetap `https://api.kledo.com/api/v1`.

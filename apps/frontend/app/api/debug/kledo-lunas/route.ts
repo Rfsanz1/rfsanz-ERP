@@ -148,26 +148,19 @@ export async function POST(req: NextRequest) {
     }
 
     const headers = { Authorization: `Bearer ${cfg.token}`, 'Content-Type': 'application/json' };
-    const base = {
+    const payload = {
       trans_date: today,
-      finance_account_id: Number(foundAccount.id),
+      bank_account_id: Number(foundAccount.id),
+      business_tran_id: Number(invoiceId),
+      amount: amountInt,
       memo: `Test lunas debug — invoice ${invoiceId}`,
     };
 
-    const v1body = { ...base, pay_from: [{ id: Number(invoiceId), amount: amountInt }] };
-    const r1 = await fetch(`${cfg.baseUrl}/finance/invoicepayments`, { method: 'POST', headers, body: JSON.stringify(v1body) });
+    const r1 = await fetch(`${cfg.baseUrl}/finance/bankTrans/invoicePayment`, { method: 'POST', headers, body: JSON.stringify(payload) });
     const d1 = await r1.json();
-    trace.step2_lunas = { variasi1: { payload: v1body, status: r1.status, ok: r1.ok, response: d1 } };
+    trace.step2_lunas = { payload, status: r1.status, ok: r1.ok, response: d1 };
 
-    if (!r1.ok) {
-      const v2body = { ...base, items: [{ invoice_id: Number(invoiceId), amount: amountInt }] };
-      const r2 = await fetch(`${cfg.baseUrl}/finance/invoicepayments`, { method: 'POST', headers, body: JSON.stringify(v2body) });
-      const d2 = await r2.json();
-      trace.step2_lunas.variasi2 = { payload: v2body, status: r2.status, ok: r2.ok, response: d2 };
-      return NextResponse.json({ ok: r2.ok, trace });
-    }
-
-    return NextResponse.json({ ok: true, trace });
+    return NextResponse.json({ ok: r1.ok, trace });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

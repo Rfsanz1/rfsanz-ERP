@@ -419,12 +419,16 @@ export async function getBankAccountId(
   }
 }
 
-/** Tandai invoice Kledo sebagai lunas — coba tiga variasi payload */
+/**
+ * Tandai invoice Kledo sebagai lunas.
+ * Endpoint resmi Kledo: POST /finance/bankTrans/invoicePayment
+ * Field: bank_account_id (bukan finance_account_id), business_tran_id (bukan pay_from)
+ */
 export async function markKledoInvoicePaid(
   baseUrl: string,
   token: string,
   invoiceId: number,
-  financeAccountId: number,
+  bankAccountId: number,
   amount: number,
   date: string,
   memo?: string,
@@ -433,48 +437,41 @@ export async function markKledoInvoicePaid(
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
-  const base = {
-    trans_date: date,
-    finance_account_id: financeAccountId,
-    memo: memo ?? 'Pembayaran lunas',
-  };
-
-  console.log(`[kledo] markKledoInvoicePaid invoiceId=${invoiceId} accountId=${financeAccountId} amount=${amount} date=${date}`);
-
-  const tryPost = async (label: string, payload: object) => {
-    const res = await fetch(`${baseUrl}/finance/invoicepayments`, {
-      method: 'POST', headers,
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json().catch(() => ({}));
-    console.log(`[kledo] invoicepayments ${label} status=${res.status} ok=${res.ok} msg=${data?.message ?? JSON.stringify(data)}`);
-    return { ok: res.ok, data };
-  };
 
   // Selalu bulatkan amount ke integer (Kledo tidak accept desimal)
   const amountInt = Math.round(amount);
 
-  if (invoiceId <= 0 || financeAccountId <= 0 || amountInt <= 0) {
-    const msg = `input tidak valid: invoiceId=${invoiceId} accountId=${financeAccountId} amount=${amountInt}`;
+  console.log(`[kledo] markKledoInvoicePaid invoiceId=${invoiceId} bankAccountId=${bankAccountId} amount=${amountInt} date=${date}`);
+
+  if (invoiceId <= 0 || bankAccountId <= 0 || amountInt <= 0) {
+    const msg = `input tidak valid: invoiceId=${invoiceId} bankAccountId=${bankAccountId} amount=${amountInt}`;
     console.warn(`[kledo] markKledoInvoicePaid SKIP — ${msg}`);
     return { ok: false, error: msg };
   }
 
   try {
-    // Variasi 1 — format benar Kledo: pay_from[].id (invoice ID yg mau dilunasi)
-    const r1 = await tryPost('v1[pay_from.id]', { ...base, pay_from: [{ id: invoiceId, amount: amountInt }] });
-    if (r1.ok) { console.log('[kledo] markKledoInvoicePaid BERHASIL v1'); return { ok: true }; }
+    const payload = {
+      trans_date: date,
+      bank_account_id: bankAccountId,
+      business_tran_id: invoiceId,
+      amount: amountInt,
+      memo: memo ?? 'Pembayaran lunas',
+    };
 
-    // Variasi 2 — format alternatif: items[].invoice_id
-    const r2 = await tryPost('v2[items.invoice_id]', { ...base, items: [{ invoice_id: invoiceId, amount: amountInt }] });
-    if (r2.ok) { console.log('[kledo] markKledoInvoicePaid BERHASIL v2'); return { ok: true }; }
+    const res = await fetch(`${baseUrl}/finance/bankTrans/invoicePayment`, {
+      method: 'POST', headers,
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    console.log(`[kledo] bankTrans/invoicePayment status=${res.status} ok=${res.ok} msg=${data?.message ?? JSON.stringify(data)}`);
 
-    // Variasi 3 — format lama: items[].finance_id
-    const r3 = await tryPost('v3[items.finance_id]', { ...base, items: [{ finance_id: invoiceId, amount: amountInt }] });
-    if (r3.ok) { console.log('[kledo] markKledoInvoicePaid BERHASIL v3'); return { ok: true }; }
+    if (res.ok) {
+      console.log('[kledo] markKledoInvoicePaid BERHASIL');
+      return { ok: true };
+    }
 
-    const msg = r1.data?.message ?? r2.data?.message ?? r3.data?.message ?? 'Gagal tandai lunas di Kledo';
-    console.error(`[kledo] markKledoInvoicePaid GAGAL semua variasi: ${msg}`);
+    const msg = data?.message ?? `Gagal tandai lunas (HTTP ${res.status})`;
+    console.error(`[kledo] markKledoInvoicePaid GAGAL: ${msg}`);
     return { ok: false, error: msg };
   } catch (e: any) {
     console.error('[kledo] markKledoInvoicePaid exception:', e.message);
