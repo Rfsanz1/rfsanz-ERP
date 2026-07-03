@@ -98,7 +98,7 @@ function BarChart({ data }: { data: { month: string; revenue: number }[] }) {
 
 /* ── Quick actions ──────────────────────────────────────────────────── */
 const QUICK_ACTIONS = [
-  { label: 'Buat Order',         href: '/sales/orders',                icon: ShoppingCart, color: '#8C57FF', bg: 'rgba(140,87,255,0.12)', desc: 'Input sales order baru'     },
+  { label: 'Buat Order',         href: '/sales/orders',                icon: ShoppingCart, color: '#8C57FF', bg: 'rgba(140,87,255,0.12)', desc: 'Input sales order baru',     modal: true },
   { label: 'Buat Penawaran',     href: '/sales/quotations',            icon: FileText,     color: '#3B82F6', bg: 'rgba(59,130,246,0.12)',  desc: 'Kirim quotation ke customer' },
   { label: 'Buat Invoice',       href: '/sales/invoices/new',          icon: DollarSign,   color: '#10B981', bg: 'rgba(16,185,129,0.12)',  desc: 'Tagih ke pelanggan'          },
   { label: 'Data Pelanggan',     href: '/customers',                   icon: Users,        color: '#06B6D4', bg: 'rgba(6,182,212,0.12)',   desc: 'Kelola data pelanggan'       },
@@ -363,6 +363,12 @@ export default function DashboardContent() {
               el.style.boxShadow = 'none';
             };
 
+            if (a.modal) return (
+              <button key={a.label} onClick={() => setShowOrder(true)}
+                style={base} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                {inner}
+              </button>
+            );
             return (
               <Link key={a.label} href={a.href}
                 style={base} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
