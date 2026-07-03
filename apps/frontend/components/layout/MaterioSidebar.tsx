@@ -10,7 +10,7 @@ import {
   Warehouse, PanelLeftClose, PanelLeftOpen,
   Truck, Receipt, Package, Navigation, DollarSign,
   BarChart2, Users, BookOpen, CreditCard, UserCheck,
-  Brain, Megaphone, Globe, Bell, ChevronUp,
+  Brain, Megaphone, Globe, Bell,
 } from 'lucide-react';
 
 export const SIDEBAR_WIDTH           = 240;
@@ -22,37 +22,7 @@ interface NavItem  {
   children?: NavChild[]; badge?: string; categoryLabel?: string;
 }
 
-/* ── Menu simpel (tampilan default) ─────────────────── */
-const NAV_SIMPLE: NavItem[] = [
-  { href: '/dashboard', label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'MENU UTAMA' },
-  {
-    label: 'Penjualan', icon: ShoppingCart, categoryLabel: 'OPERASIONAL',
-    children: [
-      { href: '/sales/smart-order', label: 'Buat Order Baru'   },
-      { href: '/sales/orders',      label: 'Daftar Pesanan'    },
-      { href: '/sales/customers',   label: 'Data Pelanggan'    },
-      { href: '/sales/reports',     label: 'Laporan Penjualan' },
-    ],
-  },
-  {
-    label: 'Gudang & Stok', icon: Warehouse,
-    children: [
-      { href: '/gudang',          label: 'Dashboard Gudang' },
-      { href: '/gudang/inbound',  label: 'Barang Masuk'     },
-      { href: '/gudang/outbound', label: 'Barang Keluar'    },
-    ],
-  },
-  {
-    label: 'Pengaturan', icon: Settings, categoryLabel: 'SISTEM',
-    children: [
-      { href: '/settings',                 label: 'Pengaturan Umum' },
-      { href: '/settings/api-integration', label: 'Integrasi'       },
-      { href: '/help',                     label: 'Bantuan'         },
-    ],
-  },
-];
-
-/* ── Menu lengkap admin ─────────────────────────────── */
+/* ── Menu navigasi ─────────────────────────────────── */
 const NAV_FULL: NavItem[] = [
   { href: '/dashboard', label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'UTAMA' },
   {
@@ -165,16 +135,6 @@ const NAV_FULL: NavItem[] = [
   },
 ];
 
-const LS_MODE_KEY = 'erp_sidebar_mode';
-function loadMode(): 'simple' | 'full' {
-  try {
-    const v = typeof window !== 'undefined' ? window.localStorage.getItem(LS_MODE_KEY) : null;
-    return v === 'simple' ? 'simple' : 'full';
-  } catch { return 'full'; }
-}
-function saveMode(m: 'simple' | 'full') {
-  if (typeof window !== 'undefined') window.localStorage.setItem(LS_MODE_KEY, m);
-}
 
 const LS_KEY = 'erp_sidebar_open_v2';
 function loadOpen(): Record<string, boolean> {
@@ -197,13 +157,8 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
-  const [sidebarMode, setSidebarMode] = useState<'simple' | 'full'>('simple');
 
-  const NAV = sidebarMode === 'full' ? NAV_FULL : NAV_SIMPLE;
-
-  useEffect(() => {
-    setSidebarMode(loadMode());
-  }, []);
+  const NAV = NAV_FULL;
 
   useEffect(() => {
     const saved = loadOpen();
@@ -215,13 +170,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
     });
     setOpen(auto);
     setMounted(true);
-  }, [pathname, sidebarMode]);
-
-  const toggleMode = () => {
-    const next = sidebarMode === 'simple' ? 'full' : 'simple';
-    setSidebarMode(next);
-    saveMode(next);
-  };
+  }, [pathname]);
 
   const toggle = (label: string) => {
     if (collapsed) return;
@@ -492,35 +441,6 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
         <div style={{ height: 8 }} />
       </div>
 
-      {/* ── Mode toggle button ─────────────────────────────────────── */}
-      {!collapsed && (
-        <div style={{ padding: '10px 12px 14px', borderTop: '1px solid #F0F0F5', flexShrink: 0 }}>
-          <button
-            onClick={toggleMode}
-            aria-pressed={sidebarMode === 'full'}
-            title={sidebarMode === 'full' ? 'Kembali ke tampilan simpel' : 'Buka semua menu admin'}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '10px 14px', borderRadius: 12, cursor: 'pointer',
-              border: '1.5px solid',
-              borderColor: sidebarMode === 'full' ? '#8C57FF' : '#E5E7EB',
-              background: sidebarMode === 'full' ? 'rgba(140,87,255,.07)' : '#F9FAFB',
-              transition: 'all 0.2s',
-            }}
-          >
-            {sidebarMode === 'full'
-              ? <ChevronUp size={15} strokeWidth={2.5} style={{ color: '#8C57FF' }} />
-              : <ChevronDown size={15} strokeWidth={2.5} style={{ color: '#6B7280' }} />
-            }
-            <span style={{
-              fontSize: 13, fontWeight: 600,
-              color: sidebarMode === 'full' ? '#8C57FF' : '#6B7280',
-            }}>
-              {sidebarMode === 'full' ? 'Mode Simpel' : 'Mode Admin (Semua Menu)'}
-            </span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }
