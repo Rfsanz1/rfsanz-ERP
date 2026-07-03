@@ -98,12 +98,12 @@ function BarChart({ data }: { data: { month: string; revenue: number }[] }) {
 
 /* ── Quick actions ──────────────────────────────────────────────────── */
 const QUICK_ACTIONS = [
-  { label: 'Buat Order',      href: '/sales/orders',               icon: FileText,  color: '#8C57FF', bg: 'rgba(140,87,255,0.12)', modal: true  },
-  { label: 'Transfer Stok',   href: '/inventory/transfers',        icon: Package,   color: '#3B82F6', bg: 'rgba(59,130,246,0.12)'  },
-  { label: 'Purchase Order',  href: '/purchasing/purchase-orders', icon: Truck,     color: '#F59E0B', bg: 'rgba(245,158,11,0.12)'  },
-  { label: 'Lap. Penjualan',  href: '/reports/sales',              icon: BarChart2, color: '#10B981', bg: 'rgba(16,185,129,0.12)'  },
-  { label: 'CRM Pipeline',    href: '/crm/pipeline',               icon: Target,    color: '#EC4899', bg: 'rgba(236,72,153,0.12)'  },
-  { label: 'Karyawan',        href: '/hr',                         icon: Users,     color: '#F59E0B', bg: 'rgba(245,158,11,0.12)'  },
+  { label: 'Buat Order',         href: '/sales/orders',                icon: ShoppingCart, color: '#8C57FF', bg: 'rgba(140,87,255,0.12)', desc: 'Input sales order baru'     },
+  { label: 'Buat Penawaran',     href: '/sales/quotations',            icon: FileText,     color: '#3B82F6', bg: 'rgba(59,130,246,0.12)',  desc: 'Kirim quotation ke customer' },
+  { label: 'Buat Invoice',       href: '/sales/invoices/new',          icon: DollarSign,   color: '#10B981', bg: 'rgba(16,185,129,0.12)',  desc: 'Tagih ke pelanggan'          },
+  { label: 'Data Pelanggan',     href: '/customers',                   icon: Users,        color: '#06B6D4', bg: 'rgba(6,182,212,0.12)',   desc: 'Kelola data pelanggan'       },
+  { label: 'Invoice Belum Lunas',href: '/sales/invoices?status=sent',  icon: Clock,        color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  desc: 'Pantau piutang outstanding'  },
+  { label: 'Lap. Penjualan',     href: '/sales/reports',               icon: BarChart2,    color: '#EC4899', bg: 'rgba(236,72,153,0.12)',  desc: 'Analisa performa penjualan'  },
 ];
 
 /* ═══════════════════════════════════════════════════════════════════ */
@@ -322,20 +322,29 @@ export default function DashboardContent() {
             const inner = (
               <>
                 <div style={{
-                  width: 48, height: 48, borderRadius: 14,
+                  width: 44, height: 44, borderRadius: 12,
                   background: a.bg,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
+                  flexShrink: 0, transition: 'transform 0.2s',
                 }}>
-                  <Icon size={22} style={{ color: a.color }} strokeWidth={1.8} />
+                  <Icon size={20} style={{ color: a.color }} strokeWidth={1.8} />
                 </div>
-                <span style={{
-                  fontSize: 12, fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  textAlign: 'center', lineHeight: 1.35,
-                }}>
-                  {a.label}
-                </span>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{
+                    fontSize: 12, fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    margin: 0, lineHeight: 1.3,
+                  }}>
+                    {a.label}
+                  </p>
+                  <p style={{
+                    fontSize: 10, fontWeight: 400,
+                    color: 'var(--text-muted)',
+                    margin: '3px 0 0', lineHeight: 1.3,
+                  }}>
+                    {a.desc}
+                  </p>
+                </div>
               </>
             );
 
@@ -354,12 +363,6 @@ export default function DashboardContent() {
               el.style.boxShadow = 'none';
             };
 
-            if (a.modal) return (
-              <button key={a.label} onClick={() => setShowOrder(true)}
-                style={base} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-                {inner}
-              </button>
-            );
             return (
               <Link key={a.label} href={a.href}
                 style={base} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
