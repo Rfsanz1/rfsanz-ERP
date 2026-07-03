@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import Drawer from '@mui/material/Drawer';
 import Tooltip from '@mui/material/Tooltip';
 import {
-  LayoutDashboard, ShoppingCart, Settings, ChevronDown,
+  LayoutDashboard, ShoppingCart, Settings, ChevronDown, ChevronUp,
   Warehouse, PanelLeftClose, PanelLeftOpen,
   Truck, Receipt, Package, Navigation, DollarSign,
   BarChart2, Users, BookOpen, CreditCard, UserCheck,
@@ -22,7 +22,37 @@ interface NavItem  {
   children?: NavChild[]; badge?: string; categoryLabel?: string;
 }
 
-/* ── Menu navigasi ─────────────────────────────────── */
+/* ── Menu simpel (default untuk staf) ──────────────── */
+const NAV_SIMPLE: NavItem[] = [
+  { href: '/dashboard', label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'MENU UTAMA' },
+  {
+    label: 'Penjualan', icon: ShoppingCart, categoryLabel: 'OPERASIONAL',
+    children: [
+      { href: '/sales/smart-order', label: 'Buat Order Baru'   },
+      { href: '/sales/orders',      label: 'Daftar Pesanan'    },
+      { href: '/sales/customers',   label: 'Data Pelanggan'    },
+      { href: '/sales/reports',     label: 'Laporan Penjualan' },
+    ],
+  },
+  {
+    label: 'Gudang & Stok', icon: Warehouse,
+    children: [
+      { href: '/gudang',          label: 'Dashboard Gudang' },
+      { href: '/gudang/inbound',  label: 'Barang Masuk'     },
+      { href: '/gudang/outbound', label: 'Barang Keluar'    },
+    ],
+  },
+  {
+    label: 'Pengaturan', icon: Settings, categoryLabel: 'SISTEM',
+    children: [
+      { href: '/settings',                 label: 'Pengaturan Umum' },
+      { href: '/settings/api-integration', label: 'Integrasi'       },
+      { href: '/help',                     label: 'Bantuan'         },
+    ],
+  },
+];
+
+/* ── Menu lengkap admin ─────────────────────────────── */
 const NAV_FULL: NavItem[] = [
   { href: '/dashboard', label: 'Beranda', icon: LayoutDashboard, categoryLabel: 'UTAMA' },
   {
@@ -144,6 +174,17 @@ function saveOpen(s: Record<string, boolean>) {
   if (typeof window !== 'undefined') window.localStorage.setItem(LS_KEY, JSON.stringify(s));
 }
 
+const LS_MODE_KEY = 'erp_sidebar_mode';
+function loadMode(): 'simple' | 'full' {
+  try {
+    const v = typeof window !== 'undefined' ? window.localStorage.getItem(LS_MODE_KEY) : null;
+    return v === 'full' ? 'full' : 'simple';
+  } catch { return 'simple'; }
+}
+function saveMode(m: 'simple' | 'full') {
+  if (typeof window !== 'undefined') window.localStorage.setItem(LS_MODE_KEY, m);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    SIDEBAR CONTENT
 ══════════════════════════════════════════════════════════════════════════ */
@@ -157,8 +198,11 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState<'simple' | 'full'>('simple');
 
-  const NAV = NAV_FULL;
+  const NAV = sidebarMode === 'full' ? NAV_FULL : NAV_SIMPLE;
+
+  useEffect(() => { setSidebarMode(loadMode()); }, []);
 
   useEffect(() => {
     const saved = loadOpen();
@@ -170,7 +214,13 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
     });
     setOpen(auto);
     setMounted(true);
-  }, [pathname]);
+  }, [pathname, sidebarMode]);
+
+  const toggleMode = () => {
+    const next: 'simple' | 'full' = sidebarMode === 'simple' ? 'full' : 'simple';
+    setSidebarMode(next);
+    saveMode(next);
+  };
 
   const toggle = (label: string) => {
     if (collapsed) return;
@@ -441,6 +491,31 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: ContentProps) {
         <div style={{ height: 8 }} />
       </div>
 
+      {/* ── Tombol mode admin / simpel ─────────────────────────────── */}
+      {!collapsed && (
+        <div style={{ padding: '10px 12px 14px', borderTop: '1px solid #F0F0F5', flexShrink: 0 }}>
+          <button
+            onClick={toggleMode}
+            aria-pressed={sidebarMode === 'full'}
+            title={sidebarMode === 'full' ? 'Kembali ke tampilan simpel' : 'Buka semua menu admin'}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '10px 14px', borderRadius: 12, cursor: 'pointer',
+              border: `1.5px solid ${sidebarMode === 'full' ? '#6366F1' : '#E5E7EB'}`,
+              background: sidebarMode === 'full' ? 'rgba(99,102,241,.07)' : '#F9FAFB',
+              transition: 'all 0.2s',
+            }}
+          >
+            {sidebarMode === 'full'
+              ? <ChevronUp size={15} strokeWidth={2.5} style={{ color: '#6366F1' }} />
+              : <ChevronDown size={15} strokeWidth={2.5} style={{ color: '#6B7280' }} />
+            }
+            <span style={{ fontSize: 13, fontWeight: 600, color: sidebarMode === 'full' ? '#6366F1' : '#6B7280' }}>
+              {sidebarMode === 'full' ? 'Mode Simpel' : 'Mode Admin (Semua Menu)'}
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
