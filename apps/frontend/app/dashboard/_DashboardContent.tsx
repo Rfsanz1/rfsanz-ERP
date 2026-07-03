@@ -6,11 +6,12 @@ import {
   TrendingUp, TrendingDown, ShoppingCart, Package, DollarSign,
   Users, FileText, AlertTriangle, CheckCircle, Clock, BarChart2,
   RefreshCw, Truck, Target, ChevronRight, Wallet, ArrowUpRight,
+  Zap,
 } from 'lucide-react';
 import CreateOrderModal from '../../components/orders/CreateOrderModal';
 import { useDashboardData } from '../../lib/hooks/useDashboardData';
 
-/* ── Formatters ────────────────────────────────────────────────────── */
+/* ── Formatters ─────────────────────────────────────────────────────── */
 function formatRp(n: number): string {
   if (!n || isNaN(n)) return 'Rp 0';
   if (n >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toFixed(1)}M`;
@@ -28,7 +29,7 @@ function formatRelative(iso: string): string {
   return `${Math.floor(hrs / 24)}h lalu`;
 }
 
-/* ── Status pills ──────────────────────────────────────────────────── */
+/* ── Status pills ───────────────────────────────────────────────────── */
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   confirmed:   { label: 'Dikonfirmasi',    color: '#3B82F6', bg: 'rgba(59,130,246,0.10)'  },
   in_progress: { label: 'Diproses',        color: '#F59E0B', bg: 'rgba(245,158,11,0.10)'  },
@@ -42,20 +43,21 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
 };
 const getStatus = (s: string) => STATUS_MAP[s?.toLowerCase()] ?? STATUS_MAP.belum_bayar;
 
-/* ── Skeleton ──────────────────────────────────────────────────────── */
+/* ── Skeleton ───────────────────────────────────────────────────────── */
 function Skel({ w = '100%', h = 16, r = 8 }: { w?: string | number; h?: number; r?: number }) {
   return (
     <div
-      className="animate-pulse"
       style={{
         width: w, height: h, borderRadius: r,
-        background: 'var(--border)',
+        background: 'linear-gradient(90deg,#E2E8F0 25%,#EEF2FF 50%,#E2E8F0 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'skel-shimmer 1.6s ease-in-out infinite',
       }}
     />
   );
 }
 
-/* ── Mini bar chart ────────────────────────────────────────────────── */
+/* ── Mini bar chart ─────────────────────────────────────────────────── */
 function BarChart({ data }: { data: { month: string; revenue: number }[] }) {
   if (!data.length) {
     return (
@@ -78,16 +80,13 @@ function BarChart({ data }: { data: { month: string; revenue: number }[] }) {
                 height: `${pct}%`,
                 borderRadius: '4px 4px 2px 2px',
                 background: isLast
-                  ? 'linear-gradient(180deg, #A379FF 0%, #8C57FF 100%)'
+                  ? 'linear-gradient(180deg,#A379FF 0%,#8C57FF 100%)'
                   : 'var(--border-strong)',
                 minHeight: 3,
                 transition: 'height 0.4s ease',
               }}
             />
-            <span
-              className="hidden sm:block"
-              style={{ fontSize: 9, color: 'var(--text-muted)', lineHeight: 1 }}
-            >
+            <span className="hidden sm:block" style={{ fontSize: 9, color: 'var(--text-muted)', lineHeight: 1 }}>
               {d.month}
             </span>
           </div>
@@ -97,14 +96,14 @@ function BarChart({ data }: { data: { month: string; revenue: number }[] }) {
   );
 }
 
-/* ── Quick actions ─────────────────────────────────────────────────── */
+/* ── Quick actions ──────────────────────────────────────────────────── */
 const QUICK_ACTIONS = [
-  { label: 'Buat Order',      href: '/sales/orders',               icon: FileText,  color: '#8C57FF', bg: 'rgba(140,87,255,0.10)',  modal: true },
-  { label: 'Transfer Stok',   href: '/inventory/transfers',        icon: Package,   color: '#8B5CF6', bg: 'rgba(139,92,246,0.10)' },
-  { label: 'Purchase Order',  href: '/purchasing/purchase-orders', icon: Truck,     color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
-  { label: 'Lap. Penjualan',  href: '/reports/sales',              icon: BarChart2, color: '#3B82F6', bg: 'rgba(59,130,246,0.10)' },
-  { label: 'CRM Pipeline',    href: '/crm/pipeline',               icon: Target,    color: '#10B981', bg: 'rgba(16,185,129,0.10)' },
-  { label: 'Karyawan',        href: '/hr',                         icon: Users,     color: '#EC4899', bg: 'rgba(236,72,153,0.10)' },
+  { label: 'Buat Order',      href: '/sales/orders',               icon: FileText,  color: '#8C57FF', bg: 'rgba(140,87,255,0.12)', modal: true  },
+  { label: 'Transfer Stok',   href: '/inventory/transfers',        icon: Package,   color: '#3B82F6', bg: 'rgba(59,130,246,0.12)'  },
+  { label: 'Purchase Order',  href: '/purchasing/purchase-orders', icon: Truck,     color: '#F59E0B', bg: 'rgba(245,158,11,0.12)'  },
+  { label: 'Lap. Penjualan',  href: '/reports/sales',              icon: BarChart2, color: '#10B981', bg: 'rgba(16,185,129,0.12)'  },
+  { label: 'CRM Pipeline',    href: '/crm/pipeline',               icon: Target,    color: '#EC4899', bg: 'rgba(236,72,153,0.12)'  },
+  { label: 'Karyawan',        href: '/hr',                         icon: Users,     color: '#F59E0B', bg: 'rgba(245,158,11,0.12)'  },
 ];
 
 /* ═══════════════════════════════════════════════════════════════════ */
@@ -121,7 +120,7 @@ export default function DashboardContent() {
 
   const revenueTitle =
     tab === 'today' ? 'Penjualan Hari Ini' :
-    tab === 'week'  ? 'Penjualan 7 Hari Terakhir' :
+    tab === 'week'  ? 'Penjualan 7 Hari' :
     'Penjualan Bulan Ini';
 
   const revenueSub =
@@ -136,8 +135,7 @@ export default function DashboardContent() {
       sub:    revenueSub,
       up:     true,
       icon:   DollarSign,
-      accent: '#8C57FF',
-      light:  'rgba(140,87,255,0.10)',
+      gradient: 'linear-gradient(135deg,#8C57FF 0%,#6D28D9 100%)',
     },
     {
       title:  kledoConnected ? 'Total Invoice Kledo' : 'Total Orders',
@@ -149,8 +147,7 @@ export default function DashboardContent() {
         : `${summary.pendingPOCount} PO menunggu`,
       up:     true,
       icon:   ShoppingCart,
-      accent: '#8B5CF6',
-      light:  'rgba(139,92,246,0.10)',
+      gradient: 'linear-gradient(135deg,#3B82F6 0%,#1D4ED8 100%)',
     },
     {
       title:  'Total Pengguna',
@@ -158,8 +155,7 @@ export default function DashboardContent() {
       sub:    `${adminStats.totalRoles} role · ${adminStats.unreadNotifications} notif`,
       up:     true,
       icon:   Users,
-      accent: '#10B981',
-      light:  'rgba(16,185,129,0.10)',
+      gradient: 'linear-gradient(135deg,#10B981 0%,#059669 100%)',
     },
     {
       title:  'Total Piutang (AR)',
@@ -167,100 +163,214 @@ export default function DashboardContent() {
       sub:    `${summary.overdueInvoiceCount} invoice jatuh tempo`,
       up:     summary.overdueInvoiceCount === 0,
       icon:   FileText,
-      accent: summary.totalAR > 0 ? '#F59E0B' : '#10B981',
-      light:  summary.totalAR > 0 ? 'rgba(245,158,11,0.10)' : 'rgba(16,185,129,0.10)',
+      gradient: summary.totalAR > 0
+        ? 'linear-gradient(135deg,#F59E0B 0%,#D97706 100%)'
+        : 'linear-gradient(135deg,#10B981 0%,#059669 100%)',
     },
   ];
 
-  /* ── Render ──────────────────────────────────────────────────────── */
+  const now = new Date();
+  const greeting =
+    now.getHours() < 12 ? 'Selamat Pagi' :
+    now.getHours() < 17 ? 'Selamat Siang' : 'Selamat Malam';
+
   return (
     <>
-    <div style={{ maxWidth: 1400 }} className="space-y-5">
+    <style>{`
+      @keyframes skel-shimmer {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      @keyframes fade-up {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .dash-fade { animation: fade-up 0.35s ease forwards; }
+    `}</style>
 
-      {/* ── Page header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+    <div style={{ maxWidth: 1400 }} className="space-y-5 dash-fade">
+
+      {/* ── HERO HEADER ──────────────────────────────────────────────── */}
+      <div
+        style={{
+          borderRadius: 20,
+          background: 'linear-gradient(135deg,#1E1B4B 0%,#312E81 45%,#4C1D95 100%)',
+          padding: '28px 28px 24px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Decorative circles */}
+        <div style={{
+          position: 'absolute', top: -40, right: -40,
+          width: 180, height: 180, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.04)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: -60, right: 80,
+          width: 140, height: 140, borderRadius: '50%',
+          background: 'rgba(139,92,246,0.15)',
+          pointerEvents: 'none',
+        }} />
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" style={{ position: 'relative', zIndex: 1 }}>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+                {greeting} 👋
+              </h1>
+              {kledoConnected && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '3px 9px',
+                  borderRadius: 100, background: 'rgba(16,185,129,0.2)',
+                  color: '#34D399', letterSpacing: '0.05em',
+                  border: '1px solid rgba(52,211,153,0.3)',
+                }}>
+                  ● KLEDO CONNECTED
+                </span>
+              )}
+            </div>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
+              {kledoConnected ? 'Data real-time dari Kledo Accounting' : 'Ringkasan bisnis Gentong Mas secara real-time'}
+            </p>
+          </div>
+
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-              Dashboard
-            </h1>
-            {kledoConnected && (
-              <span style={{
-                fontSize: 10, fontWeight: 700, padding: '3px 8px',
-                borderRadius: 100, background: 'rgba(16,185,129,0.12)',
-                color: '#10B981', letterSpacing: '0.04em',
-                border: '1px solid rgba(16,185,129,0.25)',
-              }}>
-                ● KLEDO
-              </span>
-            )}
+            <div
+              className="flex"
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 10, padding: 3, gap: 2,
+              }}
+            >
+              {(['today', 'week', 'month'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  style={{
+                    padding: '6px 14px', borderRadius: 8,
+                    fontSize: 12, fontWeight: 600, border: 'none',
+                    cursor: 'pointer', transition: 'all 0.15s ease',
+                    background: tab === t ? 'rgba(255,255,255,0.15)' : 'transparent',
+                    color: tab === t ? '#fff' : 'rgba(255,255,255,0.5)',
+                  }}
+                >
+                  {t === 'today' ? 'Hari Ini' : t === 'week' ? 'Minggu' : 'Bulan'}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={refresh}
+              disabled={loading}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px', borderRadius: 10,
+                fontSize: 12, fontWeight: 600,
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.7)',
+                cursor: 'pointer', opacity: loading ? 0.5 : 1,
+                transition: 'all 0.15s',
+              }}
+            >
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
           </div>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
-            {kledoConnected ? 'Data real-time dari Kledo Accounting' : 'Ringkasan bisnis Anda secara real-time'}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Tab switcher */}
-          <div
-            className="flex"
-            style={{
-              background: 'var(--surface-sunken)',
-              border: '1px solid var(--border)',
-              borderRadius: 10,
-              padding: 3,
-              gap: 2,
-            }}
-          >
-            {(['today', 'week', 'month'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  background: tab === t ? 'var(--surface)' : 'transparent',
-                  color: tab === t ? 'var(--text-primary)' : 'var(--text-muted)',
-                  boxShadow: tab === t ? 'var(--shadow-sm)' : 'none',
-                }}
-              >
-                {t === 'today' ? 'Hari Ini' : t === 'week' ? 'Minggu' : 'Bulan'}
-              </button>
-            ))}
-          </div>
-
-          {/* Refresh */}
-          <button
-            onClick={refresh}
-            disabled={loading}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '7px 14px',
-              borderRadius: 10,
-              fontSize: 12,
-              fontWeight: 600,
-              border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              opacity: loading ? 0.5 : 1,
-            }}
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
         </div>
       </div>
 
-      {/* ── KPI cards ───────────────────────────────────────────────── */}
+      {/* ── AKSI CEPAT (TOP) ─────────────────────────────────────────── */}
+      <div
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 18,
+          padding: '18px 20px',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+          <div className="flex items-center gap-2">
+            <div style={{
+              width: 30, height: 30, borderRadius: 8,
+              background: 'linear-gradient(135deg,#8C57FF,#6D28D9)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Zap size={14} style={{ color: '#fff' }} />
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Aksi Cepat</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Pintasan menu yang sering digunakan</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {QUICK_ACTIONS.map((a) => {
+            const Icon = a.icon;
+            const base: React.CSSProperties = {
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 10, padding: '16px 10px 14px', borderRadius: 14,
+              border: '1.5px solid var(--border)',
+              background: 'var(--surface-sunken)',
+              cursor: 'pointer', transition: 'all 0.2s ease',
+              width: '100%', textDecoration: 'none',
+            };
+            const inner = (
+              <>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 14,
+                  background: a.bg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Icon size={22} style={{ color: a.color }} strokeWidth={1.8} />
+                </div>
+                <span style={{
+                  fontSize: 12, fontWeight: 700,
+                  color: 'var(--text-primary)',
+                  textAlign: 'center', lineHeight: 1.35,
+                }}>
+                  {a.label}
+                </span>
+              </>
+            );
+
+            const hoverOn = (e: React.MouseEvent<HTMLElement>) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.borderColor = a.color;
+              el.style.background = a.bg;
+              el.style.transform = 'translateY(-3px)';
+              el.style.boxShadow = `0 8px 24px ${a.color}30`;
+            };
+            const hoverOff = (e: React.MouseEvent<HTMLElement>) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.borderColor = 'var(--border)';
+              el.style.background = 'var(--surface-sunken)';
+              el.style.transform = 'translateY(0)';
+              el.style.boxShadow = 'none';
+            };
+
+            if (a.modal) return (
+              <button key={a.label} onClick={() => setShowOrder(true)}
+                style={base} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                {inner}
+              </button>
+            );
+            return (
+              <Link key={a.label} href={a.href}
+                style={base} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                {inner}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── KPI CARDS ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {KPI.map((k) => {
           const Icon = k.icon;
@@ -270,20 +380,24 @@ export default function DashboardContent() {
               style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
-                borderRadius: 16,
-                padding: '18px 20px',
+                borderRadius: 18, padding: '20px',
                 boxShadow: 'var(--shadow-sm)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 14,
+                position: 'relative', overflow: 'hidden',
               }}
             >
-              <div className="flex items-center justify-between">
+              {/* Top gradient strip */}
+              <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0,
+                height: 3, background: k.gradient, borderRadius: '18px 18px 0 0',
+              }} />
+
+              <div className="flex items-start justify-between mb-4">
                 <div
                   style={{
-                    width: 42, height: 42, borderRadius: 10,
-                    background: k.accent,
+                    width: 44, height: 44, borderRadius: 12,
+                    background: k.gradient,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     flexShrink: 0,
                   }}
                 >
@@ -294,194 +408,81 @@ export default function DashboardContent() {
                     display: 'flex', alignItems: 'center', gap: 3,
                     padding: '3px 8px', borderRadius: 6,
                     fontSize: 11, fontWeight: 700,
-                    color: k.up ? '#56CA00' : '#FF4C51',
-                    background: k.up ? 'rgba(86,202,0,0.12)' : 'rgba(255,76,81,0.12)',
+                    color: k.up ? '#10B981' : '#EF4444',
+                    background: k.up ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.10)',
                   }}
                 >
-                  {k.up
-                    ? <TrendingUp size={13} strokeWidth={2.5} />
-                    : <TrendingDown size={13} strokeWidth={2.5} />}
+                  {k.up ? <TrendingUp size={13} strokeWidth={2.5} /> : <TrendingDown size={13} strokeWidth={2.5} />}
                 </span>
               </div>
 
-              <div>
-                {loading ? (
-                  <div className="space-y-2">
-                    <Skel w="70%" h={26} r={8} />
-                    <Skel w="90%" h={12} r={6} />
-                  </div>
-                ) : (
-                  <>
-                    <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-                      {k.value}
-                    </p>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '5px 0 0', lineHeight: 1.4 }}>
-                      {k.sub}
-                    </p>
-                  </>
-                )}
-                <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', margin: '6px 0 0', lineHeight: 1.3 }}>
-                  {k.title}
-                </p>
-              </div>
+              {loading ? (
+                <div className="space-y-2">
+                  <Skel w="70%" h={28} r={8} />
+                  <Skel w="90%" h={11} r={5} />
+                </div>
+              ) : (
+                <>
+                  <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+                    {k.value}
+                  </p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '5px 0 6px', lineHeight: 1.4 }}>
+                    {k.sub}
+                  </p>
+                </>
+              )}
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', margin: 0 }}>
+                {k.title}
+              </p>
             </div>
           );
         })}
       </div>
 
-      {/* ── Quick actions ────────────────────────────────────────────── */}
-      <div
-        style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 16,
-          padding: '20px 24px',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-          <div>
-            <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-              Aksi Cepat
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '3px 0 0' }}>Pintasan menu yang sering digunakan</p>
-          </div>
-          <ArrowUpRight size={16} style={{ color: 'var(--text-muted)' }} />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {QUICK_ACTIONS.map((a) => {
-            const Icon = a.icon;
-            const base: React.CSSProperties = {
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 12,
-              padding: '20px 12px 18px',
-              borderRadius: 14,
-              border: '1.5px solid var(--border)',
-              background: 'var(--surface-sunken)',
-              cursor: 'pointer',
-              transition: 'all 0.18s ease',
-              width: '100%',
-              textDecoration: 'none',
-            };
-            const inner = (
-              <>
-                <div style={{
-                  width: 52, height: 52, borderRadius: 14,
-                  background: a.bg,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: `1.5px solid ${a.color}22`,
-                  flexShrink: 0,
-                }}>
-                  <Icon size={24} style={{ color: a.color }} strokeWidth={1.8} />
-                </div>
-                <span style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  textAlign: 'center',
-                  lineHeight: 1.35,
-                  letterSpacing: '-0.01em',
-                }}>
-                  {a.label}
-                </span>
-              </>
-            );
-            if (a.modal) return (
-              <button
-                key={a.label}
-                onClick={() => setShowOrder(true)}
-                style={base}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = a.color;
-                  (e.currentTarget as HTMLElement).style.background = a.bg;
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${a.color}22`;
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
-                  (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)';
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                }}
-              >
-                {inner}
-              </button>
-            );
-            return (
-              <Link
-                key={a.label}
-                href={a.href}
-                style={base}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = a.color;
-                  (e.currentTarget as HTMLElement).style.background = a.bg;
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 6px 20px ${a.color}22`;
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
-                  (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)';
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                }}
-              >
-                {inner}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Revenue + Kas ────────────────────────────────────────────── */}
+      {/* ── REVENUE + KAS ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
 
-        {/* Revenue chart */}
         <div
           className="lg:col-span-2"
           style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)',
+            borderRadius: 18, padding: '22px', boxShadow: 'var(--shadow-sm)',
           }}
         >
           <div className="flex items-start justify-between mb-5">
             <div>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 Tren Pendapatan
               </p>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '3px 0 0' }}>12 bulan terakhir</p>
             </div>
-            <div
-              style={{
-                fontSize: 11, fontWeight: 700, color: '#8C57FF',
-                background: 'rgba(140,87,255,0.10)', borderRadius: 8,
-                padding: '4px 10px',
-              }}
-            >
+            <span style={{
+              fontSize: 11, fontWeight: 700, color: '#8C57FF',
+              background: 'rgba(140,87,255,0.10)', borderRadius: 8,
+              padding: '4px 10px', border: '1px solid rgba(140,87,255,0.2)',
+            }}>
               Live
-            </div>
+            </span>
           </div>
 
-          {loading
-            ? <Skel h={96} r={10} />
-            : <BarChart data={revenueChart.slice(-12).map(d => ({ month: d.month?.slice(0, 3) ?? '', revenue: d.revenue }))} />
-          }
+          {loading ? <Skel h={96} r={10} /> : (
+            <BarChart data={revenueChart.slice(-12).map(d => ({ month: d.month?.slice(0, 3) ?? '', revenue: d.revenue }))} />
+          )}
 
           <div
             className="grid grid-cols-3 gap-3 mt-5 pt-5"
             style={{ borderTop: '1px solid var(--border)' }}
           >
             {[
-              { label: 'Bulan ini',            val: formatRp(summary.monthRevenue),  accent: '#8C57FF' },
-              { label: 'Tahun ini',             val: formatRp(summary.yearRevenue),   accent: '#10B981' },
-              { label: 'Pengeluaran',           val: formatRp(summary.monthExpense),  accent: '#F59E0B' },
-            ].map(({ label, val, accent }) => (
+              { label: 'Bulan ini',   val: formatRp(summary.monthRevenue),  color: '#8C57FF' },
+              { label: 'Tahun ini',   val: formatRp(summary.yearRevenue),   color: '#10B981' },
+              { label: 'Pengeluaran', val: formatRp(summary.monthExpense),  color: '#F59E0B' },
+            ].map(({ label, val, color }) => (
               <div key={label} className="text-center">
                 {loading
                   ? <Skel w="80%" h={20} r={6} />
-                  : <p style={{ fontSize: 15, fontWeight: 800, color: accent, margin: 0, letterSpacing: '-0.01em' }}>{val}</p>}
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.3 }}>{label}</p>
+                  : <p style={{ fontSize: 16, fontWeight: 800, color, margin: 0 }}>{val}</p>}
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0' }}>{label}</p>
               </div>
             ))}
           </div>
@@ -491,45 +492,51 @@ export default function DashboardContent() {
         <div
           style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)',
+            borderRadius: 18, padding: '22px', boxShadow: 'var(--shadow-sm)',
           }}
         >
           <div className="flex items-center justify-between mb-5">
-            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Kas & Bank
             </p>
             <Wallet size={16} style={{ color: 'var(--text-muted)' }} />
           </div>
 
-          {/* Saldo utama */}
           <div
             style={{
-              borderRadius: 14,
-              padding: '16px 18px',
-              background: 'linear-gradient(135deg, #8C57FF 0%, #8B5CF6 100%)',
+              borderRadius: 14, padding: '18px',
+              background: 'linear-gradient(135deg,#8C57FF 0%,#6D28D9 100%)',
               marginBottom: 16,
+              boxShadow: '0 4px 20px rgba(140,87,255,0.3)',
             }}
           >
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', margin: '0 0 6px', fontWeight: 500 }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', margin: '0 0 6px', fontWeight: 500 }}>
               Total Saldo
             </p>
             {loading
               ? <Skel w="60%" h={28} r={8} />
-              : <p style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', margin: 0, letterSpacing: '-0.02em' }}>
+              : <p style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
                   {formatRp(summary.cashBalance)}
                 </p>
             }
           </div>
 
-          {/* Stats */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {[
               { label: 'Piutang (AR)',        val: formatRp(summary.totalAR),           color: '#F59E0B' },
               { label: 'Invoice Jatuh Tempo', val: String(summary.overdueInvoiceCount), color: '#EF4444' },
               { label: 'Stok Menipis',        val: String(summary.lowStockCount),       color: '#F59E0B' },
               { label: 'Pengguna Aktif',      val: String(adminStats.totalUsers),       color: '#10B981' },
             ].map(({ label, val, color }) => (
-              <div key={label} className="flex items-center justify-between" style={{ padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+              <div
+                key={label}
+                className="flex items-center justify-between"
+                style={{
+                  padding: '9px 12px', borderRadius: 10,
+                  background: 'var(--surface-sunken)',
+                  border: '1px solid var(--border)',
+                }}
+              >
                 <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{label}</span>
                 {loading
                   ? <Skel w={48} h={14} r={6} />
@@ -541,7 +548,7 @@ export default function DashboardContent() {
         </div>
       </div>
 
-      {/* ── Orders + Stock + Summary ─────────────────────────────────── */}
+      {/* ── ORDERS + STOCK ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
 
         {/* Recent orders */}
@@ -549,7 +556,7 @@ export default function DashboardContent() {
           className="lg:col-span-2"
           style={{
             background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
+            borderRadius: 18, overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
           }}
         >
           <div
@@ -557,7 +564,7 @@ export default function DashboardContent() {
             style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}
           >
             <div className="flex items-center gap-2">
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                 {kledoConnected ? 'Invoice Terbaru' : 'Sales Order Terbaru'}
               </p>
               {kledoConnected && (
@@ -572,8 +579,7 @@ export default function DashboardContent() {
               href={kledoConnected ? '/invoice/list' : '/sales/orders'}
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
-                fontSize: 12, fontWeight: 600, color: '#8C57FF',
-                textDecoration: 'none',
+                fontSize: 12, fontWeight: 600, color: '#8C57FF', textDecoration: 'none',
               }}
             >
               Lihat semua <ChevronRight size={14} />
@@ -598,23 +604,22 @@ export default function DashboardContent() {
                 return (
                   <div
                     key={order.id}
-                    className="flex items-center gap-3 group"
+                    className="flex items-center gap-3"
                     style={{
                       padding: '13px 20px',
                       borderBottom: i < recentOrders.length - 1 ? '1px solid var(--border)' : 'none',
-                      transition: 'background 0.15s ease',
+                      transition: 'background 0.15s',
                       cursor: 'pointer',
                     }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                   >
-                    {/* Order number badge */}
-                    <div
-                      style={{
-                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                        background: 'var(--surface-sunken)',
-                        border: '1px solid var(--border)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}
-                    >
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                      background: 'var(--surface-sunken)',
+                      border: '1px solid var(--border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
                       <ShoppingCart size={14} style={{ color: 'var(--text-muted)' }} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -624,12 +629,10 @@ export default function DashboardContent() {
                             ? (order as any).ref_number ?? `INV-${String(order.id).replace('kledo-', '')}`
                             : `#${order.id}`}
                         </p>
-                        <span
-                          style={{
-                            fontSize: 10, fontWeight: 700, padding: '2px 8px',
-                            borderRadius: 100, color: s.color, background: s.bg,
-                          }}
-                        >
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '2px 8px',
+                          borderRadius: 100, color: s.color, background: s.bg,
+                        }}>
                           {s.label}
                         </span>
                       </div>
@@ -655,15 +658,17 @@ export default function DashboardContent() {
         <div className="flex flex-col gap-3 sm:gap-4">
 
           {/* Low stock */}
-          <div
-            style={{
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: 16, padding: '18px 20px', boxShadow: 'var(--shadow-sm)',
-            }}
-          >
+          <div style={{
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 18, padding: '18px 20px', boxShadow: 'var(--shadow-sm)',
+          }}>
             <div className="flex items-center justify-between mb-4">
               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Stok Menipis</p>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 8,
+                background: 'rgba(245,158,11,0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
                 <AlertTriangle size={13} style={{ color: '#F59E0B' }} />
               </div>
             </div>
@@ -675,14 +680,20 @@ export default function DashboardContent() {
                 </div>
               ))
               : lowStock.length === 0
-                ? <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>Semua stok aman ✓</p>
+                ? <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>✓ Semua stok aman</p>
                 : lowStock.slice(0, 4).map((item) => (
                   <div key={item.productName} className="flex items-center gap-3 mb-3 last:mb-0">
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(245,158,11,0.10)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      background: 'rgba(245,158,11,0.10)', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
                       <Package size={13} style={{ color: '#F59E0B' }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }} className="truncate">{item.productName}</p>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }} className="truncate">
+                        {item.productName}
+                      </p>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>
                         Sisa <span style={{ fontWeight: 700, color: '#EF4444' }}>{item.currentStock}</span> / min {item.minStock}
                       </p>
@@ -693,21 +704,32 @@ export default function DashboardContent() {
           </div>
 
           {/* Ringkasan hari ini */}
-          <div
-            style={{
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: 16, padding: '18px 20px', boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Ringkasan Hari Ini</p>
-            <div className="space-y-3">
+          <div style={{
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 18, padding: '18px 20px', boxShadow: 'var(--shadow-sm)',
+          }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>
+              Ringkasan Hari Ini
+            </p>
+            <div className="space-y-2">
               {[
                 { Icon: CheckCircle, label: 'Revenue hari ini',    val: formatRp(summary.todayRevenue),        color: '#10B981', bg: 'rgba(16,185,129,0.10)' },
                 { Icon: Clock,       label: 'Invoice jatuh tempo', val: String(summary.overdueInvoiceCount),   color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
                 { Icon: Truck,       label: 'PO pending',           val: String(summary.pendingPOCount),        color: '#8C57FF', bg: 'rgba(140,87,255,0.10)' },
               ].map(({ Icon, label, val, color, bg }) => (
-                <div key={label} className="flex items-center gap-3">
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div
+                  key={label}
+                  className="flex items-center gap-3"
+                  style={{
+                    padding: '10px 12px', borderRadius: 10,
+                    background: 'var(--surface-sunken)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <div style={{
+                    width: 30, height: 30, borderRadius: 8, background: bg,
+                    flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
                     <Icon size={13} style={{ color }} strokeWidth={2.5} />
                   </div>
                   <span style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)' }}>{label}</span>
@@ -721,15 +743,13 @@ export default function DashboardContent() {
         </div>
       </div>
 
-      {/* ── Top Products ─────────────────────────────────────────────── */}
-      <div
-        style={{
-          background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)',
-        }}
-      >
+      {/* ── PRODUK TERLARIS ──────────────────────────────────────────── */}
+      <div style={{
+        background: 'var(--surface)', border: '1px solid var(--border)',
+        borderRadius: 18, padding: '22px', boxShadow: 'var(--shadow-sm)',
+      }}>
         <div className="flex items-center justify-between mb-5">
-          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Produk Terlaris
           </p>
           <Link
@@ -766,13 +786,11 @@ export default function DashboardContent() {
                     </p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <div style={{ flex: 1, height: 5, borderRadius: 100, background: 'var(--border)' }}>
-                        <div
-                          style={{
-                            width: `${(p.totalRevenue / maxR) * 100}%`,
-                            height: '100%', borderRadius: 100,
-                            background: 'linear-gradient(90deg, #8C57FF, #8B5CF6)',
-                          }}
-                        />
+                        <div style={{
+                          width: `${(p.totalRevenue / maxR) * 100}%`,
+                          height: '100%', borderRadius: 100,
+                          background: 'linear-gradient(90deg,#8C57FF,#8B5CF6)',
+                        }} />
                       </div>
                       <span style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0, minWidth: 60, textAlign: 'right' }}>
                         {p.totalQty} terjual
