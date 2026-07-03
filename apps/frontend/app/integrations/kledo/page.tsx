@@ -7,10 +7,10 @@ import { OdooLayout } from '../../../components/layout/OdooLayout';
 import { kledoService, type KledoProduct, type KledoContact, type KledoInvoice, type KledoSyncLog } from '../../../lib/services';
 import {
   RefreshCw, CheckCircle, XCircle, BarChart2, Package, Users,
-  FileText, Zap, Clock, AlertCircle, Search, ChevronRight, Timer, CreditCard,
+  FileText, Zap, Clock, AlertCircle, Search, ChevronRight, Timer,
 } from 'lucide-react';
 
-type Tab = 'overview' | 'payment' | 'products' | 'contacts' | 'invoices' | 'sync-logs';
+type Tab = 'overview' | 'products' | 'contacts' | 'invoices' | 'sync-logs';
 
 const INTERVAL_OPTIONS = [
   { label: 'Setiap 15 menit', value: 15 },
@@ -39,10 +39,6 @@ export default function KledoPage() {
   const [invoices, setInvoices] = useState<KledoInvoice[]>([]);
   const [syncLogs, setSyncLogs] = useState<KledoSyncLog[]>([]);
   const [spmBrands, setSpmBrands] = useState<{ brand: string; pic: string }[]>([]);
-  const [coaAccounts, setCoaAccounts] = useState<{ id: number; name: string; code?: string | null }[]>([]);
-  const [paymentConfig, setPaymentConfig] = useState<Record<string, number | null>>({});
-  const [paymentConfigSaving, setPaymentConfigSaving] = useState(false);
-  const [paymentConfigSaved, setPaymentConfigSaved] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ success: boolean; synced: number; productsImported?: number; productsUpdated?: number; contactsImported?: number; contactsUpdated?: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,58 +52,6 @@ export default function KledoPage() {
   const autoSyncTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [paymentConfigError, setPaymentConfigError] = useState<string | null>(null);
-  const [autoDetecting, setAutoDetecting] = useState(false);
-  const [autoDetectResult, setAutoDetectResult] = useState<Record<string, { id: number; name: string } | null> | null>(null);
-
-  const autoDetectAccounts = useCallback(async () => {
-    setAutoDetecting(true);
-    setAutoDetectResult(null);
-    setPaymentConfigError(null);
-    try {
-      const r = await fetch('/api/debug/kledo-lunas', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!r.ok) { setPaymentConfigError('Gagal fetch akun Kledo'); return; }
-      const d = await r.json();
-      const matches: Record<string, { id: number; name: string } | null> = d?.keyword_matches ?? {};
-      setAutoDetectResult(matches);
-      // Otomatis isi form dengan yang ditemukan
-      const newConfig: Record<string, number | null> = { ...paymentConfig };
-      for (const [key, val] of Object.entries(matches)) {
-        if (val && !newConfig[key]) newConfig[key] = val.id;
-      }
-      setPaymentConfig(newConfig);
-    } catch (e: any) {
-      setPaymentConfigError(e.message);
-    } finally {
-      setAutoDetecting(false);
-    }
-  }, [token, paymentConfig]);
-
-  const savePaymentConfig = useCallback(async () => {
-    setPaymentConfigSaving(true);
-    setPaymentConfigError(null);
-    try {
-      const res = await fetch('/api/kledo/payment-config', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paymentConfig),
-      });
-      if (res.ok) {
-        setPaymentConfigSaved(true);
-        setTimeout(() => setPaymentConfigSaved(false), 3000);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setPaymentConfigError(data?.error ?? `Gagal menyimpan (HTTP ${res.status})`);
-      }
-    } catch (e: any) {
-      setPaymentConfigError(e.message ?? 'Koneksi gagal');
-    } finally {
-      setPaymentConfigSaving(false);
-    }
-  }, [paymentConfig]);
-
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
@@ -118,13 +62,11 @@ export default function KledoPage() {
       setStatus(st);
       setSpmBrands(brands);
       if (st.connected) {
-        const [prods, conts, invs, logs, coa, pcfg] = await Promise.allSettled([
+        const [prods, conts, invs, logs] = await Promise.allSettled([
           kledoService.getProducts({ per_page: 500 }),
           kledoService.getContacts({ per_page: 500, type: 'customer' }),
           kledoService.getInvoices({ per_page: 50 }),
           kledoService.getSyncLogs({ limit: 20 }),
-          fetch('/api/kledo/coa-accounts').then(r => r.json()),
-          fetch('/api/kledo/payment-config').then(r => r.json()),
         ]);
         if (prods.status === 'fulfilled') setProducts(prods.value?.data ?? []);
         if (conts.status === 'fulfilled') setContacts(conts.value?.data ?? []);
@@ -132,13 +74,8 @@ export default function KledoPage() {
         if (logs.status === 'fulfilled') {
           const logData = logs.value?.data ?? [];
           setSyncLogs(logData);
-          // Cari last sync sukses
           const lastOk = logData.find(l => l.status === 'success');
           if (lastOk) setLastSyncAt(new Date(lastOk.createdAt));
-        }
-        if (coa.status === 'fulfilled') setCoaAccounts(coa.value?.data ?? []);
-        if (pcfg.status === 'fulfilled' && typeof pcfg.value === 'object' && !pcfg.value?.error) {
-          setPaymentConfig(pcfg.value ?? {});
         }
       } else {
         const logs = await kledoService.getSyncLogs({ limit: 20 }).catch(() => ({ data: [] }));
@@ -257,7 +194,6 @@ export default function KledoPage() {
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'overview', label: 'Overview', icon: BarChart2 },
-    { key: 'payment', label: 'Akun Pembayaran', icon: CreditCard },
     { key: 'products', label: `Produk (${products.length})`, icon: Package },
     { key: 'contacts', label: `Kontak (${contacts.length})`, icon: Users },
     { key: 'invoices', label: `Invoice (${invoices.length})`, icon: FileText },
@@ -516,23 +452,6 @@ export default function KledoPage() {
               </div>
             </div>
 
-            {/* ── Shortcut ke tab Akun Pembayaran ── */}
-            {status?.connected && (
-              <button
-                onClick={() => setTab('payment')}
-                className="w-full rounded-2xl p-5 flex items-center gap-4 text-left transition hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #EDE9FE, #F5F3FF)', border: '1.5px solid #C4B5FD' }}
-              >
-                <CreditCard className="h-6 w-6 flex-shrink-0" style={{ color: '#5B52D1' }} />
-                <div className="flex-1">
-                  <p className="font-bold text-sm" style={{ color: '#1E1B4B' }}>Konfigurasi Akun Pembayaran — Auto-Lunas</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
-                    Petakan metode bayar (Cash, Transfer BCA, Debit EDC, dll) ke akun COA Kledo agar invoice otomatis Lunas saat order dibuat.
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: '#5B52D1' }} />
-              </button>
-            )}
 
             {spmBrands.length > 0 && (
               <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
@@ -576,133 +495,6 @@ export default function KledoPage() {
                   <p className="text-base font-bold" style={{ color: '#5B52D1' }}>Rp 115.000</p>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Payment Config Tab */}
-        {tab === 'payment' && (
-          <div className="space-y-5">
-            {/* Header info */}
-            <div className="rounded-2xl p-5 flex flex-col md:flex-row md:items-center gap-4"
-              style={{ background: 'linear-gradient(135deg, #EDE9FE, #F5F3FF)', border: '1.5px solid #C4B5FD' }}>
-              <div className="flex-1">
-                <h3 className="font-bold text-sm mb-1" style={{ color: '#1E1B4B' }}>Konfigurasi Akun Pembayaran — Auto-Lunas Kledo</h3>
-                <p className="text-xs leading-relaxed" style={{ color: '#6B7280' }}>
-                  Pilih akun COA Kledo untuk setiap metode pembayaran. Saat order dibuat, invoice di Kledo langsung otomatis ditandai <b>Lunas</b>
-                  menggunakan akun yang dipilih di sini.
-                </p>
-                {!status?.connected && (
-                  <p className="text-xs mt-2 font-semibold" style={{ color: '#EF4444' }}>
-                    ⚠ Kledo belum terhubung — pastikan KLEDO_TOKEN sudah diisi di environment.
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={autoDetectAccounts}
-                disabled={autoDetecting || !status?.connected}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-50 flex-shrink-0"
-                style={{ background: '#5B52D1', color: '#fff' }}
-              >
-                <Zap className={`h-3.5 w-3.5 ${autoDetecting ? 'animate-pulse' : ''}`} />
-                {autoDetecting ? 'Mendeteksi...' : 'Auto-detect dari Kledo'}
-              </button>
-            </div>
-
-            {/* Auto-detect result info */}
-            {autoDetectResult && (
-              <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.3)', color: '#15803D' }}>
-                <p className="font-semibold mb-1 flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Auto-detect selesai — form sudah diisi otomatis dari akun Kledo yang ditemukan.</p>
-                <p style={{ color: '#6B7280' }}>Periksa dan sesuaikan jika ada yang tidak cocok, lalu klik <b>Simpan Konfigurasi</b>.</p>
-              </div>
-            )}
-
-            {/* Payment accounts grid */}
-            <div className="rounded-2xl p-5" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
-                {[
-                  { key: 'kas',            label: '💵 Cash / Tunai (default)', hint: 'Semua pembayaran cash tanpa unit bisnis spesifik' },
-                  { key: 'elektronik',     label: '📺 Cash — Elektronik',       hint: 'Kas unit bisnis elektronik' },
-                  { key: 'bahan_bangunan', label: '🏠 Cash — Bahan Bangunan',   hint: 'Kas unit bisnis bahan bangunan' },
-                  { key: 'bca',            label: '🏦 Transfer BCA',            hint: 'Rekening Giro / Tabungan BCA' },
-                  { key: 'bri',            label: '🏦 Transfer BRI',            hint: 'Rekening BRI' },
-                  { key: 'mandiri',        label: '🏦 Transfer Mandiri',        hint: 'Rekening Mandiri' },
-                  { key: 'bni',            label: '🏦 Transfer BNI',            hint: 'Rekening BNI' },
-                  { key: 'bca_edc',        label: '💳 Debit BCA EDC',           hint: 'Mesin EDC BCA (berbeda dari rekening Giro BCA)' },
-                  { key: 'bri_edc',        label: '💳 Debit BRI EDC',           hint: 'Mesin EDC BRI' },
-                ].map(({ key, label, hint }) => {
-                  const val = paymentConfig[key] ?? '';
-                  const hasValue = !!val;
-                  const detected = autoDetectResult?.[key];
-                  return (
-                    <div key={key}>
-                      <label className="text-[11px] font-semibold flex items-center gap-1.5 mb-1" style={{ color: hasValue ? '#5B52D1' : '#6B7280' }}>
-                        {label}
-                        {detected && !hasValue && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(34,197,94,.15)', color: '#15803D' }}>
-                            terdeteksi
-                          </span>
-                        )}
-                        {hasValue && <CheckCircle className="h-3 w-3" style={{ color: '#22C55E' }} />}
-                      </label>
-                      <select
-                        value={val}
-                        onChange={e => setPaymentConfig(prev => ({ ...prev, [key]: e.target.value ? Number(e.target.value) : null }))}
-                        className="w-full text-xs rounded-lg px-2.5 py-2 outline-none"
-                        style={{
-                          border: `1.5px solid ${hasValue ? '#C4B5FD' : '#EDE9FE'}`,
-                          color: '#1E1B4B', background: hasValue ? '#F5F3FF' : '#FAFAFA',
-                        }}
-                      >
-                        <option value="">— Pilih akun COA Kledo —</option>
-                        {coaAccounts.map(acc => (
-                          <option key={acc.id} value={acc.id}>
-                            {acc.code ? `[${acc.code}] ` : ''}{acc.name}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-[10px] mt-0.5" style={{ color: '#9CA3AF' }}>{hint}</p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Save */}
-              <div className="flex items-center gap-3 flex-wrap pt-3" style={{ borderTop: '1px solid #EDE9FE' }}>
-                <button
-                  onClick={savePaymentConfig}
-                  disabled={paymentConfigSaving}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition disabled:opacity-50"
-                  style={{ background: paymentConfigSaved ? '#22C55E' : '#5B52D1', color: '#fff' }}
-                >
-                  {paymentConfigSaving
-                    ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Menyimpan...</>
-                    : paymentConfigSaved
-                    ? <><CheckCircle className="h-3.5 w-3.5" /> Tersimpan!</>
-                    : <><Zap className="h-3.5 w-3.5" /> Simpan Konfigurasi</>}
-                </button>
-                {paymentConfigError && (
-                  <span className="text-xs font-semibold flex items-center gap-1" style={{ color: '#EF4444' }}>
-                    <AlertCircle className="h-3.5 w-3.5" /> {paymentConfigError}
-                  </span>
-                )}
-                {coaAccounts.length === 0 && status?.connected && (
-                  <span className="text-xs flex items-center gap-1" style={{ color: '#F59E0B' }}>
-                    <AlertCircle className="h-3.5 w-3.5" /> Daftar akun masih kosong — coba klik Auto-detect
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Petunjuk cara kerja */}
-            <div className="rounded-2xl p-5" style={{ backgroundColor: '#FFFFFF', border: '1.5px solid #EDE9FE' }}>
-              <h3 className="font-bold text-xs mb-3" style={{ color: '#1E1B4B' }}>Cara Kerja Auto-Lunas</h3>
-              <ol className="space-y-2 text-xs" style={{ color: '#6B7280' }}>
-                <li className="flex gap-2"><span className="flex-shrink-0 font-bold" style={{ color: '#5B52D1' }}>1.</span> Saat order dibuat di Smart Order, invoice otomatis dibuat di Kledo.</li>
-                <li className="flex gap-2"><span className="flex-shrink-0 font-bold" style={{ color: '#5B52D1' }}>2.</span> Sistem melihat metode pembayaran (Cash, Transfer BCA, Debit BRI EDC, dll).</li>
-                <li className="flex gap-2"><span className="flex-shrink-0 font-bold" style={{ color: '#5B52D1' }}>3.</span> Akun COA yang dipilih di sini dipakai untuk mencatat pembayaran di Kledo.</li>
-                <li className="flex gap-2"><span className="flex-shrink-0 font-bold" style={{ color: '#5B52D1' }}>4.</span> Invoice di Kledo berubah status dari <b>Outstanding</b> → <b>Lunas</b> secara otomatis.</li>
-              </ol>
             </div>
           </div>
         )}

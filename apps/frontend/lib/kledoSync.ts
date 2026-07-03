@@ -339,37 +339,79 @@ async function getSavedPaymentAccountId(bankKey: string): Promise<number | null>
   return null;
 }
 
-/** Cari finance account Kledo berdasarkan nama bank/kas (semua halaman) */
+/**
+ * Cari finance account Kledo untuk metode pembayaran tertentu.
+ *
+ * Urutan prioritas (semuanya otomatis, tanpa perlu konfigurasi):
+ * 1. Setting tersimpan (jika user pernah konfigurasi manual)
+ * 2. Keyword match di nama akun (dari BANK_KEYWORDS)
+ * 3. Kategori-based fallback: transfer/edc → akun kategori "Bank",
+ *    cash → akun kategori "Kas & Setara Kas" atau "Kas"
+ * 4. Last resort: akun pertama yang bukan tipe pendapatan/beban
+ */
 export async function getBankAccountId(
   baseUrl: string,
   token: string,
   bankKey: string,
 ): Promise<number | null> {
-  // Prioritas 1: gunakan ID yang sudah dikonfigurasi user
+  // Prioritas 1: setting tersimpan (opsional, tidak wajib)
   const savedId = await getSavedPaymentAccountId(bankKey);
   if (savedId) {
     console.log(`[kledo] getBankAccountId DARI SETTING key="${bankKey}" → id=${savedId}`);
     return savedId;
   }
 
-  // Fallback: cari by keyword di COA Kledo
   try {
     const accounts = await fetchAllKledoAccounts(baseUrl, token);
-    const keywords = BANK_KEYWORDS[bankKey.toLowerCase()] ?? [bankKey.toLowerCase()];
-    console.log(`[kledo] getBankAccountId key="${bankKey}" keywords=${JSON.stringify(keywords)} total_accounts=${accounts.length}`);
-    // Log nama akun agar mudah debug
-    console.log(`[kledo] COA: ${accounts.map((a: any) => `${a.id}:${a.name}`).join(' | ')}`);
+    const key = bankKey.toLowerCase();
+    const keywords = BANK_KEYWORDS[key] ?? [key];
+    console.log(`[kledo] getBankAccountId key="${bankKey}" total_accounts=${accounts.length}`);
 
+    // Prioritas 2: keyword match di nama akun
     for (const kw of keywords) {
-      const match = accounts.find((a: any) =>
-        (a.name ?? '').toLowerCase().includes(kw),
-      );
+      const match = accounts.find((a: any) => (a.name ?? '').toLowerCase().includes(kw));
       if (match) {
-        console.log(`[kledo] getBankAccountId MATCH keyword="${kw}" → id=${match.id} name="${match.name}"`);
+        console.log(`[kledo] getBankAccountId KEYWORD kw="${kw}" → id=${match.id} name="${match.name}"`);
         return Number(match.id);
       }
     }
-    console.warn(`[kledo] getBankAccountId TIDAK KETEMU untuk key="${bankKey}" — konfigurasikan di Integrasi > Kledo > Akun Pembayaran`);
+
+    // Prioritas 3: kategori-based fallback
+    // Tentukan apakah ini pembayaran bank (transfer/edc) atau kas (cash/tunai)
+    const isBankPayment = ['bca', 'bri', 'mandiri', 'bni', 'bca_edc', 'bri_edc', 'bni_edc', 'transfer', 'edc'].includes(key);
+    const isKasPayment  = ['kas', 'elektronik', 'bahan_bangunan', 'cash'].includes(key);
+
+    // Kata kunci kategori yang dicari di field category.name / type Kledo
+    const bankCatKw = ['bank'];
+    const kasCatKw  = ['kas', 'cash', 'setara kas'];
+
+    const catKeywords = isBankPayment ? bankCatKw : isKasPayment ? kasCatKw : [...bankCatKw, ...kasCatKw];
+
+    for (const ckw of catKeywords) {
+      const match = accounts.find((a: any) => {
+        const cat  = (a.category?.name ?? a.category ?? '').toLowerCase();
+        const type = (a.type ?? '').toLowerCase();
+        return cat.includes(ckw) || type.includes(ckw);
+      });
+      if (match) {
+        console.log(`[kledo] getBankAccountId KATEGORI ckw="${ckw}" → id=${match.id} name="${match.name}" cat="${match.category?.name ?? match.type}"`);
+        return Number(match.id);
+      }
+    }
+
+    // Prioritas 4: last resort — akun pertama yang bukan pendapatan/beban/piutang/hutang
+    const EXCLUDE_TYPES = ['pendapatan', 'beban', 'piutang', 'hutang', 'income', 'expense', 'receivable', 'payable', 'equity', 'modal'];
+    const lastResort = accounts.find((a: any) => {
+      const cat  = (a.category?.name ?? '').toLowerCase();
+      const type = (a.type ?? '').toLowerCase();
+      return !EXCLUDE_TYPES.some(ex => cat.includes(ex) || type.includes(ex));
+    });
+    if (lastResort) {
+      console.warn(`[kledo] getBankAccountId LAST RESORT → id=${lastResort.id} name="${lastResort.name}" (tidak ada match spesifik untuk key="${bankKey}")`);
+      return Number(lastResort.id);
+    }
+
+    console.error(`[kledo] getBankAccountId GAGAL TOTAL untuk key="${bankKey}" — Kledo tidak punya akun yang bisa dipakai`);
     return null;
   } catch (e: any) {
     console.error('[kledo] getBankAccountId error:', e.message);
