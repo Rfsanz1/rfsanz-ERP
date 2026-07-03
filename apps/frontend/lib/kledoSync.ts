@@ -289,19 +289,42 @@ async function fetchAllKledoAccounts(baseUrl: string, token: string): Promise<an
 
 /**
  * Baca ID akun pembayaran yang sudah dikonfigurasi user.
- * - Jika DATABASE_URL tersedia (local/dev): baca dari local_settings
- * - Jika BACKEND_URL tersedia (production): baca via backend API
+ * Urutan prioritas:
+ * 1. AppSetting table (backend/Prisma — sumber utama di production)
+ * 2. local_settings table (frontend local dev)
+ * 3. Backend API /api/kledo/payment-config (fallback via HTTP)
  */
 async function getSavedPaymentAccountId(bankKey: string): Promise<number | null> {
   const sk = `kledo_payment_${bankKey.toLowerCase()}_id`;
   try {
-    // Local DB path
     if (process.env.DATABASE_URL) {
+      const { getDb } = await import('./localDb');
+      const db = getDb();
+
+      // Cek AppSetting dulu (tempat backend/Prisma simpan konfigurasi)
+      try {
+        const r = await db.query(
+          `SELECT value FROM "AppSetting" WHERE key = $1 LIMIT 1`,
+          [sk],
+        );
+        const appVal = r.rows[0]?.value;
+        if (appVal && appVal !== '0') {
+          console.log(`[kledo] getSavedPaymentAccountId key="${bankKey}" → AppSetting id=${appVal}`);
+          return Number(appVal);
+        }
+      } catch { /* AppSetting tabel belum ada → lanjut */ }
+
+      // Fallback: local_settings (dipakai di mode frontend-only)
       const { getLocalSetting, ensureTables } = await import('./localDb');
       await ensureTables();
       const val = await getLocalSetting(sk);
-      return val && val !== '0' ? Number(val) : null;
+      if (val && val !== '0') {
+        console.log(`[kledo] getSavedPaymentAccountId key="${bankKey}" → local_settings id=${val}`);
+        return Number(val);
+      }
+      return null;
     }
+
     // Backend API path — gunakan BACKEND yang sudah dinormalisasi (dengan https://)
     if (BACKEND) {
       const r = await fetch(`${BACKEND}/api/kledo/payment-config`, {
