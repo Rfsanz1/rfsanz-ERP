@@ -17,7 +17,7 @@ import { getKledoCfg } from '@/lib/kledoSync';
 /** Keyword sama persis dengan kledoSync.ts */
 const BANK_KEYWORDS: Record<string, string[]> = {
   bca:            ['bca giro', 'giro bca', 'bank bca', 'bca tabungan', 'bca'],
-  bri:            ['bri edc', 'edc bri', 'bank bri', 'bri tabungan', 'bri'],
+  bri:            ['bri cv', 'bri giro', 'giro bri', 'bank bri', 'bri tabungan', 'bri'],
   mandiri:        ['bank mandiri', 'mandiri tabungan', 'mandiri giro', 'mandiri'],
   bni:            ['bank bni', 'bni tabungan', 'bni giro', 'bni'],
   bca_edc:        ['bca edc', 'edc bca', 'bca'],
