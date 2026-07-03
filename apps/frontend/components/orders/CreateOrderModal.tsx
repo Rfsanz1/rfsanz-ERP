@@ -299,6 +299,10 @@ export default function CreateOrderModal({
         /* Backend versi lama yang memang kembalikan { kledo } */
         if (kledoResult?.ok) {
           setKledoStatus('ok');
+          // Cek apakah auto-lunas berhasil — tampilkan warning jika tidak
+          if (!kledoResult?.paid && kledoResult?.paidError) {
+            setError(`Invoice masuk Kledo ✓ — Lunas GAGAL: ${kledoResult.paidError}. Tandai manual di Kledo atau cek konfigurasi akun di Integrasi > Kledo.`);
+          }
           onSuccess();
         } else {
           setSavedOrderId(orderId);

@@ -214,8 +214,16 @@ export default function NewInvoicePage() {
       // Kledo status
       const kledo = data.kledo;
       if (kledo?.ok) {
-        setStepKledo('ok');
-        setKledoMsg(kledo.ref ? `Ref: ${kledo.ref}` : `ID: ${kledo.invoiceId}`);
+        // Invoice berhasil masuk Kledo — cek juga status lunas
+        if (!kledo?.paid && kledo?.paidError) {
+          setStepKledo('error');
+          const ref = kledo.ref ? `Ref: ${kledo.ref}` : `ID: ${kledo.invoiceId}`;
+          setKledoMsg(`Invoice masuk (${ref}) — Auto-lunas GAGAL: ${kledo.paidError}`);
+        } else {
+          setStepKledo('ok');
+          const ref = kledo.ref ? `Ref: ${kledo.ref}` : `ID: ${kledo.invoiceId}`;
+          setKledoMsg(kledo.paid ? `${ref} ✓ Lunas` : ref);
+        }
       } else {
         setStepKledo('error');
         setKledoMsg(kledo?.error ?? 'Gagal push ke Kledo');

@@ -198,8 +198,16 @@ export default function SmartOrderPage() {
       };
       const res = await api.post('/sales/orders', payload);
       const kledoResult = (res.data as any)?.kledo;
-      setKledoStatus(kledoResult?.ok ? 'ok' : 'error');
       const soNum = res.data?.data?.soNumber ?? res.data?.soNumber ?? '';
+      if (!kledoResult?.ok) {
+        setKledoStatus('error');
+      } else if (!kledoResult?.paid && kledoResult?.paidError) {
+        // Invoice masuk Kledo tapi lunas gagal
+        setKledoStatus('warn' as any);
+        setError(`Invoice masuk Kledo ✓ — Auto-lunas GAGAL: ${kledoResult.paidError}`);
+      } else {
+        setKledoStatus('ok');
+      }
       setSuccess(`Order ${soNum} berhasil dibuat!`);
       setTimeout(() => router.push('/sales/orders'), 2000);
     } catch (e: any) {
