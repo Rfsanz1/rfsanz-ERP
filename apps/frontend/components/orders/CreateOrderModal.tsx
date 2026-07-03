@@ -260,6 +260,39 @@ export default function CreateOrderModal({
       }
     };
 
+    /* Helper: kirim foto bukti transfer ke WA grup payment + konsumen via Fonnte */
+    const sendWaBuktiIfAvailable = async (soNumber: string | null | undefined) => {
+      const transferEntries = pembayaranList.filter(p => p.metode === 'transfer' && p.buktiTransfer);
+      if (transferEntries.length === 0) return;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('gm_auth_token') ?? '' : '';
+      for (const entry of transferEntries) {
+        if (!entry.buktiTransfer) continue;
+        try {
+          const fd = new FormData();
+          fd.append('file', entry.buktiTransfer, entry.buktiTransfer.name);
+          fd.append('soNumber', soNumber ?? '-');
+          fd.append('namaCustomer', namaCustomer);
+          fd.append('noHp', noHp ?? '');
+          fd.append('totalHarga', String(grandTotal));
+          fd.append('bankPilihan', entry.bankPilihan ?? '');
+          fd.append('salesName', salesName ?? '');
+          const r = await fetch('/api/wa/send-bukti', {
+            method: 'POST',
+            body: fd,
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const d = await r.json().catch(() => ({}));
+          if (d.ok) {
+            console.log('[bukti-wa] Foto bukti transfer terkirim ke WA');
+          } else {
+            console.warn('[bukti-wa] Gagal kirim WA:', d.error ?? d.results);
+          }
+        } catch (e: any) {
+          console.warn('[bukti-wa] Exception:', e.message);
+        }
+      }
+    };
+
     /* ── RETRY MODE: order sudah tersimpan lokal, cukup kirim ulang ke Kledo ── */
     if (savedOrderId !== null) {
       try {
@@ -269,6 +302,8 @@ export default function CreateOrderModal({
           setKledoStatus('ok');
           // Upload bukti transfer jika retry berhasil dan ada invoiceId
           uploadBuktiIfAvailable(kledoResult?.invoiceId).catch(() => {});
+          // Kirim foto bukti ke WA (soNumber tidak tersedia saat retry — pakai orderId)
+          sendWaBuktiIfAvailable(`ORD-${savedOrderId}`).catch(() => {});
           setTimeout(onSuccess, 800);
         } else {
           setKledoStatus('error');
@@ -328,11 +363,15 @@ export default function CreateOrderModal({
       const orderId = (res.data as any)?.id ?? (res.data as any)?.data?.id ?? null;
       const kledoResult = (res.data as any)?.kledo;
 
+      const resSoNumber: string | null =
+        (res.data as any)?.soNumber ?? (res.data as any)?.data?.soNumber ?? null;
+
       if (kledoResult !== undefined) {
         /* Backend versi lama yang memang kembalikan { kledo } */
         if (kledoResult?.ok) {
           setKledoStatus('ok');
           uploadBuktiIfAvailable(kledoResult?.invoiceId).catch(() => {});
+          sendWaBuktiIfAvailable(resSoNumber).catch(() => {});
           // Cek apakah auto-lunas berhasil — tampilkan warning jika tidak
           if (!kledoResult?.paid && kledoResult?.paidError) {
             setError(`Invoice masuk Kledo ✓ — Lunas GAGAL: ${kledoResult.paidError}. Tandai manual di Kledo atau cek konfigurasi akun di Integrasi > Kledo.`);
@@ -350,6 +389,7 @@ export default function CreateOrderModal({
         setKledoStatus('ok');
         const asyncInvoiceId = (res.data as any)?.data?.kledoInvoiceId ?? (res.data as any)?.kledoInvoiceId;
         uploadBuktiIfAvailable(asyncInvoiceId).catch(() => {});
+        sendWaBuktiIfAvailable(resSoNumber).catch(() => {});
         onSuccess();
       }
     } catch (e: any) {
