@@ -7,6 +7,7 @@ import {
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
   CreditCard, Banknote, Smartphone, Wallet, Copy, Check, ChevronDown,
   ImagePlus,
+  Camera,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { api } from '../../lib/api';
@@ -894,41 +895,79 @@ export default function CreateOrderModal({
                                     </div>
                                   </div>
                                 ) : (
-                                  /* Tombol pilih gambar */
-                                  <label
-                                    className="flex flex-col items-center justify-center gap-2 py-4 rounded-xl cursor-pointer transition-all active:scale-[.98]"
-                                    style={{
-                                      border: `2px dashed var(--border)`,
-                                      background: 'var(--surface-sunken)',
-                                    }}
-                                    onMouseEnter={e => {
-                                      (e.currentTarget as HTMLElement).style.borderColor = COLOR;
-                                      (e.currentTarget as HTMLElement).style.background = `${COLOR}08`;
-                                    }}
-                                    onMouseLeave={e => {
-                                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
-                                      (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)';
-                                    }}>
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={e => {
-                                        const f = e.target.files?.[0] ?? null;
-                                        if (entry.buktiPreviewUrl) URL.revokeObjectURL(entry.buktiPreviewUrl);
-                                        const previewUrl = f ? URL.createObjectURL(f) : null;
-                                        updateEntry({ buktiTransfer: f, buktiPreviewUrl: previewUrl });
-                                        e.target.value = '';
+                                  /* Tombol pilih / ambil gambar */
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {/* Pilih dari galeri */}
+                                    <label
+                                      className="flex flex-col items-center justify-center gap-2 py-4 rounded-xl cursor-pointer transition-all active:scale-[.98]"
+                                      style={{
+                                        border: `2px dashed var(--border)`,
+                                        background: 'var(--surface-sunken)',
                                       }}
-                                    />
-                                    <ImagePlus className="h-5 w-5" style={{ color: 'var(--text-muted)' }} />
-                                    <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>
-                                      Pilih foto bukti transfer
-                                    </span>
-                                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                      onMouseEnter={e => {
+                                        (e.currentTarget as HTMLElement).style.borderColor = COLOR;
+                                        (e.currentTarget as HTMLElement).style.background = `${COLOR}08`;
+                                      }}
+                                      onMouseLeave={e => {
+                                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+                                        (e.currentTarget as HTMLElement).style.background = 'var(--surface-sunken)';
+                                      }}>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={e => {
+                                          const f = e.target.files?.[0] ?? null;
+                                          if (entry.buktiPreviewUrl) URL.revokeObjectURL(entry.buktiPreviewUrl);
+                                          const previewUrl = f ? URL.createObjectURL(f) : null;
+                                          updateEntry({ buktiTransfer: f, buktiPreviewUrl: previewUrl });
+                                          e.target.value = '';
+                                        }}
+                                      />
+                                      <ImagePlus className="h-5 w-5" style={{ color: 'var(--text-muted)' }} />
+                                      <span className="text-[11px] font-semibold text-center" style={{ color: 'var(--text-muted)' }}>
+                                        Pilih dari Galeri
+                                      </span>
+                                    </label>
+
+                                    {/* Ambil foto langsung */}
+                                    <label
+                                      className="flex flex-col items-center justify-center gap-2 py-4 rounded-xl cursor-pointer transition-all active:scale-[.98]"
+                                      style={{
+                                        border: `2px dashed ${COLOR}60`,
+                                        background: `${COLOR}08`,
+                                      }}
+                                      onMouseEnter={e => {
+                                        (e.currentTarget as HTMLElement).style.borderColor = COLOR;
+                                        (e.currentTarget as HTMLElement).style.background = `${COLOR}18`;
+                                      }}
+                                      onMouseLeave={e => {
+                                        (e.currentTarget as HTMLElement).style.borderColor = `${COLOR}60`;
+                                        (e.currentTarget as HTMLElement).style.background = `${COLOR}08`;
+                                      }}>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        className="hidden"
+                                        onChange={e => {
+                                          const f = e.target.files?.[0] ?? null;
+                                          if (entry.buktiPreviewUrl) URL.revokeObjectURL(entry.buktiPreviewUrl);
+                                          const previewUrl = f ? URL.createObjectURL(f) : null;
+                                          updateEntry({ buktiTransfer: f, buktiPreviewUrl: previewUrl });
+                                          e.target.value = '';
+                                        }}
+                                      />
+                                      <Camera className="h-5 w-5" style={{ color: COLOR }} />
+                                      <span className="text-[11px] font-semibold text-center" style={{ color: COLOR }}>
+                                        Ambil Foto
+                                      </span>
+                                    </label>
+
+                                    <span className="col-span-2 text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>
                                       JPG, PNG, WEBP — maks. 10 MB
                                     </span>
-                                  </label>
+                                  </div>
                                 )}
                               </div>
                             </div>
