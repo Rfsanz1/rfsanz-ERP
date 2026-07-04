@@ -18,19 +18,23 @@ export default function AccountingSettingsPage() {
   const router    = useRouter();
   const COLOR     = ACCOUNTING_CONFIG.appColor;
 
-  const [kledoToken, setKledoToken]   = useState('');
-  const [showToken, setShowToken]     = useState(false);
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState(false);
-  const [testing, setTesting]         = useState(false);
-  const [status, setStatus]           = useState<'idle'|'ok'|'error'>('idle');
-  const [msg, setMsg]                 = useState('');
+  const [kledoToken, setKledoToken]         = useState('');
+  const [templateId, setTemplateId]         = useState('');
+  const [showToken, setShowToken]           = useState(false);
+  const [loading, setLoading]               = useState(true);
+  const [saving, setSaving]                 = useState(false);
+  const [testing, setTesting]               = useState(false);
+  const [status, setStatus]                 = useState<'idle'|'ok'|'error'>('idle');
+  const [msg, setMsg]                       = useState('');
 
   useEffect(() => {
-    axios.get('/api/local-settings?key=kledo_token')
-      .then(r => { if (r.data?.data?.value) setKledoToken(r.data.data.value); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      axios.get('/api/local-settings?key=kledo_token').catch(() => null),
+      axios.get('/api/local-settings?key=kledo_invoice_template_id').catch(() => null),
+    ]).then(([rToken, rTpl]) => {
+      if (rToken?.data?.data?.value) setKledoToken(rToken.data.data.value);
+      if (rTpl?.data?.data?.value)   setTemplateId(rTpl.data.data.value);
+    }).finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -38,11 +42,14 @@ export default function AccountingSettingsPage() {
     setSaving(true); setStatus('idle'); setMsg('');
     try {
       await axios.post('/api/local-settings', { key: 'kledo_token', value: kledoToken.trim() });
+      if (templateId.trim()) {
+        await axios.post('/api/local-settings', { key: 'kledo_invoice_template_id', value: templateId.trim() });
+      }
       setStatus('ok');
-      setMsg('Token berhasil disimpan — Kledo sync akan bekerja mulai sekarang.');
+      setMsg('Pengaturan berhasil disimpan — Kledo sync akan bekerja mulai sekarang.');
     } catch (e: any) {
       setStatus('error');
-      setMsg(e?.response?.data?.error ?? 'Gagal menyimpan token.');
+      setMsg(e?.response?.data?.error ?? 'Gagal menyimpan pengaturan.');
     } finally { setSaving(false); }
   };
 
@@ -103,6 +110,28 @@ export default function AccountingSettingsPage() {
                 {showToken ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>
+              Template Invoice Kledo <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opsional)</span>
+            </label>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 6px' }}>
+              Nomor template yang tampil di <strong>Kledo → Pengaturan → Template → Invoice</strong>.
+              Contoh: <code style={{ background: 'var(--surface-sunken)', padding: '1px 5px', borderRadius: 4 }}>1</code>, <code style={{ background: 'var(--surface-sunken)', padding: '1px 5px', borderRadius: 4 }}>2</code>, dst.
+              Kosongkan untuk pakai default Kledo.
+            </p>
+            <input
+              type="number"
+              min={1}
+              value={loading ? '' : templateId}
+              disabled={loading}
+              onChange={e => setTemplateId(e.target.value)}
+              placeholder="Contoh: 1"
+              style={{ ...inputStyle, width: 140 }}
+              onFocus={e => { e.target.style.borderColor = COLOR; }}
+              onBlur={e => { e.target.style.borderColor = 'var(--border)'; }}
+            />
           </div>
 
           {status !== 'idle' && (

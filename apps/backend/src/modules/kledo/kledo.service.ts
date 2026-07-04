@@ -8,8 +8,9 @@ const SPM_BRAND_PIC: Record<string, string> = {
   'HONDA': 'PT Sumber Makmur', 'SUZUKI': 'Dewi Lestari', 'KAWASAKI': 'Eko Prasetyo',
 };
 
-const DB_KEY_TOKEN   = 'kledo_token';
-const DB_KEY_BASEURL = 'kledo_base_url';
+const DB_KEY_TOKEN       = 'kledo_token';
+const DB_KEY_BASEURL     = 'kledo_base_url';
+const DB_KEY_TEMPLATE_ID = 'kledo_invoice_template_id';
 
 // ── In-memory cache untuk getProducts (cegah 429 rate limit) ─────────
 const _productsCache: { data: any; ts: number } = { data: null, ts: 0 };
@@ -636,6 +637,16 @@ export class KledoService {
         items: resolvedItems,
       };
       if (contactId && contactId > 0) payload.contact_id = contactId;
+
+      // fin_template_id: template invoice Kledo (opsional, dibaca dari setting DB)
+      try {
+        const tplRow = await this.prisma.appSetting.findUnique({ where: { key: DB_KEY_TEMPLATE_ID } });
+        const tplId = tplRow?.value ? Number(tplRow.value) : null;
+        if (tplId && !isNaN(tplId)) {
+          payload.fin_template_id = tplId;
+          this.logger.log(`[Kledo] Menggunakan template invoice ID: ${tplId}`);
+        }
+      } catch { /* skip jika DB tidak tersedia */ }
 
       this.logger.log(`[Kledo] Mengirim invoice — contact_id=${contactId}, items=${resolvedItems.length}`);
       this.logger.debug(`[Kledo] Payload: ${JSON.stringify(payload)}`);
