@@ -170,14 +170,27 @@ export default function CreateOrderModal({
   const totalDibayar  = pembayaranList.reduce((s, p) => s + (p.jumlah || 0), 0);
   const sisaBayar     = Math.max(0, grandTotal - totalDibayar);
 
-  /* Auto-fill jumlah pembayaran saat grandTotal berubah */
-  useEffect(() => {
-    setPembayaranList(prev => {
-      const totalManual = prev.filter(p => !p.autoFill).reduce((s, p) => s + p.jumlah, 0);
-      const sisa = Math.max(0, grandTotal - totalManual);
-      return prev.map(p => p.autoFill ? { ...p, jumlah: sisa } : p);
+  /* Bagi rata sisa (grandTotal - total manual) ke semua entri yang masih auto-fill */
+  const redistributeAuto = (list: PembayaranEntry[], total: number): PembayaranEntry[] => {
+    const totalManual = list.filter(p => !p.autoFill).reduce((s, p) => s + (p.jumlah || 0), 0);
+    const autoEntries = list.filter(p => p.autoFill);
+    if (autoEntries.length === 0) return list;
+    const sisa = Math.max(0, total - totalManual);
+    const share = Math.floor(sisa / autoEntries.length);
+    let seen = 0;
+    return list.map(p => {
+      if (!p.autoFill) return p;
+      seen++;
+      const isLast = seen === autoEntries.length;
+      return { ...p, jumlah: isLast ? sisa - share * (autoEntries.length - 1) : share };
     });
-  }, [grandTotal]);
+  };
+
+  /* Auto-fill jumlah pembayaran saat grandTotal atau jumlah pembayaran manual berubah */
+  useEffect(() => {
+    setPembayaranList(prev => redistributeAuto(prev, grandTotal));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grandTotal, pembayaranList.filter(p => !p.autoFill).map(p => p.jumlah).join(',')]);
 
   const handleCustomerSelect = (c: CustomerOption) => {
     setNamaCustomer(c.name);
@@ -721,7 +734,7 @@ export default function CreateOrderModal({
                 <div className="space-y-3">
                   {pembayaranList.map((entry, idx) => {
                     const updateEntry = (patch: Partial<PembayaranEntry>) =>
-                      setPembayaranList(prev => prev.map((p, i) => i === idx ? { ...p, ...patch } : p));
+                      setPembayaranList(prev => redistributeAuto(prev.map((p, i) => i === idx ? { ...p, ...patch } : p), grandTotal));
 
                     return (
                       <div key={entry.id} className="rounded-2xl p-4 space-y-3"
@@ -734,7 +747,7 @@ export default function CreateOrderModal({
                           </span>
                           {pembayaranList.length > 1 && (
                             <button type="button"
-                              onClick={() => setPembayaranList(prev => prev.filter((_, i) => i !== idx))}
+                              onClick={() => setPembayaranList(prev => redistributeAuto(prev.filter((_, i) => i !== idx), grandTotal))}
                               className="p-1 rounded-lg"
                               style={{ color: 'var(--danger)', background: 'rgba(239,68,68,.08)' }}>
                               <Trash2 className="h-3.5 w-3.5" />
@@ -1001,7 +1014,7 @@ export default function CreateOrderModal({
                             )}
                             {!entry.autoFill && (
                               <button type="button"
-                                onClick={() => updateEntry({ jumlah: grandTotal, autoFill: true })}
+                                onClick={() => updateEntry({ jumlah: 0, autoFill: true })}
                                 className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md transition-all active:scale-95"
                                 style={{ background: 'var(--surface-sunken)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
                                 Reset otomatis
@@ -1022,14 +1035,7 @@ export default function CreateOrderModal({
                   {/* Tambah metode pembayaran */}
                   <button type="button"
                     onClick={() => {
-                      const totalAuto   = pembayaranList.filter(p => p.autoFill).reduce((s, p) => s + p.jumlah, 0);
-                      const totalManual = pembayaranList.filter(p => !p.autoFill).reduce((s, p) => s + p.jumlah, 0);
-                      const sisa = Math.max(0, grandTotal - totalManual);
-                      const jumlahBaru = Math.round(sisa / 2);
-                      setPembayaranList(prev => [
-                        ...prev.map(p => p.autoFill ? { ...p, jumlah: Math.max(0, sisa - jumlahBaru) } : p),
-                        { ...newPembayaran(), jumlah: jumlahBaru, autoFill: false },
-                      ]);
+                      setPembayaranList(prev => redistributeAuto([...prev, newPembayaran()], grandTotal));
                     }}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[.98]"
                     style={{ border: `2px dashed ${COLOR}50`, color: COLOR, background: `${COLOR}08` }}>
