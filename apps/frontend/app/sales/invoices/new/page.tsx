@@ -98,7 +98,9 @@ export default function NewInvoicePage() {
   const [kledoMsg,  setKledoMsg]  = useState('');
   const [waMsg,     setWaMsg]     = useState('');
   const [invNumber, setInvNumber] = useState('');
+  const [invId,    setInvId]     = useState('');
   const [done, setDone]           = useState(false);
+  const [autoPrint, setAutoPrint] = useState(true);
 
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
   const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
@@ -210,6 +212,7 @@ export default function NewInvoicePage() {
 
       setStepSave('ok');
       setInvNumber(data.data?.invNumber ?? '');
+      setInvId(data.data?.id ?? '');
 
       // Kledo status
       const kledo = data.kledo;
@@ -248,6 +251,12 @@ export default function NewInvoicePage() {
       }
 
       setDone(true);
+
+      // Auto print: buka tab PDF dan trigger window.print() otomatis
+      if (autoPrint && data.data?.id) {
+        window.open(`/api/invoices/${data.data.id}/pdf?autoprint=1`, '_blank', 'noopener,noreferrer');
+      }
+
     } catch (e: any) {
       setStepSave('error');
       setError(e.message ?? 'Terjadi kesalahan.');
@@ -324,22 +333,32 @@ export default function NewInvoicePage() {
 
         {/* Tombol kembali ke list jika selesai */}
         {done && (
-          <div className="flex gap-3">
-            <button onClick={() => router.push('/sales/invoices')}
-              className="flex-1 py-3 rounded-xl text-sm font-semibold text-white"
-              style={{ background: `linear-gradient(135deg, ${C}, #0097A7)` }}>
-              Lihat Semua Invoice
-            </button>
-            <button onClick={() => {
-              setCustomerName(''); setCustomerId(''); setKledoContactId(''); setNoHp('');
-              setSalesName(user?.name ?? ''); setNotes(''); setDiskonTotal(0); setPajak(0); setOngkir(0);
-              setItems([emptyItem()]); setStepSave('idle'); setStepKledo('idle'); setStepWa('idle');
-              setDone(false); setError(''); setInvNumber('');
-            }}
-              className="flex-1 py-3 rounded-xl text-sm font-semibold"
-              style={{ border: `1.5px solid ${C}`, color: C, background: `${C}0A` }}>
-              Buat Invoice Baru
-            </button>
+          <div className="space-y-2">
+            <div className="flex gap-3">
+              <button onClick={() => router.push('/sales/invoices')}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white"
+                style={{ background: `linear-gradient(135deg, ${C}, #0097A7)` }}>
+                Lihat Semua Invoice
+              </button>
+              <button onClick={() => {
+                setCustomerName(''); setCustomerId(''); setKledoContactId(''); setNoHp('');
+                setSalesName(user?.name ?? ''); setNotes(''); setDiskonTotal(0); setPajak(0); setOngkir(0);
+                setItems([emptyItem()]); setStepSave('idle'); setStepKledo('idle'); setStepWa('idle');
+                setDone(false); setError(''); setInvNumber(''); setInvId('');
+              }}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold"
+                style={{ border: `1.5px solid ${C}`, color: C, background: `${C}0A` }}>
+                Buat Invoice Baru
+              </button>
+            </div>
+            {invId && (
+              <button
+                onClick={() => window.open(`/api/invoices/${invId}/pdf?autoprint=1`, '_blank', 'noopener,noreferrer')}
+                className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+                style={{ border: '1.5px solid #9CA3AF', color: '#6B7280', background: 'transparent' }}>
+                🖨️ Cetak Invoice
+              </button>
+            )}
           </div>
         )}
 
@@ -585,6 +604,23 @@ export default function NewInvoicePage() {
                 </p>
               </div>
             </div>
+
+            {/* ── Toggle Auto Print ── */}
+            <label className="flex items-center gap-3 cursor-pointer select-none rounded-2xl px-4 py-3"
+              style={{ background: `${C}08`, border: `1.5px solid ${C}22` }}>
+              <div className="relative flex-shrink-0" onClick={() => setAutoPrint(v => !v)}>
+                <div className="w-10 h-5 rounded-full transition-colors duration-200"
+                  style={{ background: autoPrint ? C : '#D1D5DB' }} />
+                <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
+                  style={{ transform: autoPrint ? 'translateX(20px)' : 'translateX(0)' }} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Auto Print setelah simpan</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Tab cetak akan terbuka otomatis begitu invoice tersimpan
+                </p>
+              </div>
+            </label>
 
             {/* ── Submit ── */}
             <button

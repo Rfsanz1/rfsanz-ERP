@@ -357,7 +357,18 @@ export class InvoiceService {
       td{padding:8px;border-bottom:1px solid #eee}
       .totals{text-align:right;margin-top:8px}
       .grand{font-size:17px;font-weight:bold;color:#7367F0}
-    </style></head><body>
+      @media print{body{padding:16px}}
+    </style>
+    <script>
+      window.onload = function() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('autoprint') === '1') {
+          window.print();
+          window.onafterprint = function() { window.close(); };
+        }
+      };
+    </script>
+    </head><body>
       <div class="top">
         <div><div class="inv-title">INVOICE</div><div style="font-size:16px;margin-top:4px">${inv.noInvoice}</div></div>
         <div style="text-align:right">
