@@ -761,105 +761,52 @@ export default function CreateOrderModal({
 
                         {/* Bank selector — jika Transfer (di atas Jumlah) */}
                         {entry.metode === 'transfer' && (() => {
-                          const isDropOpen = openBankDrop === entry.id;
-                          const selectedRek = REKENING.find(x => x.key === entry.bankPilihan);
                           return (
                             <div className="space-y-2">
                               <label className="block text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
-                                Bank Tujuan <span className="font-normal" style={{ color: 'var(--text-muted)' }}>— pilih untuk otomatis lunas di Kledo</span>
+                                Bank Tujuan
                               </label>
 
-                              {/* Trigger button */}
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  onClick={() => setOpenBankDrop(isDropOpen ? null : entry.id)}
-                                  className="w-full flex items-center justify-between rounded-xl px-4 py-3 transition-all active:scale-[.98]"
-                                  style={{
-                                    border: `1.5px solid ${entry.bankPilihan ? COLOR : isDropOpen ? COLOR : 'var(--border)'}`,
-                                    background: entry.bankPilihan ? `${COLOR}0D` : isDropOpen ? `${COLOR}08` : 'var(--surface)',
-                                    boxShadow: isDropOpen ? `0 0 0 3px ${COLOR}18` : 'none',
-                                  }}>
-                                  <span className="text-[13px] font-semibold" style={{ color: entry.bankPilihan ? COLOR : 'var(--text-muted)' }}>
-                                    {selectedRek ? `${selectedRek.bank}${selectedRek.sub ? ` (${selectedRek.sub})` : ''}` : '— Pilih Bank —'}
-                                  </span>
-                                  <ChevronDown
-                                    className="h-4 w-4 flex-shrink-0 transition-transform"
-                                    style={{
-                                      color: entry.bankPilihan ? COLOR : 'var(--text-muted)',
-                                      transform: isDropOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                    }} />
-                                </button>
-
-                                {/* Custom dropdown list */}
-                                {isDropOpen && (
-                                  <div
-                                    className="absolute left-0 right-0 z-50 mt-1 rounded-xl overflow-hidden"
-                                    style={{
-                                      border: `1.5px solid ${COLOR}40`,
-                                      background: 'var(--surface)',
-                                      boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
-                                    }}>
-                                    {REKENING.map((r, ri) => {
-                                      const isSelected = entry.bankPilihan === r.key;
-                                      return (
-                                        <button
-                                          key={r.key}
-                                          type="button"
-                                          onClick={() => {
-                                            updateEntry({ bankPilihan: isSelected ? null : r.key });
-                                            setOpenBankDrop(null);
-                                          }}
-                                          className="w-full flex items-center justify-between px-4 py-3 transition-all active:scale-[.99]"
-                                          style={{
-                                            background: isSelected ? `${COLOR}12` : 'transparent',
-                                            borderTop: ri > 0 ? '1px solid var(--border)' : 'none',
-                                          }}>
-                                          <div className="flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                              style={{ background: isSelected ? `${COLOR}20` : 'var(--surface-sunken)' }}>
-                                              <span className="text-[10px] font-black" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>
-                                                {r.bank.slice(0, 3)}
-                                              </span>
-                                            </div>
-                                            <div className="text-left">
-                                              <p className="text-[13px] font-semibold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-primary)' }}>
-                                                {r.bank}
-                                              </p>
-                                              {r.sub && <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{r.sub}</p>}
-                                            </div>
-                                          </div>
-                                          {isSelected && (
-                                            <Check className="h-4 w-4 flex-shrink-0" style={{ color: COLOR }} />
-                                          )}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+                              {/* Grid kartu bank */}
+                              <div className="grid grid-cols-2 gap-2">
+                                {REKENING.map(r => {
+                                  const isSelected = entry.bankPilihan === r.key;
+                                  const isCopied = copiedBank === r.bank && isSelected;
+                                  return (
+                                    <button
+                                      key={r.key}
+                                      type="button"
+                                      onClick={() => {
+                                        if (isSelected) {
+                                          updateEntry({ bankPilihan: null });
+                                        } else {
+                                          updateEntry({ bankPilihan: r.key });
+                                          copyRekening(r.bank, r.no);
+                                        }
+                                      }}
+                                      className="flex flex-col items-start gap-0.5 rounded-xl px-3 py-2.5 transition-all active:scale-[.97] text-left"
+                                      style={{
+                                        border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`,
+                                        background: isSelected ? `${COLOR}10` : 'var(--surface)',
+                                      }}>
+                                      <div className="flex items-center justify-between w-full">
+                                        <span className="text-[13px] font-black leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-primary)' }}>
+                                          {r.bank}
+                                        </span>
+                                        {isSelected && <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: COLOR }} />}
+                                      </div>
+                                      <span className="text-[11px] font-mono font-semibold tracking-wide" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>
+                                        {r.no}
+                                      </span>
+                                      {isSelected && (
+                                        <span className="text-[9px] font-semibold mt-0.5 flex items-center gap-1" style={{ color: '#10B981' }}>
+                                          {isCopied ? <><Check className="h-2.5 w-2.5" /> Tersalin!</> : <><Copy className="h-2.5 w-2.5" /> Tap lagi untuk salin</>}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
                               </div>
-
-                              {/* Info rekening setelah dipilih */}
-                              {entry.bankPilihan && (() => {
-                                const r = REKENING.find(x => x.key === entry.bankPilihan);
-                                const isCopied = copiedBank === r?.bank;
-                                return (
-                                  <div className="space-y-1.5">
-                                    <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
-                                      <CheckCircle2 className="h-3 w-3" /> Kledo otomatis <strong>LUNAS</strong> via <strong>{KLEDO_BANK[entry.bankPilihan] ?? entry.bankPilihan.toUpperCase()}</strong>
-                                    </p>
-                                    {r && (
-                                      <button type="button" onClick={() => copyRekening(r.bank, r.no)}
-                                        className="w-full flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all active:scale-[.98]"
-                                        style={{ background: isCopied ? `${COLOR}0D` : 'var(--surface-sunken)', border: `1.5px solid ${isCopied ? `${COLOR}60` : 'var(--border)'}` }}>
-                                        <span className="text-[11px] font-bold w-16 flex-shrink-0" style={{ color: COLOR }}>{r.bank}</span>
-                                        <span className="text-[12px] font-semibold flex-1 text-left" style={{ color: 'var(--text-primary)', letterSpacing: '.03em' }}>{r.no}</span>
-                                        {isCopied ? <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: COLOR }} /> : <Copy className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />}
-                                      </button>
-                                    )}
-                                  </div>
-                                );
-                              })()}
 
                               {/* Upload bukti transfer */}
                               <div className="space-y-1.5">
