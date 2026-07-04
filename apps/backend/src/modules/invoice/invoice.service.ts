@@ -348,16 +348,60 @@ export class InvoiceService {
 
   async getPdfHtml(id: string) {
     const { data: inv } = await this.findOne(id);
+    const fmt = (n: number) => `Rp ${Number(n ?? 0).toLocaleString('id-ID')}`;
+    const tgl = (d: any) => d ? new Date(d).toLocaleDateString('id-ID') : '-';
+    const sep = '='.repeat(62);
+    const line = '-'.repeat(62);
+
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-      body{font-family:Arial,sans-serif;padding:32px;color:#333;font-size:13px}
-      .top{display:flex;justify-content:space-between;margin-bottom:24px}
-      .inv-title{font-size:28px;font-weight:bold;color:#7367F0}
-      table{width:100%;border-collapse:collapse;margin:16px 0}
-      th{background:#7367F0;color:#fff;padding:8px;text-align:left;font-size:11px}
-      td{padding:8px;border-bottom:1px solid #eee}
-      .totals{text-align:right;margin-top:8px}
-      .grand{font-size:17px;font-weight:bold;color:#7367F0}
-      @media print{body{padding:16px}}
+      @page {
+        size: A4 portrait;
+        margin: 8mm 10mm 8mm 12mm;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 11pt;
+        color: #000;
+        background: #fff;
+        margin: 0;
+        padding: 0;
+      }
+      h1 { font-size: 16pt; margin: 0 0 2px 0; letter-spacing: 2px; }
+      .inv-no { font-size: 12pt; font-weight: bold; }
+      .status { font-size: 10pt; font-weight: bold; border: 1px solid #000; padding: 1px 6px; display: inline-block; }
+      .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+      .header-right { text-align: right; }
+      pre.sep { margin: 4px 0; font-size: 10pt; white-space: pre; }
+      table { width: 100%; border-collapse: collapse; margin: 4px 0; }
+      thead tr th {
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 3px 4px;
+        text-align: left;
+        font-size: 10pt;
+      }
+      tbody tr td {
+        padding: 3px 4px;
+        font-size: 10pt;
+        vertical-align: top;
+      }
+      tbody tr:last-child td { border-bottom: 1px solid #000; }
+      .col-no   { width: 6%; }
+      .col-nama { width: 44%; }
+      .col-qty  { width: 8%; text-align: right; }
+      .col-harga  { width: 20%; text-align: right; }
+      .col-sub  { width: 22%; text-align: right; }
+      .totals { margin-top: 4px; }
+      .totals table { width: 55%; margin-left: auto; }
+      .totals td { padding: 2px 4px; font-size: 10pt; }
+      .totals td:last-child { text-align: right; }
+      .total-grand td { font-weight: bold; font-size: 12pt; border-top: 1px solid #000; padding-top: 4px; }
+      .notes { margin-top: 8px; font-size: 10pt; }
+      .footer { margin-top: 20px; font-size: 9pt; display: flex; justify-content: flex-end; }
+      .ttd { text-align: center; width: 160px; }
+      .ttd .box { border-bottom: 1px solid #000; height: 60px; }
+      @media print { body { -webkit-print-color-adjust: exact; } }
     </style>
     <script>
       window.onload = function() {
@@ -369,26 +413,72 @@ export class InvoiceService {
       };
     </script>
     </head><body>
-      <div class="top">
-        <div><div class="inv-title">INVOICE</div><div style="font-size:16px;margin-top:4px">${inv.noInvoice}</div></div>
-        <div style="text-align:right">
-          <div>Tanggal: <strong>${new Date(inv.tanggal).toLocaleDateString('id-ID')}</strong></div>
-          <div>Jatuh Tempo: <strong>${inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('id-ID') : '-'}</strong></div>
-          <div style="margin-top:8px;padding:4px 10px;background:#${inv.status === 'paid' ? '4CAF50' : inv.status === 'overdue' ? 'F44336' : '7367F0'};color:#fff;border-radius:4px">${inv.status.toUpperCase()}</div>
+
+      <div class="header-row">
+        <div>
+          <h1>INVOICE</h1>
+          <div class="inv-no">${inv.noInvoice ?? '-'}</div>
+        </div>
+        <div class="header-right">
+          <div>Tanggal&nbsp;&nbsp;: <strong>${tgl(inv.tanggal)}</strong></div>
+          <div>Jatuh Tempo: <strong>${tgl(inv.dueDate)}</strong></div>
+          <div style="margin-top:4px">
+            <span class="status">${(inv.status ?? '').toUpperCase()}</span>
+          </div>
         </div>
       </div>
-      <div style="margin-bottom:16px"><strong>Kepada:</strong><br>${inv.customer?.name ?? '-'}</div>
-      <table><thead><tr><th>#</th><th>Produk</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead>
-      <tbody>${(inv.items ?? []).map((it: any, i: number) =>
-        `<tr><td>${i + 1}</td><td>${it.nama}</td><td>${it.qty}</td><td>Rp ${Number(it.harga).toLocaleString('id-ID')}</td><td>Rp ${Number(it.subtotal).toLocaleString('id-ID')}</td></tr>`
-      ).join('')}</tbody></table>
-      <div class="totals">
-        <div>Subtotal: Rp ${Number(inv.subtotal ?? 0).toLocaleString('id-ID')}</div>
-        <div>Diskon: Rp ${Number(inv.diskon ?? 0).toLocaleString('id-ID')}</div>
-        <div>Pajak: Rp ${Number(inv.pajak ?? 0).toLocaleString('id-ID')}</div>
-        <div class="grand">Grand Total: Rp ${Number(inv.grandTotal ?? 0).toLocaleString('id-ID')}</div>
+
+      <pre class="sep">${sep}</pre>
+
+      <div style="margin-bottom:6px;font-size:11pt">
+        <strong>Kepada :</strong> ${inv.customer?.name ?? '-'}<br>
+        ${inv.customer?.phone ? `<strong>No. HP&nbsp;&nbsp;:</strong> ${inv.customer.phone}` : ''}
+        ${inv.salesName ? `<br><strong>Sales&nbsp;&nbsp;&nbsp;:</strong> ${inv.salesName}` : ''}
       </div>
-      ${inv.notes ? `<div style="margin-top:24px;padding:12px;background:#f5f5f5;border-radius:6px;color:#666">${inv.notes}</div>` : ''}
+
+      <pre class="sep">${line}</pre>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="col-no">#</th>
+            <th class="col-nama">Produk</th>
+            <th class="col-qty">Qty</th>
+            <th class="col-harga">Harga Satuan</th>
+            <th class="col-sub">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(inv.items ?? []).map((it: any, i: number) => `
+          <tr>
+            <td class="col-no">${i + 1}</td>
+            <td class="col-nama">${it.nama}${it.unit ? ` (${it.unit})` : ''}</td>
+            <td class="col-qty">${it.qty}</td>
+            <td class="col-harga">${fmt(it.harga)}</td>
+            <td class="col-sub">${fmt(it.subtotal)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <table>
+          <tr><td>Subtotal</td><td>${fmt(inv.subtotal ?? 0)}</td></tr>
+          ${Number(inv.diskon ?? 0) > 0 ? `<tr><td>Diskon</td><td>- ${fmt(inv.diskon)}</td></tr>` : ''}
+          ${Number(inv.pajak ?? 0) > 0 ? `<tr><td>Pajak/PPN</td><td>${fmt(inv.pajak)}</td></tr>` : ''}
+          ${Number(inv.ongkir ?? 0) > 0 ? `<tr><td>Ongkos Kirim</td><td>${fmt(inv.ongkir)}</td></tr>` : ''}
+          <tr class="total-grand"><td>GRAND TOTAL</td><td>${fmt(inv.grandTotal ?? 0)}</td></tr>
+        </table>
+      </div>
+
+      ${inv.notes ? `<div class="notes"><strong>Catatan:</strong> ${inv.notes}</div>` : ''}
+
+      <div class="footer">
+        <div class="ttd">
+          <div class="box"></div>
+          <div style="margin-top:2px">( ________________ )</div>
+        </div>
+      </div>
+
     </body></html>`;
   }
 }
