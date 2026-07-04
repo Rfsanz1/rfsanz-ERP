@@ -947,31 +947,28 @@ export default function CreateOrderModal({
                             onFocus={focusColor} onBlur={blurColor} />
                         </div>
 
-                        {/* EDC selector — jika Debit */}
+                        {/* Bank selector — jika Debit */}
                         {entry.metode === 'debit' && (
                           <div className="space-y-2">
-                            <p className="text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>Mesin EDC</p>
-                            <div className="grid grid-cols-3 gap-2">
+                            <label className="block text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
+                              Bank Debit
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
                               {EDC_OPTIONS.map(edc => {
                                 const isSelected = entry.edcPilihan === edc.key;
                                 return (
                                   <button key={edc.key} type="button"
                                     onClick={() => updateEntry({ edcPilihan: isSelected ? null : edc.key })}
-                                    className="flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl text-center transition-all active:scale-95"
-                                    style={{ border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`, background: isSelected ? `${COLOR}15` : 'var(--surface)' }}>
-                                    <CreditCard className="h-3.5 w-3.5" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }} />
-                                    <span className="text-[11px] font-bold" style={{ color: isSelected ? COLOR : 'var(--text-secondary)' }}>{edc.bank}</span>
-                                    <span className="text-[9px]" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>EDC</span>
-                                    {isSelected && <span className="w-1 h-1 rounded-full" style={{ background: COLOR }} />}
+                                    className="flex items-center justify-between rounded-xl px-3 py-2.5 transition-all active:scale-[.97] text-left"
+                                    style={{ border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`, background: isSelected ? `${COLOR}10` : 'var(--surface)' }}>
+                                    <span className="text-[13px] font-black leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-primary)' }}>
+                                      {edc.bank}
+                                    </span>
+                                    {isSelected && <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: COLOR }} />}
                                   </button>
                                 );
                               })}
                             </div>
-                            {entry.edcPilihan && (
-                              <p className="text-[11px] font-medium flex items-center gap-1" style={{ color: '#10B981' }}>
-                                <CheckCircle2 className="h-3 w-3" /> Kledo otomatis <strong>LUNAS</strong> via <strong>{KLEDO_EDC[entry.edcPilihan] ?? entry.edcPilihan.toUpperCase()}</strong>
-                              </p>
-                            )}
                           </div>
                         )}
                       </div>
