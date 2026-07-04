@@ -47,6 +47,7 @@ const INTEGRATIONS: Integration[] = [
     fields: [
       { key: 'token', label: 'Token API', secret: true, placeholder: 'Paste token API Kledo…', hint: 'Login kledo.com → nama akun → Pengaturan → API → buat token' },
       { key: 'baseUrl', label: 'Base URL (opsional)', placeholder: 'https://api.kledo.com/api/v1' },
+      { key: 'templateId', label: 'Nomor Template Invoice', placeholder: 'Contoh: 1', hint: 'Kledo → Pengaturan → Template → Invoice — lihat urutan template yang aktif (1, 2, 3…). Kosongkan untuk pakai default Kledo.' },
     ],
   },
   {
@@ -215,7 +216,7 @@ function IntCard({
 ══════════════════════════════════════════════════════════════════════════ */
 function ConfigModal({
   intg, onClose, authToken, kledoConfig, kledoStatus, onKledoSaved, onOtherSaved,
-  fonnteConfig, onFonnteSaved,
+  fonnteConfig, onFonnteSaved, kledoTemplateId,
 }: {
   intg: Integration;
   onClose: () => void;
@@ -226,6 +227,7 @@ function ConfigModal({
   onOtherSaved: (id: string) => void;
   fonnteConfig: FonnteConfig;
   onFonnteSaved: () => void;
+  kledoTemplateId?: string;
 }) {
   const existingSaved = intg.id !== 'kledo' ? loadIntgConfig(intg.id) : {};
   // Pre-populate fonnte fields: prioritas DB → localStorage → defaultValue
@@ -239,6 +241,8 @@ function ConfigModal({
         templatePayment: (fonnteConfig?.templatePayment) || existingSaved.templatePayment || existingSaved.template_payment || DEFAULT_TEMPLATE_PAYMENT,
         templateKonsumen: (fonnteConfig?.templateKonsumen) || existingSaved.templateKonsumen || existingSaved.template_invoice || DEFAULT_TEMPLATE_KONSUMEN,
       }
+    : intg.id === 'kledo'
+    ? { templateId: kledoTemplateId ?? '' }
     : existingSaved;
   const [values, setValues] = useState<Record<string, string>>(initValues);
   const [show, setShow] = useState<Record<string, boolean>>({});
@@ -269,6 +273,18 @@ function ConfigModal({
         }
         const baseUrl = values['baseUrl']?.trim();
         saveIntgConfig('kledo', { token, ...(baseUrl ? { baseUrl } : {}) });
+
+        // Simpan template ID ke DB jika diisi
+        const templateId = (values['templateId'] ?? '').trim();
+        if (templateId) {
+          try {
+            await fetch('/api/local-settings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: 'kledo_invoice_template_id', value: templateId }),
+            });
+          } catch { /* ignore */ }
+        }
 
         let backendOk = false;
         try {
@@ -552,6 +568,7 @@ export default function ApiIntegrationPage() {
   const [kledoConfig, setKledoConfig] = useState<KledoConfig>(null);
   const [kledoStatus, setKledoStatus] = useState<KledoStatus>(null);
   const [fonnteConfig, setFonnteConfig] = useState<FonnteConfig>(null);
+  const [kledoTemplateId, setKledoTemplateId] = useState('');
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   const apiFetch = useCallback(
@@ -563,6 +580,9 @@ export default function ApiIntegrationPage() {
   const refreshKledo = useCallback(() => {
     apiFetch('/api/kledo/config').then(r => r.ok ? r.json() : null).then(d => d && setKledoConfig(d)).catch(() => {});
     fetch('/api/kledo/status').then(r => r.ok ? r.json() : null).then(d => d && setKledoStatus(d)).catch(() => {});
+    fetch('/api/local-settings?key=kledo_invoice_template_id').then(r => r.ok ? r.json() : null).then(d => {
+      if (d?.data?.value) setKledoTemplateId(d.data.value);
+    }).catch(() => {});
   }, [apiFetch]);
 
   const refreshFonnte = useCallback(() => {
@@ -639,6 +659,7 @@ export default function ApiIntegrationPage() {
           onOtherSaved={handleOtherSaved}
           fonnteConfig={fonnteConfig}
           onFonnteSaved={refreshFonnte}
+          kledoTemplateId={kledoTemplateId}
         />
       )}
     </OdooLayout>
