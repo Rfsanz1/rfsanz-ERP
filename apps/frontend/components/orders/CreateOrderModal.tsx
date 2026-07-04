@@ -944,29 +944,60 @@ export default function CreateOrderModal({
                         })()}
 
                         {/* Bank selector — jika Debit */}
-                        {entry.metode === 'debit' && (
-                          <div className="space-y-2">
-                            <label className="block text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
-                              Bank Debit
-                            </label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {EDC_OPTIONS.map(edc => {
-                                const isSelected = entry.edcPilihan === edc.key;
-                                return (
-                                  <button key={edc.key} type="button"
-                                    onClick={() => updateEntry({ edcPilihan: isSelected ? null : edc.key })}
-                                    className="flex items-center justify-between rounded-xl px-3 py-2.5 transition-all active:scale-[.97] text-left"
-                                    style={{ border: `2px solid ${isSelected ? COLOR : 'var(--border)'}`, background: isSelected ? `${COLOR}10` : 'var(--surface)' }}>
-                                    <span className="text-[13px] font-black leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-primary)' }}>
-                                      {edc.bank}
-                                    </span>
-                                    {isSelected && <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: COLOR }} />}
-                                  </button>
-                                );
-                              })}
+                        {entry.metode === 'debit' && (() => {
+                          const isDropOpen = openBankDrop === `edc-${entry.id}`;
+                          const selectedEdc = EDC_OPTIONS.find(x => x.key === entry.edcPilihan);
+                          return (
+                            <div className="space-y-2">
+                              <label className="block text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
+                                Bank Debit
+                              </label>
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenBankDrop(isDropOpen ? null : `edc-${entry.id}`)}
+                                  className="w-full flex items-center justify-between rounded-xl px-4 py-3 transition-all active:scale-[.98]"
+                                  style={{
+                                    border: `1.5px solid ${entry.edcPilihan ? COLOR : isDropOpen ? COLOR : 'var(--border)'}`,
+                                    background: entry.edcPilihan ? `${COLOR}0D` : isDropOpen ? `${COLOR}08` : 'var(--surface)',
+                                    boxShadow: isDropOpen ? `0 0 0 3px ${COLOR}18` : 'none',
+                                  }}>
+                                  <span className="text-[13px] font-semibold" style={{ color: entry.edcPilihan ? COLOR : 'var(--text-muted)' }}>
+                                    {selectedEdc ? selectedEdc.bank : '— Pilih Bank —'}
+                                  </span>
+                                  <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform"
+                                    style={{ color: entry.edcPilihan ? COLOR : 'var(--text-muted)', transform: isDropOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                                </button>
+
+                                {isDropOpen && (
+                                  <div className="absolute left-0 right-0 z-50 mt-1 rounded-xl overflow-hidden"
+                                    style={{ border: `1.5px solid ${COLOR}40`, background: 'var(--surface)', boxShadow: '0 8px 24px rgba(0,0,0,0.14)' }}>
+                                    {EDC_OPTIONS.map((edc, ri) => {
+                                      const isSelected = entry.edcPilihan === edc.key;
+                                      return (
+                                        <button key={edc.key} type="button"
+                                          onClick={() => { updateEntry({ edcPilihan: isSelected ? null : edc.key }); setOpenBankDrop(null); }}
+                                          className="w-full flex items-center justify-between px-4 py-3 transition-all active:scale-[.99]"
+                                          style={{ background: isSelected ? `${COLOR}12` : 'transparent', borderTop: ri > 0 ? '1px solid var(--border)' : 'none' }}>
+                                          <div className="flex items-center gap-2.5">
+                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                              style={{ background: isSelected ? `${COLOR}20` : 'var(--surface-sunken)' }}>
+                                              <span className="text-[10px] font-black" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>
+                                                {edc.bank.slice(0, 3)}
+                                              </span>
+                                            </div>
+                                            <p className="text-[13px] font-semibold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-primary)' }}>{edc.bank}</p>
+                                          </div>
+                                          {isSelected && <Check className="h-4 w-4 flex-shrink-0" style={{ color: COLOR }} />}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {/* Jumlah — selalu di bawah bank selector */}
                         <div>
