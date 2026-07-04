@@ -14,6 +14,7 @@ import { api } from '../../lib/api';
 import CustomerSearchDropdown, { type CustomerOption } from '../ui/CustomerSearchDropdown';
 import ProductSearchDropdown, { type ProductOption } from '../ui/ProductSearchDropdown';
 import SalesDropdown from '../ui/SalesDropdown';
+import { BankLogo } from '../ui/BankLogo';
 
 const COLOR = '#00ACC1';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -798,12 +799,7 @@ export default function CreateOrderModal({
                                           className="w-full flex items-center justify-between px-4 py-3 transition-all active:scale-[.99]"
                                           style={{ background: isSelected ? `${COLOR}12` : 'transparent', borderTop: ri > 0 ? '1px solid var(--border)' : 'none' }}>
                                           <div className="flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                              style={{ background: isSelected ? `${COLOR}20` : 'var(--surface-sunken)' }}>
-                                              <span className="text-[10px] font-black" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>
-                                                {r.bank.slice(0, 3)}
-                                              </span>
-                                            </div>
+                                            <BankLogo bank={r.bank} size={32} />
                                             <div className="text-left">
                                               <p className="text-[13px] font-semibold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-primary)' }}>{r.bank}</p>
                                               <p className="text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>{r.no}</p>
@@ -980,12 +976,7 @@ export default function CreateOrderModal({
                                           className="w-full flex items-center justify-between px-4 py-3 transition-all active:scale-[.99]"
                                           style={{ background: isSelected ? `${COLOR}12` : 'transparent', borderTop: ri > 0 ? '1px solid var(--border)' : 'none' }}>
                                           <div className="flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                              style={{ background: isSelected ? `${COLOR}20` : 'var(--surface-sunken)' }}>
-                                              <span className="text-[10px] font-black" style={{ color: isSelected ? COLOR : 'var(--text-muted)' }}>
-                                                {edc.bank.slice(0, 3)}
-                                              </span>
-                                            </div>
+                                            <BankLogo bank={edc.bank} size={32} />
                                             <p className="text-[13px] font-semibold leading-tight" style={{ color: isSelected ? COLOR : 'var(--text-primary)' }}>{edc.bank}</p>
                                           </div>
                                           {isSelected && <Check className="h-4 w-4 flex-shrink-0" style={{ color: COLOR }} />}
