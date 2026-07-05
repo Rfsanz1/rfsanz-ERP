@@ -6,12 +6,13 @@ import { useAuthStore } from '../../../../lib/store/useAuthStore';
 import AppShell from '../../../../components/layout/AppShell';
 import {
   ArrowLeft, Plus, Trash2, Tag, Percent, Truck,
-  Link2, CheckCircle2, AlertCircle, Package, MessageSquare, Send,
+  Link2, CheckCircle2, AlertCircle, Package, MessageSquare, Send, Printer,
 } from 'lucide-react';
 import CustomerSearchDropdown, { type CustomerOption } from '../../../../components/ui/CustomerSearchDropdown';
 import ProductSearchDropdown, { type ProductOption } from '../../../../components/ui/ProductSearchDropdown';
 import SalesDropdown from '../../../../components/ui/SalesDropdown';
 import { api } from '@/lib/api';
+import { printDocument, buildInvoiceHtml, buildSuratJalanHtml } from '../../../../lib/printService';
 
 const C = '#00ACC1';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -101,6 +102,8 @@ export default function NewInvoicePage() {
   const [invId,    setInvId]     = useState('');
   const [done, setDone]           = useState(false);
   const [autoPrint, setAutoPrint] = useState(true);
+  const [printing, setPrinting]   = useState<'invoice' | 'sj' | null>(null);
+  const [printMsg, setPrintMsg]   = useState('');
 
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
   const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
@@ -345,18 +348,90 @@ export default function NewInvoicePage() {
                 setSalesName(user?.name ?? ''); setNotes(''); setDiskonTotal(0); setPajak(0); setOngkir(0);
                 setItems([emptyItem()]); setStepSave('idle'); setStepKledo('idle'); setStepWa('idle');
                 setDone(false); setError(''); setInvNumber(''); setInvId('');
+                setPrinting(null); setPrintMsg('');
               }}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold"
                 style={{ border: `1.5px solid ${C}`, color: C, background: `${C}0A` }}>
                 Buat Invoice Baru
               </button>
             </div>
+
+            {/* Tombol cetak ke printer CUPS */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                disabled={!!printing}
+                onClick={async () => {
+                  setPrinting('invoice'); setPrintMsg('');
+                  const html = buildInvoiceHtml({
+                    noInvoice: invNumber,
+                    tanggal,
+                    dueDate,
+                    customerName,
+                    salesName,
+                    items: items.map(it => ({ nama: it.nama, qty: it.qty, harga: it.harga, diskonItem: it.diskonItem, subtotal: it.subtotal, unit: it.unit })),
+                    diskonTotal,
+                    pajak,
+                    ongkir,
+                    grandTotal,
+                    metodePembayaran,
+                    notes,
+                  });
+                  const res = await printDocument('invoice', html, `Invoice ${invNumber}`);
+                  setPrintMsg(res.ok ? `✓ Terkirim ke ${res.printer}` : `✗ ${res.message}`);
+                  setPrinting(null);
+                }}
+                className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition"
+                style={{ border: '1.5px solid #1E1B4B', color: '#1E1B4B', background: printing === 'invoice' ? '#F3F4F6' : 'white' }}>
+                <Printer className="h-4 w-4" />
+                {printing === 'invoice' ? 'Mencetak…' : 'Cetak Invoice'}
+              </button>
+
+              <button
+                disabled={!!printing}
+                onClick={async () => {
+                  setPrinting('sj'); setPrintMsg('');
+                  const noSJ = invNumber.replace('INV-', 'SJ-');
+                  const html = buildSuratJalanHtml({
+                    noSuratJalan: noSJ,
+                    tanggal,
+                    noInvoice: invNumber,
+                    customerName,
+                    items: items.map(it => ({ nama: it.nama, qty: it.qty, unit: it.unit })),
+                    pengirim: salesName || 'Admin',
+                  });
+                  const res = await printDocument('surat-jalan', html, `Surat Jalan ${noSJ}`);
+                  setPrintMsg(res.ok ? `✓ Terkirim ke ${res.printer}` : `✗ ${res.message}`);
+                  setPrinting(null);
+                }}
+                className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition"
+                style={{ border: '1.5px solid #059669', color: '#059669', background: printing === 'sj' ? '#F0FDF4' : 'white' }}>
+                <Printer className="h-4 w-4" />
+                {printing === 'sj' ? 'Mencetak…' : 'Cetak Surat Jalan'}
+              </button>
+            </div>
+
+            {printMsg && (
+              <div className="rounded-xl px-4 py-2.5 text-sm font-medium"
+                style={{
+                  background: printMsg.startsWith('✓') ? 'rgba(5,150,105,.06)' : 'rgba(239,68,68,.06)',
+                  border: printMsg.startsWith('✓') ? '1.5px solid rgba(5,150,105,.2)' : '1.5px solid rgba(239,68,68,.2)',
+                  color: printMsg.startsWith('✓') ? '#059669' : '#DC2626',
+                }}>
+                {printMsg}
+                {printMsg.startsWith('✗') && (
+                  <span className="text-xs ml-2 opacity-70">
+                    — Cek konfigurasi di <a href="/settings/print-gateway" className="underline">Settings → Print Gateway</a>
+                  </span>
+                )}
+              </div>
+            )}
+
             {invId && (
               <button
                 onClick={() => window.open(`/api/invoices/${invId}/pdf?autoprint=1`, '_blank', 'noopener,noreferrer')}
-                className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-                style={{ border: '1.5px solid #9CA3AF', color: '#6B7280', background: 'transparent' }}>
-                🖨️ Cetak Invoice
+                className="w-full py-2.5 rounded-xl text-xs font-medium flex items-center justify-center gap-2"
+                style={{ border: '1.5px solid #D1D5DB', color: '#9CA3AF', background: 'transparent' }}>
+                🖥️ Buka PDF di browser (cetak manual)
               </button>
             )}
           </div>

@@ -4,21 +4,22 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Building2, Users, Globe2, Hash, Mail, Smartphone,
-  HardDrive, Link2, FileSearch, ChevronRight, Wifi, Tags,
+  HardDrive, Link2, FileSearch, ChevronRight, Wifi, Tags, Printer,
 } from 'lucide-react';
 
 const MENU = [
-  { href: '/settings',                  label: 'Umum',             icon: Building2 },
-  { href: '/settings/users',            label: 'Users & Roles',    icon: Users },
-  { href: '/settings/companies',        label: 'Multi Perusahaan', icon: Globe2 },
-  { href: '/settings/document-numbers', label: 'Nomor Dokumen',    icon: Hash },
-  { href: '/settings/email-gateway',    label: 'Email Gateway',    icon: Mail },
-  { href: '/settings/wa-gateway',       label: 'WA Gateway',       icon: Smartphone },
-  { href: '/settings/api-integration',  label: 'API & Integrasi',  icon: Link2 },
-  { href: '/settings/connection',       label: 'Koneksi Server',   icon: Wifi },
-  { href: '/settings/keywords',         label: 'Deteksi Produk',   icon: Tags },
-  { href: '/settings/backup',           label: 'Backup & Restore', icon: HardDrive },
-  { href: '/settings/audit-log',        label: 'Audit Log',        icon: FileSearch },
+  { href: '/settings',                    label: 'Umum',             icon: Building2 },
+  { href: '/settings/users',              label: 'Users & Roles',    icon: Users },
+  { href: '/settings/companies',          label: 'Multi Perusahaan', icon: Globe2 },
+  { href: '/settings/document-numbers',   label: 'Nomor Dokumen',    icon: Hash },
+  { href: '/settings/email-gateway',      label: 'Email Gateway',    icon: Mail },
+  { href: '/settings/wa-gateway',         label: 'WA Gateway',       icon: Smartphone },
+  { href: '/settings/print-gateway',      label: 'Print Gateway',    icon: Printer },
+  { href: '/settings/api-integration',    label: 'API & Integrasi',  icon: Link2 },
+  { href: '/settings/connection',         label: 'Koneksi Server',   icon: Wifi },
+  { href: '/settings/keywords',           label: 'Deteksi Produk',   icon: Tags },
+  { href: '/settings/backup',             label: 'Backup & Restore', icon: HardDrive },
+  { href: '/settings/audit-log',          label: 'Audit Log',        icon: FileSearch },
 ];
 
 export default function SettingsLayoutInner({ children }: { children: React.ReactNode }) {
