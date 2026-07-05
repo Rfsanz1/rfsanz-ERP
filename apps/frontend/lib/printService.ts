@@ -1,18 +1,24 @@
 /**
  * printService.ts
- * Utility untuk kirim print job ke CUPS server via /api/print
+ * Utility untuk kirim print job ke printer via:
+ *   - Mode "agent": Print Agent (Node.js ringan di VM) → lebih mudah, tidak perlu expose CUPS
+ *   - Mode "cups":  CUPS langsung via IPP (perlu cupsctl --remote-any)
  */
 
 const STORAGE_KEY = 'erp_print_config';
 
 export interface PrintConfig {
-  cupsHost: string;
-  printerInvoice: string;
+  mode:              'agent' | 'cups';
+  agentUrl:          string;
+  cupsHost:          string;
+  printerInvoice:    string;
   printerSuratJalan: string;
 }
 
 export const DEFAULT_PRINT_CONFIG: PrintConfig = {
-  cupsHost:          '192.168.18.49:361',
+  mode:              'agent',
+  agentUrl:          'http://192.168.18.49:6631',
+  cupsHost:          '192.168.18.49:631',
   printerInvoice:    'EPSON_LX-310',
   printerSuratJalan: 'EPSON_L1250_Series',
 };
@@ -33,8 +39,8 @@ export function savePrintConfig(cfg: PrintConfig) {
 }
 
 export interface PrintResult {
-  ok: boolean;
-  message: string;
+  ok:       boolean;
+  message:  string;
   printer?: string;
 }
 
@@ -44,54 +50,90 @@ export async function printDocument(
   title?: string,
 ): Promise<PrintResult> {
   const cfg = getPrintConfig();
+
   try {
-    const res = await fetch('/api/print', {
-      method: 'POST',
-      headers: {
-        'Content-Type':       'application/json',
-        'x-cups-host':        cfg.cupsHost,
-        'x-printer-invoice':  cfg.printerInvoice,
-        'x-printer-sj':       cfg.printerSuratJalan,
-      },
-      body: JSON.stringify({ type, html, title }),
-    });
-    const data = await res.json();
-    if (!res.ok || data.error) return { ok: false, message: data.error ?? 'Gagal print' };
-    return { ok: true, message: data.message, printer: data.printer };
+    if (cfg.mode === 'agent') {
+      // ── Mode Agent: kirim ke Print Agent di VM ─────────────────────────
+      const res = await fetch('/api/print-agent', {
+        method: 'POST',
+        headers: {
+          'Content-Type':       'application/json',
+          'x-agent-url':        cfg.agentUrl,
+          'x-printer-invoice':  cfg.printerInvoice,
+          'x-printer-sj':       cfg.printerSuratJalan,
+        },
+        body: JSON.stringify({ type, html, title }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) return { ok: false, message: data.error ?? 'Gagal print via agent' };
+      return { ok: true, message: data.message, printer: data.printer };
+
+    } else {
+      // ── Mode CUPS langsung via IPP ──────────────────────────────────────
+      const res = await fetch('/api/print', {
+        method: 'POST',
+        headers: {
+          'Content-Type':       'application/json',
+          'x-cups-host':        cfg.cupsHost,
+          'x-printer-invoice':  cfg.printerInvoice,
+          'x-printer-sj':       cfg.printerSuratJalan,
+        },
+        body: JSON.stringify({ type, html, title }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) return { ok: false, message: data.error ?? 'Gagal print via CUPS' };
+      return { ok: true, message: data.message, printer: data.printer };
+    }
   } catch (e: any) {
     return { ok: false, message: e?.message ?? 'Tidak bisa terhubung ke print server' };
   }
 }
 
 export async function checkPrinterStatus(): Promise<{
-  cupsHost: string;
-  invoice: { name: string; online: boolean; error?: string };
-  suratJalan: { name: string; online: boolean; error?: string };
+  mode:        string;
+  online:      boolean;
+  agentUrl?:   string;
+  cupsHost?:   string;
+  printers?:   string[];
+  invoice?:    { name: string; online: boolean; error?: string };
+  suratJalan?: { name: string; online: boolean; error?: string };
+  error?:      string;
 }> {
   const cfg = getPrintConfig();
-  const params = new URLSearchParams({
-    host:    cfg.cupsHost,
-    invoice: cfg.printerInvoice,
-    sj:      cfg.printerSuratJalan,
-  });
-  const res = await fetch(`/api/print?${params}`);
-  return res.json();
+
+  if (cfg.mode === 'agent') {
+    const params = new URLSearchParams({ url: cfg.agentUrl });
+    const res = await fetch(`/api/print-agent?${params}`);
+    const data = await res.json();
+    return { mode: 'agent', agentUrl: cfg.agentUrl, ...data };
+  } else {
+    const params = new URLSearchParams({
+      host:    cfg.cupsHost,
+      invoice: cfg.printerInvoice,
+      sj:      cfg.printerSuratJalan,
+    });
+    const res  = await fetch(`/api/print?${params}`);
+    const data = await res.json();
+    return { mode: 'cups', cupsHost: cfg.cupsHost, online: data.invoice?.online || data.suratJalan?.online, ...data };
+  }
 }
 
+// ── HTML builders ──────────────────────────────────────────────────────────
+
 export function buildInvoiceHtml(invoice: {
-  noInvoice: string;
-  tanggal: string;
-  dueDate?: string;
-  customerName: string;
-  salesName?: string;
-  items: { nama: string; qty: number; harga: number; diskonItem?: number; subtotal: number; unit?: string }[];
-  diskonTotal?: number;
-  pajak?: number;
-  ongkir?: number;
-  grandTotal: number;
+  noInvoice:         string;
+  tanggal:           string;
+  dueDate?:          string;
+  customerName:      string;
+  salesName?:        string;
+  items:             { nama: string; qty: number; harga: number; diskonItem?: number; subtotal: number; unit?: string }[];
+  diskonTotal?:      number;
+  pajak?:            number;
+  ongkir?:           number;
+  grandTotal:        number;
   metodePembayaran?: string;
-  notes?: string;
-  companyName?: string;
+  notes?:            string;
+  companyName?:      string;
 }): string {
   const fmtRp = (v: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(v);
@@ -125,7 +167,6 @@ export function buildInvoiceHtml(invoice: {
       </td>
     </tr>
   </table>
-
   <table style="width:100%;margin-bottom:16px;">
     <tr>
       <td style="width:50%;vertical-align:top;">
@@ -138,7 +179,6 @@ export function buildInvoiceHtml(invoice: {
       </td>
     </tr>
   </table>
-
   <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
     <thead>
       <tr style="background:#1E1B4B;color:#fff;">
@@ -151,15 +191,14 @@ export function buildInvoiceHtml(invoice: {
     </thead>
     <tbody>${rows}</tbody>
   </table>
-
   <table style="width:100%;margin-bottom:16px;">
     <tr>
       <td style="width:60%;"></td>
       <td style="width:40%;">
         <table style="width:100%;border-collapse:collapse;">
-          ${invoice.diskonTotal ? `<tr><td style="padding:3px 8px;font-size:9pt;">Diskon</td><td style="padding:3px 8px;text-align:right;font-size:9pt;">${fmtRp(invoice.diskonTotal)}</td></tr>` : ''}
-          ${invoice.pajak ? `<tr><td style="padding:3px 8px;font-size:9pt;">Pajak</td><td style="padding:3px 8px;text-align:right;font-size:9pt;">${fmtRp(invoice.pajak)}</td></tr>` : ''}
-          ${invoice.ongkir ? `<tr><td style="padding:3px 8px;font-size:9pt;">Ongkos Kirim</td><td style="padding:3px 8px;text-align:right;font-size:9pt;">${fmtRp(invoice.ongkir)}</td></tr>` : ''}
+          ${invoice.diskonTotal ? `<tr><td style="padding:3px 8px;font-size:9pt;">Diskon</td><td style="padding:3px 8px;text-align:right;">${fmtRp(invoice.diskonTotal)}</td></tr>` : ''}
+          ${invoice.pajak       ? `<tr><td style="padding:3px 8px;font-size:9pt;">Pajak</td><td style="padding:3px 8px;text-align:right;">${fmtRp(invoice.pajak)}</td></tr>` : ''}
+          ${invoice.ongkir      ? `<tr><td style="padding:3px 8px;font-size:9pt;">Ongkos Kirim</td><td style="padding:3px 8px;text-align:right;">${fmtRp(invoice.ongkir)}</td></tr>` : ''}
           <tr style="background:#1E1B4B;color:#fff;">
             <td style="padding:6px 8px;font-weight:bold;">TOTAL</td>
             <td style="padding:6px 8px;text-align:right;font-weight:bold;font-size:12pt;">${fmtRp(invoice.grandTotal)}</td>
@@ -168,9 +207,7 @@ export function buildInvoiceHtml(invoice: {
       </td>
     </tr>
   </table>
-
   ${invoice.notes ? `<p style="font-size:9pt;color:#555;border-top:1px solid #eee;padding-top:8px;">Catatan: ${invoice.notes}</p>` : ''}
-
   <p style="font-size:8pt;color:#aaa;text-align:center;margin-top:24px;border-top:1px solid #eee;padding-top:8px;">
     Dicetak otomatis oleh Gentong Mas ERP
   </p>
@@ -178,17 +215,17 @@ export function buildInvoiceHtml(invoice: {
 }
 
 export function buildSuratJalanHtml(data: {
-  noSuratJalan: string;
-  tanggal: string;
-  noInvoice?: string;
-  customerName: string;
-  alamat?: string;
-  items: { nama: string; qty: number; unit?: string; keterangan?: string }[];
-  pengirim?: string;
-  penerima?: string;
-  supir?: string;
+  noSuratJalan:  string;
+  tanggal:       string;
+  noInvoice?:    string;
+  customerName:  string;
+  alamat?:       string;
+  items:         { nama: string; qty: number; unit?: string; keterangan?: string }[];
+  pengirim?:     string;
+  penerima?:     string;
+  supir?:        string;
   platKendaraan?: string;
-  companyName?: string;
+  companyName?:  string;
 }): string {
   const fmtDate = (s: string) => {
     try { return new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }); }
@@ -220,7 +257,6 @@ export function buildSuratJalanHtml(data: {
       </td>
     </tr>
   </table>
-
   <table style="width:100%;margin-bottom:16px;border:1px solid #ddd;border-collapse:collapse;">
     <tr>
       <td style="padding:6px 8px;border:1px solid #ddd;font-size:9pt;color:#888;width:20%;">Kepada</td>
@@ -235,7 +271,6 @@ export function buildSuratJalanHtml(data: {
       <td style="padding:6px 8px;border:1px solid #ddd;">${data.platKendaraan ?? '-'}</td>
     </tr>` : ''}
   </table>
-
   <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
     <thead>
       <tr style="background:#1E1B4B;color:#fff;">
@@ -248,7 +283,6 @@ export function buildSuratJalanHtml(data: {
     </thead>
     <tbody>${rows}</tbody>
   </table>
-
   <table style="width:100%;margin-top:32px;">
     <tr>
       <td style="width:33%;text-align:center;">
@@ -265,7 +299,6 @@ export function buildSuratJalanHtml(data: {
       </td>
     </tr>
   </table>
-
   <p style="font-size:8pt;color:#aaa;text-align:center;margin-top:24px;border-top:1px solid #eee;padding-top:8px;">
     Dicetak otomatis oleh Gentong Mas ERP
   </p>
