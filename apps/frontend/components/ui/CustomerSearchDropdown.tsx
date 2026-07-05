@@ -41,7 +41,7 @@ async function searchContacts(q: string): Promise<CustomerOption[]> {
         name:    c.name ?? '',
         phone:   c.phone ?? null,
         email:   c.email ?? null,
-        address: null,
+        address: c.address ?? null,
         source:  'kledo' as const,
       }));
       _searchCache.set(key, mapped);

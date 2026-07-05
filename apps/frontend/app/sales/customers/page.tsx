@@ -74,7 +74,7 @@ export default function CustomersPage() {
           phone: c.phone ?? '',
           email: c.email ?? '',
           city: '',
-          address: '',
+          address: c.address ?? '',
           kledoId: String(c.kledoId ?? ''),
           totalTransaction: 0,
           lastOrderDate: '',

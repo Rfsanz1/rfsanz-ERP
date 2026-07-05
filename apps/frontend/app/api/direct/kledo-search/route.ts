@@ -288,9 +288,10 @@ export async function GET(req: NextRequest) {
     const data = raw.map((c: any) => ({
       id:      `kledo-${c.id}`,
       kledoId: c.id,
-      name:    c.name  ?? '',
-      phone:   c.phone ?? '',
-      email:   c.email ?? '',
+      name:    c.name    ?? '',
+      phone:   c.phone   ?? '',
+      email:   c.email   ?? '',
+      address: c.address ?? '',
     }));
     return NextResponse.json({ success: true, data, total: data.length });
   } catch (e: any) {
