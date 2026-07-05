@@ -188,17 +188,29 @@ export async function findOrCreateKledoContact(
       const items = sd?.data?.data ?? sd?.data ?? [];
       const found = findInList(items);
       if (found) {
-        // Kontak sudah ada — kalau alamat diisi tapi kontak belum punya alamat, update.
+        // Kontak sudah ada — sinkronkan alamat terbaru dari order ini kalau berbeda
+        // (alamat pengiriman bisa berubah per order untuk kontak yang sama).
         if (alamat) {
           const existing = items.find((c: any) => Number(c.id) === found);
-          if (existing && !existing.address) {
+          const currentAddr = (existing?.address ?? '').trim();
+          if (existing && currentAddr !== alamat.trim()) {
             try {
-              await fetch(`${baseUrl}/finance/contacts/${found}`, {
+              const putRes = await fetch(`${baseUrl}/finance/contacts/${found}`, {
                 method: 'PUT',
                 headers,
-                body: JSON.stringify({ address: alamat }),
+                body: JSON.stringify({
+                  name: existing.name ?? namaCustomer,
+                  phone: existing.phone ?? noHp ?? null,
+                  address: alamat,
+                }),
               });
-            } catch {}
+              if (!putRes.ok) {
+                const errBody = await putRes.text().catch(() => '');
+                console.error(`[kledo] update alamat contact ${found} GAGAL: HTTP ${putRes.status} ${errBody}`);
+              }
+            } catch (e: any) {
+              console.error('[kledo] update alamat contact exception:', e.message);
+            }
           }
         }
         return found;

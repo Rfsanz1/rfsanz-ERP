@@ -267,18 +267,20 @@ export class KledoService {
           (phone && c.phone && c.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')),
       );
       if (found) {
-        // Kontak sudah ada — kalau alamat diisi tapi kontak belum punya alamat, update.
-        if (address && !found.address) {
+        // Kontak sudah ada — sinkronkan alamat terbaru dari order ini kalau berbeda
+        // (alamat pengiriman bisa berubah per order untuk kontak yang sama).
+        const currentAddr = (found.address ?? '').trim();
+        if (address && currentAddr !== address.trim()) {
           try {
             await firstValueFrom(
               this.http.put(
                 `${baseUrl}/finance/contacts/${found.id}`,
-                { address },
+                { name: found.name ?? name, phone: found.phone ?? phone ?? null, address },
                 { headers, timeout: TIMEOUT },
               ),
             );
-          } catch (e) {
-            this.logger.warn('Gagal update alamat contact Kledo: ' + e);
+          } catch (e: any) {
+            this.logger.warn(`Gagal update alamat contact Kledo id=${found.id}: ${e?.response?.data ? JSON.stringify(e.response.data) : e}`);
           }
         }
         return found.id;
