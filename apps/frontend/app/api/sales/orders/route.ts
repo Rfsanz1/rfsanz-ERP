@@ -156,6 +156,7 @@ export async function POST(req: NextRequest) {
         soNumber,
         salesName: salesName ?? null,
         noHp: noHp ?? null,
+        alamat: alamat ?? null,
         tanggal: tanggal ?? new Date().toISOString().slice(0, 10),
         catatan: catatan ?? undefined,
         contactId: kledoContactId ? Number(kledoContactId) : null,

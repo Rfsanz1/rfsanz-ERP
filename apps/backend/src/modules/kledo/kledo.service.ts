@@ -243,7 +243,7 @@ export class KledoService {
     }
   }
 
-  async findOrCreateContact(name: string, phone?: string): Promise<number> {
+  async findOrCreateContact(name: string, phone?: string, address?: string): Promise<number> {
     const token = await this.getToken();
     if (!token) return 0;
     const headers = await this.getHeaders();
@@ -266,7 +266,23 @@ export class KledoService {
           c.name?.toLowerCase() === name?.toLowerCase() ||
           (phone && c.phone && c.phone.replace(/\D/g, '') === phone.replace(/\D/g, '')),
       );
-      if (found) return found.id;
+      if (found) {
+        // Kontak sudah ada — kalau alamat diisi tapi kontak belum punya alamat, update.
+        if (address && !found.address) {
+          try {
+            await firstValueFrom(
+              this.http.put(
+                `${baseUrl}/finance/contacts/${found.id}`,
+                { address },
+                { headers, timeout: TIMEOUT },
+              ),
+            );
+          } catch (e) {
+            this.logger.warn('Gagal update alamat contact Kledo: ' + e);
+          }
+        }
+        return found.id;
+      }
     } catch (e) {
       this.logger.warn('Gagal cari contact Kledo: ' + e);
     }
@@ -276,7 +292,7 @@ export class KledoService {
       const createRes = await firstValueFrom(
         this.http.post(
           `${baseUrl}/finance/contacts`,
-          { name, phone: phone ?? null, type_id: 4, is_customer: 1 },
+          { name, phone: phone ?? null, address: address ?? null, type_id: 4, is_customer: 1 },
           { headers, timeout: TIMEOUT },
         ),
       );
@@ -566,7 +582,7 @@ export class KledoService {
   }
 
   async createInvoice(dto: {
-    namaCustomer: string; noHp?: string; memo?: string; orderId?: number | string;
+    namaCustomer: string; noHp?: string; alamat?: string; memo?: string; orderId?: number | string;
     noInvoice?: string; salesName?: string;
     items: Array<{ kledoProductId?: string | null; nama: string; qty: number; harga: number; unitId?: number }>;
     dueDays?: number;
@@ -582,7 +598,7 @@ export class KledoService {
     try {
       const headers = await this.getHeaders();
       const baseUrl = await this.getBaseUrl();
-      const contactId = await this.findOrCreateContact(dto.namaCustomer, dto.noHp);
+      const contactId = await this.findOrCreateContact(dto.namaCustomer, dto.noHp, dto.alamat);
       const today = new Date();
       const transDate = today.toISOString().split('T')[0];
       const dueDate = new Date(today.getTime() + (dto.dueDays ?? 30) * 86400000).toISOString().split('T')[0];

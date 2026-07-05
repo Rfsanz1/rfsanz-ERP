@@ -161,6 +161,7 @@ export async function findOrCreateKledoContact(
   token: string,
   namaCustomer: string,
   noHp?: string | null,
+  alamat?: string | null,
 ): Promise<number | null> {
   if (!namaCustomer) return null;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -186,7 +187,22 @@ export async function findOrCreateKledoContact(
       const sd    = await sr.json();
       const items = sd?.data?.data ?? sd?.data ?? [];
       const found = findInList(items);
-      if (found) return found;
+      if (found) {
+        // Kontak sudah ada — kalau alamat diisi tapi kontak belum punya alamat, update.
+        if (alamat) {
+          const existing = items.find((c: any) => Number(c.id) === found);
+          if (existing && !existing.address) {
+            try {
+              await fetch(`${baseUrl}/finance/contacts/${found}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({ address: alamat }),
+              });
+            } catch {}
+          }
+        }
+        return found;
+      }
     }
   } catch {}
 
@@ -194,6 +210,7 @@ export async function findOrCreateKledoContact(
   try {
     const body: any = { name: namaCustomer, type_id: 3 };
     if (noHp) body.phone = noHp;
+    if (alamat) body.address = alamat;
     const cr = await fetch(`${baseUrl}/finance/contacts`, {
       method: 'POST',
       headers,
@@ -491,6 +508,7 @@ interface KledoOrderInput {
   soNumber?: string;
   salesName?: string | null;
   noHp?: string | null;
+  alamat?: string | null;
   tanggal: string;
   dueDate?: string | null;
   catatan?: string;
@@ -534,6 +552,7 @@ export async function pushOrderToKledo(
         cfg.token,
         order.contactName,
         (order as any).noHp ?? null,
+        (order as any).alamat ?? null,
       );
     }
 
@@ -586,13 +605,15 @@ export async function pushOrderToKledo(
       items: kledoItems,
     };
     // ref_number tidak dikirim → Kledo auto-generate nomor INV/xxxxx
-    // Memo: nama sales + no HP saja
+    // Memo: nama sales + no HP + alamat pengiriman
     const memoSales = order.salesName ? `Sales: ${order.salesName}` : '';
     const memoHp    = order.noHp ? `HP: ${order.noHp}` : '';
-    const memo      = [memoSales, memoHp].filter(Boolean).join(' | ');
+    const memoAlamat = order.alamat ? `Alamat: ${order.alamat}` : '';
+    const memo      = [memoSales, memoHp, memoAlamat].filter(Boolean).join(' | ');
     if (memo)                   payload.memo    = memo;
-    // Catatan order → field "Pesan" di Kledo
-    if (order.catatan)          payload.message = order.catatan;
+    // Catatan order → field "Pesan" di Kledo (alamat disertakan juga di sini)
+    const messageParts = [order.catatan, order.alamat ? `Alamat: ${order.alamat}` : ''].filter(Boolean);
+    if (messageParts.length)    payload.message = messageParts.join('\n');
     if (resolvedContactId)      payload.contact_id   = resolvedContactId;
     else if (order.contactName) payload.contact_name = order.contactName;
     if (order.diskonTotal)  payload.discount     = order.diskonTotal;
