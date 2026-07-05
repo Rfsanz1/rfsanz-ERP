@@ -1,136 +1,99 @@
 #!/usr/bin/env node
+'use strict';
+
 /**
- * Gentong Mas ERP — Print Agent
- * Jalankan di VM Linux Mint untuk menerima print job dari ERP.
- *
- * Install & jalankan:
- *   node agent.js
- *
- * Atau sebagai service (auto-start):
- *   sudo node install-service.js
+ * Gentong Mas ERP — Print Agent v1.1
+ * Jalankan di VM Linux Mint:  node agent.js
+ * Install sebagai service:    sudo bash install-service.sh
  */
 
-const http = require('http');
-const { exec, execSync } = require('child_process');
-const os   = require('os');
+var http       = require('http');
+var exec       = require('child_process').exec;
+var execSync   = require('child_process').execSync;
+var os         = require('os');
+var fs         = require('fs');
+var path       = require('path');
 
-const PORT = process.env.AGENT_PORT || 6631;
+var PORT = Number(process.env.AGENT_PORT) || 6631;
+var TMP  = os.tmpdir();
 
-// ── Daftar printer (sesuaikan jika perlu) ──────────────────────────────────
-const PRINTERS = {
-  'EPSON_LX-310':      'EPSON_LX-310',
-  'EPSON_L1250_Series':'EPSON_L1250_Series',
-};
-
-// ── Helper: baca body JSON ─────────────────────────────────────────────────
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', chunk => { data += chunk; if (data.length > 5_000_000) reject(new Error('Body terlalu besar')); });
-    req.on('end', () => {
-      try { resolve(JSON.parse(data)); } catch { reject(new Error('Body bukan JSON valid')); }
-    });
-    req.on('error', reject);
-  });
+// ── Cek Node.js versi minimum ─────────────────────────────────────────────
+var nodeVer = process.versions.node.split('.').map(Number);
+if (nodeVer[0] < 12) {
+  console.error('ERROR: Node.js minimal versi 12. Jalankan: sudo apt install nodejs');
+  process.exit(1);
 }
 
-// ── Helper: kirim response JSON ────────────────────────────────────────────
-function json(res, status, body) {
-  const payload = JSON.stringify(body);
+// ── Helper ────────────────────────────────────────────────────────────────
+function readBody(req, cb) {
+  var chunks = [];
+  req.on('data', function(c) { chunks.push(c); });
+  req.on('end',  function()  {
+    try { cb(null, JSON.parse(Buffer.concat(chunks).toString('utf8'))); }
+    catch(e) { cb(new Error('Body bukan JSON valid')); }
+  });
+  req.on('error', cb);
+}
+
+function sendJson(res, status, obj) {
+  var body = JSON.stringify(obj);
   res.writeHead(status, {
     'Content-Type':                'application/json',
-    'Content-Length':              Buffer.byteLength(payload),
+    'Content-Length':              Buffer.byteLength(body),
     'Access-Control-Allow-Origin': '*',
   });
-  res.end(payload);
+  res.end(body);
 }
 
-// ── Cek apakah printer tersedia di CUPS ───────────────────────────────────
-function printerExists(name) {
+function getPrinterList() {
   try {
-    const out = execSync('lpstat -p 2>/dev/null || true').toString();
-    return out.includes(name);
-  } catch { return false; }
+    var out = execSync('lpstat -p 2>/dev/null', { timeout: 3000 }).toString();
+    var list = [];
+    out.split('\n').forEach(function(line) {
+      var m = line.match(/^printer\s+(\S+)/);
+      if (m) list.push(m[1]);
+    });
+    return list;
+  } catch(e) {
+    return [];
+  }
 }
 
-// ── Kirim print job via `lp` ──────────────────────────────────────────────
-function printHtml(printerName, html, title, callback) {
-  const fs    = require('fs');
-  const path  = require('path');
-  const tmpFile = path.join(os.tmpdir(), `erp_print_${Date.now()}.html`);
+// ── Kirim print via lp ────────────────────────────────────────────────────
+function doPrint(printer, html, title, cb) {
+  var safeName  = (title || 'ERP').replace(/[^a-zA-Z0-9\-_. ]/g, '_');
+  var safePrint = printer.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+  var tmpFile   = path.join(TMP, 'gm_print_' + Date.now() + '.html');
 
-  const fullHtml = `<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<title>${(title || 'ERP Print').replace(/</g, '&lt;')}</title>
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: Arial, sans-serif; font-size: 11pt; }
-  @page { margin: 10mm; }
-</style>
-</head>
-<body>${html}</body>
-</html>`;
+  var fullHtml = '<!DOCTYPE html>\n'
+    + '<html lang="id"><head><meta charset="UTF-8"><title>' + safeName + '</title>'
+    + '<style>* {margin:0;padding:0;box-sizing:border-box;} body{font-family:Arial,sans-serif;font-size:11pt;} @page{margin:10mm;}</style>'
+    + '</head><body>' + html + '</body></html>';
 
-  fs.writeFile(tmpFile, fullHtml, 'utf8', err => {
-    if (err) return callback(err);
+  fs.writeFile(tmpFile, fullHtml, 'utf8', function(err) {
+    if (err) return cb(err);
 
-    // Coba cetak dengan chromium-browser (headless) atau wkhtmltopdf
-    // Fallback: langsung lp sebagai text/html
-    const chromiumBins = [
-      'chromium-browser', 'chromium', 'google-chrome', 'google-chrome-stable'
-    ];
+    var cmd = 'lp -d "' + safePrint + '" -t "' + safeName + '" -o media=A4 "' + tmpFile + '"';
 
-    let chromiumPath = null;
-    for (const bin of chromiumBins) {
-      try {
-        execSync(`which ${bin} 2>/dev/null`);
-        chromiumPath = bin;
-        break;
-      } catch { /* tidak ada */ }
-    }
+    exec(cmd, { timeout: 15000 }, function(err2, stdout, stderr) {
+      fs.unlink(tmpFile, function() {}); // hapus file tmp
 
-    if (chromiumPath) {
-      // Chromium headless → PDF → lp
-      const pdfFile = tmpFile.replace('.html', '.pdf');
-      const chromiumCmd = `${chromiumPath} --headless --disable-gpu --no-sandbox --print-to-pdf="${pdfFile}" "file://${tmpFile}" 2>/dev/null`;
-      exec(chromiumCmd, (errChrome) => {
-        if (errChrome) {
-          // Fallback ke lp langsung
-          sendViaLp(tmpFile, printerName, 'text/html', title, callback, tmpFile);
-        } else {
-          sendViaLp(pdfFile, printerName, 'application/pdf', title, callback, tmpFile, pdfFile);
-        }
-      });
-    } else {
-      // Tidak ada chromium, kirim HTML langsung
-      sendViaLp(tmpFile, printerName, 'text/html', title, callback, tmpFile);
-    }
+      if (err2) {
+        var msg = stderr || err2.message || 'lp gagal';
+        return cb(new Error(msg));
+      }
+      cb(null, stdout.trim() || 'Job print dikirim ke ' + printer);
+    });
   });
 }
 
-function sendViaLp(file, printer, mime, title, callback, ...cleanupFiles) {
-  const safeTitle   = (title || 'ERP').replace(/[^a-zA-Z0-9\-_. ]/g, '_');
-  const safePrinter = printer.replace(/[^a-zA-Z0-9\-_.]/g, '_');
-  const cmd = `lp -d "${safePrinter}" -t "${safeTitle}" -o media=A4 -o fit-to-page "${file}"`;
+// ── HTTP Server ───────────────────────────────────────────────────────────
+var server = http.createServer(function(req, res) {
+  var url    = req.url || '/';
+  var method = req.method || 'GET';
 
-  exec(cmd, (err, stdout, stderr) => {
-    const fs = require('fs');
-    cleanupFiles.forEach(f => { try { fs.unlinkSync(f); } catch {} });
-
-    if (err) {
-      callback(new Error(`lp gagal: ${stderr || err.message}`));
-    } else {
-      callback(null, stdout.trim() || `Print job dikirim ke ${printer}`);
-    }
-  });
-}
-
-// ── HTTP Server ────────────────────────────────────────────────────────────
-const server = http.createServer((req, res) => {
   // CORS preflight
-  if (req.method === 'OPTIONS') {
+  if (method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin':  '*',
       'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
@@ -139,87 +102,70 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
 
-  const url = req.url || '/';
-
-  // GET /status — cek status agent
-  if (req.method === 'GET' && url === '/status') {
-    let printers = [];
-    try {
-      const out = execSync('lpstat -p 2>/dev/null || lpstat -a 2>/dev/null || echo "no-cups"').toString();
-      printers = out.split('\n')
-        .filter(l => l.startsWith('printer ') || l.match(/^\S+ accepting/))
-        .map(l => l.split(' ')[1])
-        .filter(Boolean);
-    } catch {}
-
-    return json(res, 200, {
+  // GET /status
+  if (method === 'GET' && url === '/status') {
+    var printers = getPrinterList();
+    return sendJson(res, 200, {
       ok:       true,
-      version:  '1.0.0',
+      version:  '1.1.0',
       hostname: os.hostname(),
-      printers,
+      printers: printers,
       message:  'Gentong Mas Print Agent aktif',
     });
   }
 
-  // POST /print — terima print job
-  if (req.method === 'POST' && url === '/print') {
-    readBody(req)
-      .then(body => {
-        const { printer, html, title } = body;
-        if (!printer || !html) throw new Error('printer dan html harus diisi');
+  // POST /print
+  if (method === 'POST' && url === '/print') {
+    return readBody(req, function(err, body) {
+      if (err) return sendJson(res, 400, { error: err.message });
 
-        console.log(`[${new Date().toISOString()}] Print job diterima → printer: ${printer}, judul: ${title || '-'}`);
+      var printer = body.printer;
+      var html    = body.html;
+      var title   = body.title || 'ERP Print';
 
-        printHtml(printer, html, title, (err, msg) => {
-          if (err) {
-            console.error(`[ERROR] ${err.message}`);
-            return json(res, 500, { error: err.message });
-          }
-          console.log(`[OK] ${msg}`);
-          json(res, 200, { ok: true, message: msg, printer });
-        });
-      })
-      .catch(err => {
-        console.error(`[ERROR] ${err.message}`);
-        json(res, 400, { error: err.message });
+      if (!printer || !html) {
+        return sendJson(res, 400, { error: 'printer dan html harus diisi' });
+      }
+
+      console.log('[' + new Date().toISOString() + '] Print → ' + printer + ' | ' + title);
+
+      doPrint(printer, html, title, function(err2, msg) {
+        if (err2) {
+          console.error('[ERROR] ' + err2.message);
+          return sendJson(res, 500, { error: err2.message });
+        }
+        console.log('[OK] ' + msg);
+        sendJson(res, 200, { ok: true, message: msg, printer: printer });
       });
-    return;
+    });
   }
 
-  // GET / — halaman info
-  if (req.method === 'GET' && (url === '/' || url === '')) {
+  // GET /
+  if (method === 'GET' && (url === '/' || url === '')) {
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    return res.end(`Gentong Mas Print Agent v1.0.0
-=====================================
-Endpoint:
-  GET  /status  — cek status
-  POST /print   — kirim print job
-
-Agent berjalan di port ${PORT}
-`);
+    return res.end('Gentong Mas Print Agent v1.1\nEndpoints:\n  GET  /status\n  POST /print\n');
   }
 
-  json(res, 404, { error: 'Endpoint tidak ditemukan' });
+  sendJson(res, 404, { error: 'Endpoint tidak ditemukan' });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`
-╔══════════════════════════════════════════╗
-║   Gentong Mas ERP — Print Agent v1.0.0  ║
-╚══════════════════════════════════════════╝
-✅  Agent berjalan di http://0.0.0.0:${PORT}
-🖨️  Endpoint: POST http://IP-VM:${PORT}/print
-📡  Status:   GET  http://IP-VM:${PORT}/status
-
-Tekan Ctrl+C untuk berhenti.
-`);
-});
-
-server.on('error', err => {
+server.on('error', function(err) {
   if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${PORT} sudah dipakai. Ganti dengan: AGENT_PORT=6632 node agent.js`);
+    console.error('ERROR: Port ' + PORT + ' sudah dipakai. Coba: AGENT_PORT=6632 node agent.js');
   } else {
-    console.error('❌ Server error:', err);
+    console.error('ERROR:', err.message);
   }
   process.exit(1);
+});
+
+server.listen(PORT, '0.0.0.0', function() {
+  console.log('');
+  console.log('╔═══════════════════════════════════════════╗');
+  console.log('║  Gentong Mas ERP - Print Agent v1.1       ║');
+  console.log('╚═══════════════════════════════════════════╝');
+  console.log('✅  Jalan di http://0.0.0.0:' + PORT);
+  console.log('🖨️  Printer tersedia: ' + (getPrinterList().join(', ') || '(belum ada - tambahkan di CUPS)'));
+  console.log('');
+  console.log('Tekan Ctrl+C untuk berhenti.');
+  console.log('');
 });
