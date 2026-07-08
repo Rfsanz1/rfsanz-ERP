@@ -78,35 +78,43 @@ export interface WaOrderVars {
 }
 
 const TEMPLATE_ORDER =
-  `🛒 *Order Baru Masuk!*\n\n` +
-  `📋 Invoice     : *{order_no}*\n` +
+  `🛒 *ORDER BARU MASUK*\n` +
+  `━━━━━━━━━━━━━━━━━━━\n` +
+  `📋 No. Invoice : *{order_no}*\n` +
   `👤 Customer    : *{customer_name}*\n` +
   `📞 Telepon     : {phone}\n` +
-  `👨‍💼 Sales       : {sales}\n\n` +
-  `📦 *Detail Order:*\n{items}\n\n` +
-  `💰 Total       : *{total}*\n` +
-  `💳 Pembayaran  : {payment_method}\n` +
-  `📌 Status      : {status}\n\n` +
+  `👨‍💼 Sales       : {sales}\n` +
+  `━━━━━━━━━━━━━━━━━━━\n` +
+  `📦 *Detail Produk*\n{items}\n` +
+  `━━━━━━━━━━━━━━━━━━━\n` +
+  `💰 Total Tagihan : *{total}*\n` +
+  `💳 Pembayaran    : {payment_method}\n` +
+  `📌 Status        : {status}\n` +
+  `━━━━━━━━━━━━━━━━━━━\n` +
   `_Gentong Mas ERP • {datetime}_`;
 
 const TEMPLATE_PAYMENT =
-  `💸 *Bukti Transfer Masuk*\n\n` +
-  `📋 Order       : #{order_no}\n` +
+  `💸 *BUKTI TRANSFER MASUK*\n` +
+  `━━━━━━━━━━━━━━━━━━━\n` +
+  `📋 No. Invoice : *{order_no}*\n` +
   `👤 Customer    : {customer_name}\n` +
   `📞 Telepon     : {phone}\n` +
-  `💰 Total       : {total}\n` +
-  `🏦 Pembayaran  : {bank}\n` +
-  `👨‍💼 Sales       : {sales}\n\n` +
+  `💰 Total       : *{total}*\n` +
+  `🏦 Metode      : {bank}\n` +
+  `👨‍💼 Sales       : {sales}\n` +
+  `━━━━━━━━━━━━━━━━━━━\n` +
   `_Gentong Mas ERP • {datetime}_`;
 
 const TEMPLATE_KONSUMEN =
-  `Halo Kak *{customer_name}* 👋\n\n` +
-  `Terima kasih sudah memesan di *Gentong Mas* 🙏\n\n` +
-  `📦 Produk : {item_name}\n` +
-  `🔢 Jumlah : {qty} unit\n` +
-  `💰 Total  : *{total}*\n` +
-  `✅ Status : {status}\n\n` +
-  `Jika ada pertanyaan, silakan hubungi kami 😊\nTerima kasih! 🙌`;
+  `Halo Kak *{customer_name}*, terima kasih telah berbelanja di *Gentong Mas* 🙏✨\n\n` +
+  `Berikut ringkasan pesanan Anda:\n` +
+  `📋 No. Invoice : *{order_no}*\n\n` +
+  `📦 *Detail Pesanan*\n{items}\n\n` +
+  `💰 Total Belanja : *{total}*\n` +
+  `📌 Status Bayar  : {status}\n\n` +
+  `Pesanan akan segera kami proses dan kabari kembali untuk info pengiriman 🚚\n\n` +
+  `Ada pertanyaan? Balas chat ini saja ya, kami siap membantu 😊\n` +
+  `Terima kasih atas kepercayaan Anda! 🙌`;
 
 function apply(template: string, vars: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
@@ -122,9 +130,18 @@ export async function sendAllOrderNotifications(order: WaOrderVars): Promise<{
     getFonnteGroupPayment(),
   ]);
 
-  const itemsStr = (order.items ?? [])
-    .map(it => `  • ${it.nama} ×${it.qty} = ${fmt(Number(it.harga) * Number(it.qty))}`)
-    .join('\n') || '  (tidak ada item)';
+  const MAX_ITEMS_IN_MSG = 15;
+  const rawItems = order.items ?? [];
+  const itemLines = rawItems
+    .slice(0, MAX_ITEMS_IN_MSG)
+    .map((it, i) => {
+      const namaBersih = String(it.nama ?? '-').replace(/[\r\n]+/g, ' ').trim();
+      return `${i + 1}. ${namaBersih}\n   ${it.qty} × ${fmt(Number(it.harga))} = ${fmt(Number(it.harga) * Number(it.qty))}`;
+    });
+  if (rawItems.length > MAX_ITEMS_IN_MSG) {
+    itemLines.push(`… dan ${rawItems.length - MAX_ITEMS_IN_MSG} produk lainnya`);
+  }
+  const itemsStr = itemLines.join('\n') || '(tidak ada item)';
 
   const statusLabel =
     order.status === 'paid' || order.status === 'lunas' ? '✅ Lunas'
@@ -157,14 +174,12 @@ export async function sendAllOrderNotifications(order: WaOrderVars): Promise<{
     datetime,
   });
 
-  const first = order.items?.[0];
   const msgKonsumen = apply(TEMPLATE_KONSUMEN, {
+    order_no: order.soNumber,
     customer_name: order.namaCustomer,
-    item_name: first?.nama ?? '-',
-    qty: String(first?.qty ?? 0),
+    items: itemsStr,
     total: fmt(order.totalHarga),
     status: statusLabel,
-    datetime,
   });
 
   const [grupOrderRes, grupPaymentRes, konsumenRes] = await Promise.all([
