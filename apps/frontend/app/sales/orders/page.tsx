@@ -48,7 +48,7 @@ export default function SalesOrdersPage() {
       if (search) params.search = search;
       if (statusFilter) params.status = statusFilter;
 
-      const res = await api.get('/orders', { params });
+      const res = await api.get('/sales/orders', { params });
       const data = res.data?.data ?? res.data?.items ?? res.data;
       if (Array.isArray(data) && data.length > 0) {
         setRows(data);

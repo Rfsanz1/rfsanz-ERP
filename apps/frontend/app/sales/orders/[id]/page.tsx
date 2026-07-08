@@ -60,15 +60,50 @@ export default function OrderDetailPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      /* Coba endpoint orders dulu, lalu sales/orders */
       let data: any = null;
-      for (const url of [`/orders/${id}`, `/sales/orders/${id}`]) {
+
+      /* Order dari Kledo (id diprefix "kledo-") → ambil dari daftar invoice Kledo */
+      if (String(id).startsWith('kledo-')) {
+        const kledoId = String(id).replace('kledo-', '');
         try {
-          const r = await api.get(url);
-          data = r.data?.data ?? r.data;
-          if (data?.id) break;
+          const kRes = await api.get('/kledo/invoices', { params: { per_page: 50 } });
+          const d = kRes.data;
+          const inner = d?.data ?? d;
+          const list: any[] = Array.isArray(inner?.data) ? inner.data : Array.isArray(inner) ? inner : [];
+          const inv = list.find((i: any) => String(i.id) === kledoId);
+          if (inv) {
+            data = {
+              id,
+              soNumber: inv.ref_number ?? `INV-${inv.id}`,
+              namaCustomer: inv.contact?.name ?? inv.contact_name ?? '–',
+              totalHarga: Number(inv.amount ?? inv.total ?? 0),
+              status: inv.status ?? 'draft',
+              createdAt: inv.trans_date,
+              tanggal: inv.trans_date,
+              jatuhTempo: inv.due_date,
+              catatan: inv.memo,
+              items: (inv.items ?? []).map((it: any) => ({
+                nama: it.name_item ?? it.name,
+                qty: it.qty,
+                harga: it.price ?? it.rate,
+                subtotal: it.amount,
+              })),
+              kledoInvoiceId: inv.id,
+              source: 'kledo',
+            };
+          }
         } catch {}
+      } else {
+        /* Order lokal: coba sales/orders (endpoint yang benar) lalu orders sebagai fallback */
+        for (const url of [`/sales/orders/${id}`, `/orders/${id}`]) {
+          try {
+            const r = await api.get(url);
+            const d = r.data?.data ?? r.data;
+            if (d?.id) { data = d; break; }
+          } catch {}
+        }
       }
+
       if (data?.id) setOrder(data);
       else setNotFound(true);
     } catch { setNotFound(true); }
@@ -113,7 +148,7 @@ export default function OrderDetailPage() {
   const updateStatus = async (newStatus: string) => {
     setStatusUpdating(true);
     try {
-      await api.patch(`/orders/${id}`, { status: newStatus });
+      await api.put(`/sales/orders/${id}`, { status: newStatus });
       setOrder((o: any) => ({ ...o, status: newStatus }));
     } catch {}
     finally { setStatusUpdating(false); }
@@ -168,18 +203,20 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {/* Kirim ke Kledo */}
-          <button onClick={retryKledo} disabled={kledoSyncing}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold disabled:opacity-60"
-            style={{ border: `1.5px solid ${PURPLE}`, color: PURPLE }}>
-            {kledoSyncing
-              ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-              : <Send className="h-3.5 w-3.5" />}
-            {kledoSyncing ? 'Mengirim…' : 'Kirim ke Kledo'}
-          </button>
+          {/* Kirim ke Kledo — hanya untuk order lokal */}
+          {order.source !== 'kledo' && (
+            <button onClick={retryKledo} disabled={kledoSyncing}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold disabled:opacity-60"
+              style={{ border: `1.5px solid ${PURPLE}`, color: PURPLE }}>
+              {kledoSyncing
+                ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                : <Send className="h-3.5 w-3.5" />}
+              {kledoSyncing ? 'Mengirim…' : 'Kirim ke Kledo'}
+            </button>
+          )}
 
-          {/* Maju status */}
-          {nextStatus && (
+          {/* Maju status — hanya untuk order lokal (order dari Kledo tidak punya id lokal) */}
+          {nextStatus && order.source !== 'kledo' && (
             <button onClick={() => updateStatus(nextStatus)} disabled={statusUpdating}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-60"
               style={{ background: C }}>
@@ -428,8 +465,8 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* Tombol Batalkan */}
-      {!['delivered', 'cancelled'].includes(order.status) && (
+      {/* Tombol Batalkan — hanya untuk order lokal */}
+      {order.source !== 'kledo' && !['delivered', 'cancelled'].includes(order.status) && (
         <div className="flex justify-end">
           <button onClick={() => updateStatus('cancelled')} disabled={statusUpdating}
             className="px-4 py-2 rounded-xl text-xs font-semibold disabled:opacity-60"
