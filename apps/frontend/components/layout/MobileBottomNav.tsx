@@ -8,7 +8,7 @@ import {
 
 const NAV_ITEMS = [
   { href: '/dashboard',      label: 'Beranda',  icon: LayoutDashboard },
-  { href: '/sales/smart-order', label: 'Buat Order', icon: ShoppingCart },
+  { href: '/sales/orders/new', label: 'Buat Order', icon: ShoppingCart },
   { href: '/sales/orders',   label: 'Pesanan',  icon: ClipboardList },
   { href: '/sales/customers',label: 'Pelanggan',icon: Users },
   { href: '/settings',       label: 'Pengaturan',icon: Settings },

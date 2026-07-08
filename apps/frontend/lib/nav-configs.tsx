@@ -20,7 +20,7 @@ import { NavItem } from '../components/layout/AppShell';
 
 export const SALES_CONFIG = { appName: 'Penjualan', appColor: '#00ACC1', appGradient: 'from-cyan-500 to-cyan-700', appIcon: ShoppingCart };
 export const SALES_NAV: NavItem[] = [
-  { label: 'Smart Order Input', href: '/sales/smart-order',    icon: Zap },
+  { label: 'Buat Order',        href: '/sales/orders/new',     icon: Zap },
   { label: 'Quotation',        href: '/sales/quotations',      icon: FileText,
     children: [
       { label: 'Semua Quotation', href: '/sales/quotations' },

@@ -22,7 +22,7 @@ const C = {
 };
 
 const NAV = [
-  { href: '/sales/smart-order',   label: 'Smart Order',  icon: Zap },
+  { href: '/sales/orders/new',    label: 'Buat Order',   icon: Zap },
   { href: '/sales/quotations',    label: 'Quotation',    icon: FileText },
   { href: '/sales/orders',        label: 'Sales Order',  icon: ShoppingCart },
   { href: '/sales/faktur',        label: 'Faktur',       icon: CreditCard },

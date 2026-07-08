@@ -27,7 +27,7 @@ export default function SalesDashboardPage() {
   ];
 
   const ACTIONS = [
-    { label: 'BUAT ORDER BARU',  sub: 'Catat penjualan baru',   href: '/sales/smart-order', icon: PlusCircle,    color: '#8C57FF', bg: 'linear-gradient(135deg,#8C57FF,#8B5CF6)' },
+    { label: 'BUAT ORDER BARU',  sub: 'Catat penjualan baru',   href: '/sales/orders/new', icon: PlusCircle,    color: '#8C57FF', bg: 'linear-gradient(135deg,#8C57FF,#8B5CF6)' },
     { label: 'DAFTAR PESANAN',   sub: 'Lihat semua pesanan',    href: '/sales/orders',      icon: ClipboardList, color: '#0EA5E9', bg: 'linear-gradient(135deg,#0EA5E9,#38BDF8)' },
     { label: 'DATA PELANGGAN',   sub: 'Cari info pelanggan',    href: '/sales/customers',   icon: Users,         color: '#10B981', bg: 'linear-gradient(135deg,#10B981,#34D399)' },
     { label: 'LAPORAN PENJUALAN',sub: 'Rekap hasil penjualan',  href: '/sales/reports',     icon: BarChart2,     color: '#F59E0B', bg: 'linear-gradient(135deg,#F59E0B,#FCD34D)' },

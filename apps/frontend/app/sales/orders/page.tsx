@@ -110,7 +110,7 @@ export default function SalesOrdersPage() {
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Refresh
           </button>
-          <button onClick={() => router.push('/sales/smart-order')}
+          <button onClick={() => router.push('/sales/orders/new')}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: C, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={14} /> Order Baru
           </button>

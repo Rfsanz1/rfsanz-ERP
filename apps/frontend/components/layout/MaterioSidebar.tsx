@@ -28,7 +28,7 @@ const NAV_SIMPLE: NavItem[] = [
   {
     label: 'Penjualan', icon: ShoppingCart, categoryLabel: 'OPERASIONAL',
     children: [
-      { href: '/sales/smart-order', label: 'Buat Order Baru'   },
+      { href: '/sales/orders/new',  label: 'Buat Order Baru'   },
       { href: '/sales/orders',      label: 'Daftar Pesanan'    },
       { href: '/sales/customers',   label: 'Data Pelanggan'    },
       { href: '/sales/reports',     label: 'Laporan Penjualan' },
@@ -58,7 +58,7 @@ const NAV_FULL: NavItem[] = [
   {
     label: 'Penjualan', icon: ShoppingCart, categoryLabel: 'OPERASIONAL',
     children: [
-      { href: '/sales/smart-order', label: 'Smart Order'       },
+      { href: '/sales/orders/new',  label: 'Buat Order'        },
       { href: '/sales/quotations',  label: 'Penawaran'         },
       { href: '/sales/orders',      label: 'Pesanan Penjualan' },
       { href: '/sales/invoices',    label: 'Invoice'           },

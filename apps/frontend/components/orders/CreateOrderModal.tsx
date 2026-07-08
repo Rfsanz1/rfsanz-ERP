@@ -195,7 +195,8 @@ export default function CreateOrderModal({
   const handleCustomerSelect = (c: CustomerOption) => {
     setNamaCustomer(c.name);
     if (c.phone && !noHp) setNoHp(c.phone);
-    if (c.address && !alamat) setAlamat(c.address);
+    // Tanpa field manual, alamat harus mengikuti pelanggan yang dipilih (tidak boleh tertinggal dari pelanggan sebelumnya)
+    setAlamat(c.address ?? '');
     if (c.source === 'kledo') setKledoContactId(c.id.replace('kledo-', ''));
     else if ((c as any).kledoId) setKledoContactId((c as any).kledoId);
   };
@@ -528,12 +529,6 @@ export default function CreateOrderModal({
               <div>
                 <Label>Nama Sales</Label>
                 <SalesDropdown value={salesName} onChange={setSalesName} accentColor={COLOR} placeholder="Pilih atau ketik nama sales..." />
-              </div>
-              <div className="sm:col-span-2">
-                <Label optional>Alamat Pengiriman</Label>
-                <input className={inputCls} style={inputSt} placeholder="Jl. contoh No. 1, Kota..."
-                  value={alamat} onChange={e => setAlamat(e.target.value)}
-                  onFocus={focusColor} onBlur={blurColor} />
               </div>
             </div>
           </section>
