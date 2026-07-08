@@ -130,6 +130,14 @@ export class KledoController {
     catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil invoice Kledo'); }
   }
 
+  /** Detail 1 invoice Kledo termasuk daftar item — dipakai halaman detail order. */
+  @Get('invoices/:id')
+  @UseGuards(JwtAuthGuard)
+  async getInvoiceDetail(@Param('id') id: string, @Res() res: Response) {
+    try { return ok(res, await this.svc.getInvoiceDetail(id)); }
+    catch (e: any) { return fail(res, e?.message ?? 'Gagal mengambil detail invoice Kledo'); }
+  }
+
   @Post('invoices')
   @UseGuards(JwtAuthGuard)
   async createInvoice(@Body() dto: any, @Res() res: Response) {

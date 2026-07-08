@@ -66,11 +66,20 @@ export default function OrderDetailPage() {
       if (String(id).startsWith('kledo-')) {
         const kledoId = String(id).replace('kledo-', '');
         try {
-          const kRes = await api.get('/kledo/invoices', { params: { per_page: 50 } });
-          const d = kRes.data;
-          const inner = d?.data ?? d;
-          const list: any[] = Array.isArray(inner?.data) ? inner.data : Array.isArray(inner) ? inner : [];
-          const inv = list.find((i: any) => String(i.id) === kledoId);
+          let inv: any = null;
+          /* Detail endpoint menyertakan items; list endpoint tidak */
+          try {
+            const dRes = await api.get(`/kledo/invoices/${kledoId}`);
+            const dd = dRes.data;
+            inv = dd?.data ?? dd;
+          } catch {}
+          if (!inv?.id) {
+            const kRes = await api.get('/kledo/invoices', { params: { per_page: 50 } });
+            const d = kRes.data;
+            const inner = d?.data ?? d;
+            const list: any[] = Array.isArray(inner?.data) ? inner.data : Array.isArray(inner) ? inner : [];
+            inv = list.find((i: any) => String(i.id) === kledoId);
+          }
           if (inv) {
             data = {
               id,

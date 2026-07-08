@@ -208,6 +208,16 @@ export class KledoService {
     return res.data;
   }
 
+  /** Ambil detail 1 invoice Kledo (termasuk items) — list endpoint tidak menyertakan items. */
+  async getInvoiceDetail(id: number | string) {
+    const token = await this.getToken();
+    if (!token) throw new Error('KLEDO_TOKEN belum dikonfigurasi');
+    const headers = await this.getHeaders();
+    const baseUrl = await this.getBaseUrl();
+    const res = await firstValueFrom(this.http.get(`${baseUrl}/finance/invoices/${id}`, { headers }));
+    return res.data;
+  }
+
   // ── Purchase Invoices (Tagihan Pembelian dari Kledo) ─────────────────
   async getPurchaseInvoices(query: any = {}) {
     const token = await this.getToken();
