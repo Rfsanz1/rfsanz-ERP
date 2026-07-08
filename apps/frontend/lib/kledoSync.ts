@@ -620,9 +620,8 @@ export async function pushOrderToKledo(
     // Memo: nama sales | no HP (alamat dikirim terpisah di field message)
     const memo = [order.salesName || '', order.noHp || ''].filter(Boolean).join(' | ');
     if (memo)                   payload.memo    = memo;
-    // Catatan order → field "Pesan" di Kledo (alamat disertakan juga di sini)
-    const messageParts = [order.catatan, order.alamat ? `Alamat: ${order.alamat}` : ''].filter(Boolean);
-    if (messageParts.length)    payload.message = messageParts.join('\n');
+    // Catatan order → field "Pesan" di Kledo (alamat tidak disertakan)
+    if (order.catatan)          payload.message = order.catatan;
     if (resolvedContactId)      payload.contact_id   = resolvedContactId;
     else if (order.contactName) payload.contact_name = order.contactName;
     if (order.diskonTotal)  payload.discount     = order.diskonTotal;
