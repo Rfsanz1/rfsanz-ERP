@@ -617,11 +617,8 @@ export async function pushOrderToKledo(
       items: kledoItems,
     };
     // ref_number tidak dikirim → Kledo auto-generate nomor INV/xxxxx
-    // Memo: nama sales + no HP + alamat pengiriman
-    const memoSales = order.salesName ? `Sales: ${order.salesName}` : '';
-    const memoHp    = order.noHp ? `HP: ${order.noHp}` : '';
-    const memoAlamat = order.alamat ? `Alamat: ${order.alamat}` : '';
-    const memo      = [memoSales, memoHp, memoAlamat].filter(Boolean).join(' | ');
+    // Memo: nama sales | no HP (alamat dikirim terpisah di field message)
+    const memo = [order.salesName || '', order.noHp || ''].filter(Boolean).join(' | ');
     if (memo)                   payload.memo    = memo;
     // Catatan order → field "Pesan" di Kledo (alamat disertakan juga di sini)
     const messageParts = [order.catatan, order.alamat ? `Alamat: ${order.alamat}` : ''].filter(Boolean);
