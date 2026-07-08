@@ -92,10 +92,10 @@ export default function OrderDetailPage() {
               jatuhTempo: inv.due_date,
               catatan: inv.memo,
               items: (inv.items ?? []).map((it: any) => ({
-                nama: it.name_item ?? it.name,
+                nama: it.name_item ?? it.name ?? it.product_name ?? it.product?.name ?? it.desc ?? it.description ?? '–',
                 qty: it.qty,
-                harga: it.price ?? it.rate,
-                subtotal: it.amount,
+                harga: it.price ?? it.rate ?? (it.qty ? Number(it.amount) / Number(it.qty) : it.amount),
+                subtotal: it.amount ?? it.total,
               })),
               kledoInvoiceId: inv.id,
               source: 'kledo',
@@ -413,38 +413,43 @@ export default function OrderDetailPage() {
             Daftar Produk · {items.length} item
           </p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr style={{ background: '#FDFCFF', borderBottom: '1px solid #F0EDFB' }}>
-                {['#', 'Produk', 'Qty', 'Satuan', 'Harga', 'Diskon', 'Subtotal'].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
-                <tr><td colSpan={7} className="px-5 py-10 text-center text-sm" style={{ color: '#9CA3AF' }}>Tidak ada item</td></tr>
-              ) : items.map((it: any, i: number) => (
-                <tr key={it.id ?? i} style={{ borderBottom: i < items.length - 1 ? '1px solid #F5F3FF' : 'none' }}>
-                  <td className="px-5 py-3.5 text-xs" style={{ color: '#9CA3AF' }}>{i + 1}</td>
-                  <td className="px-5 py-3.5">
-                    <p className="text-sm font-semibold" style={{ color: '#1E1B4B' }}>{it.nama ?? it.productName ?? it.name}</p>
+        {/* Daftar sebagai kartu (bukan tabel) supaya tidak perlu digeser ke kanan/kiri di layar kecil */}
+        <div>
+          {items.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm" style={{ color: '#9CA3AF' }}>Tidak ada item</p>
+          ) : items.map((it: any, i: number) => {
+            const nama = it.nama ?? it.productName ?? it.name ?? '–';
+            const qtyNum = Number(it.qty ?? it.quantity);
+            const qty = Number.isFinite(qtyNum) && qtyNum > 0 ? qtyNum : 1;
+            const satuan = it.unit ?? it.satuan ?? '–';
+            let harga = Number(it.harga ?? it.unitPrice ?? it.price ?? 0);
+            if (!Number.isFinite(harga)) harga = 0;
+            const diskon = it.diskon;
+            const subtotal = it.subtotal;
+            return (
+              <div key={it.id ?? i} className="px-5 py-3.5"
+                style={{ borderBottom: i < items.length - 1 ? '1px solid #F5F3FF' : 'none' }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold break-words" style={{ color: '#1E1B4B', overflowWrap: 'anywhere' }}>
+                      <span className="text-xs font-normal mr-1.5" style={{ color: '#9CA3AF' }}>{i + 1}.</span>
+                      {nama}
+                    </p>
                     {it.kledoProductId && (
                       <span className="text-[10px] font-medium" style={{ color: PURPLE }}>
                         <Link2 className="h-2.5 w-2.5 inline mr-0.5" />Kledo #{it.kledoProductId}
                       </span>
                     )}
-                  </td>
-                  <td className="px-5 py-3.5 text-sm" style={{ color: '#6B7280' }}>{it.qty ?? it.quantity}</td>
-                  <td className="px-5 py-3.5 text-xs" style={{ color: '#9CA3AF' }}>{it.unit ?? it.satuan ?? '–'}</td>
-                  <td className="px-5 py-3.5 text-sm" style={{ color: '#6B7280' }}>{fmtRp(it.harga ?? it.unitPrice ?? it.price)}</td>
-                  <td className="px-5 py-3.5 text-sm" style={{ color: '#EF4444' }}>{it.diskon ? `-${fmtRp(it.diskon)}` : '–'}</td>
-                  <td className="px-5 py-3.5 text-sm font-semibold" style={{ color: '#1E1B4B' }}>{fmtRp(it.subtotal)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                  <p className="text-sm font-semibold whitespace-nowrap" style={{ color: '#1E1B4B' }}>{fmtRp(subtotal)}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs" style={{ color: '#6B7280' }}>
+                  <span>{qty} {satuan !== '–' ? satuan : ''} × {fmtRp(harga)}</span>
+                  {diskon ? <span style={{ color: '#EF4444' }}>Diskon -{fmtRp(diskon)}</span> : null}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Ringkasan total */}
