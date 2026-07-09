@@ -298,13 +298,9 @@ export default function OrderDetailPage() {
         {/* Info Pelanggan */}
         <div className="bg-white rounded-2xl p-5 space-y-4" style={{ border: '1.5px solid #F0EDFB' }}>
           <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Pelanggan</p>
-          <InfoRow icon={User}     label="Nama"   value={order.namaCustomer ?? order.customerName ?? '–'} />
-          {(order.noHp ?? order.customerPhone) && (
-            <InfoRow icon={Phone}   label="No. HP" value={order.noHp ?? order.customerPhone} />
-          )}
-          {(order.alamat ?? order.shippingAddress) && (
-            <InfoRow icon={MapPin}  label="Alamat" value={order.alamat ?? order.shippingAddress} />
-          )}
+          <InfoRow icon={User}    label="Nama"   value={order.namaCustomer ?? order.customerName ?? '–'} />
+          <InfoRow icon={Phone}   label="No. HP" value={order.noHp ?? order.customerPhone ?? '–'} />
+          <InfoRow icon={MapPin}  label="Alamat" value={order.alamat ?? order.shippingAddress ?? '–'} />
         </div>
 
         {/* Info Transaksi */}
