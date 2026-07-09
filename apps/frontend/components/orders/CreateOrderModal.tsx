@@ -537,6 +537,12 @@ export default function CreateOrderModal({
           <section className="space-y-4">
             <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Info Transaksi</p>
             <div>
+              <Label optional>Alamat Pengiriman</Label>
+              <input className={inputCls} style={inputSt} placeholder="Jl. Contoh No. 1, Kota..."
+                value={alamat} onChange={e => setAlamat(e.target.value)}
+                onFocus={focusColor} onBlur={blurColor} />
+            </div>
+            <div>
               <Label optional>Catatan / Pesan</Label>
               <input className={inputCls} style={inputSt} placeholder="Catatan atau pesan untuk order ini..."
                 value={catatan} onChange={e => setCatatan(e.target.value)}
