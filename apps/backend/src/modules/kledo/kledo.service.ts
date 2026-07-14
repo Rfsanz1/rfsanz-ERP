@@ -666,7 +666,7 @@ export class KledoService {
       };
       if (contactId && contactId > 0) payload.contact_id = contactId;
       if (dto.alamat) payload.shipping_address = dto.alamat;
-      if (dto.catatan) payload.note = dto.catatan;
+      if (dto.catatan) payload.message = dto.catatan;
 
       // fin_template_id: template invoice Kledo (opsional, dibaca dari setting DB)
       try {
