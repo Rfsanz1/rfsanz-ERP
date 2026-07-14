@@ -594,7 +594,7 @@ export class KledoService {
   }
 
   async createInvoice(dto: {
-    namaCustomer: string; noHp?: string; alamat?: string; memo?: string; orderId?: number | string;
+    namaCustomer: string; noHp?: string; alamat?: string; catatan?: string; memo?: string; orderId?: number | string;
     noInvoice?: string; salesName?: string;
     items: Array<{ kledoProductId?: string | null; nama: string; qty: number; harga: number; unitId?: number }>;
     dueDays?: number;
@@ -666,6 +666,7 @@ export class KledoService {
       };
       if (contactId && contactId > 0) payload.contact_id = contactId;
       if (dto.alamat) payload.shipping_address = dto.alamat;
+      if (dto.catatan) payload.note = dto.catatan;
 
       // fin_template_id: template invoice Kledo (opsional, dibaca dari setting DB)
       try {

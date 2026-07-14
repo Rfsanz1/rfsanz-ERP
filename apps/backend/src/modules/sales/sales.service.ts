@@ -158,6 +158,7 @@ export class SalesService {
       orderId: order.id,
       noInvoice,
       salesName: order.salesName ?? undefined,
+      catatan: order.catatan ?? undefined,
       items: kledoItems,
       /* param auto-lunas */
       metodePembayaran: paymentParams?.metodePembayaran ?? order.metodePembayaran ?? null,
