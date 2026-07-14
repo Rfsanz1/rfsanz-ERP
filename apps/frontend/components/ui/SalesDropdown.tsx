@@ -117,7 +117,9 @@ export default function SalesDropdown({
     return colors[Math.abs(hash) % colors.length];
   };
 
-  const displayText = open && !selected ? query : value;
+  const displayText = open && !selected
+    ? query
+    : (selected?.phone ? `${selected.name} | ${selected.phone}` : value);
 
   return (
     <div ref={containerRef} className="relative w-full">
