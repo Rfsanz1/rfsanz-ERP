@@ -129,6 +129,7 @@ export default function CreateOrderModal({
   const [noHp, setNoHp]                       = useState('');
   const [alamat, setAlamat]                   = useState('');
   const [salesName, setSalesName]             = useState(user?.name ?? '');
+  const [salesPhone, setSalesPhone]           = useState('');
 
   const [tanggal]                             = useState(today());
   const [catatan, setCatatan]                 = useState('');
@@ -344,7 +345,9 @@ export default function CreateOrderModal({
       noHp: noHp.trim() || undefined,
       alamat: alamat.trim() || undefined,
       catatan: catatan.trim() || undefined,
-      salesName: salesName.trim() || undefined,
+      salesName: salesName.trim()
+        ? (salesPhone.trim() ? `${salesName.trim()} | ${salesPhone.trim()}` : salesName.trim())
+        : undefined,
       tanggal,
       diskonTotal: diskonTotal || undefined,
       pajak: pajak || undefined,
@@ -528,7 +531,13 @@ export default function CreateOrderModal({
               </div>
               <div>
                 <Label>Referensi Sales</Label>
-                <SalesDropdown value={salesName} onChange={setSalesName} accentColor={COLOR} placeholder="Pilih atau ketik nama sales..." />
+                <SalesDropdown
+                  value={salesName}
+                  onChange={v => { setSalesName(v); setSalesPhone(''); }}
+                  onSelect={s => { setSalesName(s.name); setSalesPhone(s.phone ?? ''); }}
+                  accentColor={COLOR}
+                  placeholder="Pilih atau ketik nama sales..."
+                />
               </div>
             </div>
 

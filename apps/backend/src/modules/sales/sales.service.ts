@@ -151,9 +151,6 @@ export class SalesService {
       unitId: it.unitId ?? 1,
     }));
     const noInvoice = `INV-${String(order.id).padStart(5, '0')}`;
-    const memoWithAlamat = [order.catatan, order.alamat ? `Alamat: ${order.alamat}` : '']
-      .filter(Boolean)
-      .join(' | ');
     const result = await this.kledo.createInvoice({
       namaCustomer: order.namaCustomer,
       noHp: order.noHp,
@@ -161,7 +158,6 @@ export class SalesService {
       orderId: order.id,
       noInvoice,
       salesName: order.salesName ?? undefined,
-      memo: memoWithAlamat || undefined,
       items: kledoItems,
       /* param auto-lunas */
       metodePembayaran: paymentParams?.metodePembayaran ?? order.metodePembayaran ?? null,
