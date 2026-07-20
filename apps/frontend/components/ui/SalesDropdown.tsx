@@ -12,7 +12,7 @@ export interface SalesOption {
 }
 
 const STATIC_SALES: SalesOption[] = [
-  { id: 's1', name: 'Lehan',    phone: '0857-2982-4485', role: 'sales' },
+  { id: 's1', name: 'AFIF',     phone: '081363305898',   role: 'sales' },
   { id: 's2', name: 'Priyanto', phone: '0823-3479-2357', role: 'sales' },
   { id: 's3', name: 'Agus',     phone: '0857-3084-5708', role: 'sales' },
   { id: 's4', name: 'Dhani',    phone: '0812-1599-2058', role: 'sales' },
