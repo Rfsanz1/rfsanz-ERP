@@ -267,7 +267,7 @@ export async function findOrCreateKledoContact(
 const BANK_KEYWORDS: Record<string, string[]> = {
   /* Transfer Bank spesifik — urutan dari paling spesifik ke paling umum */
   bca:            ['bca giro', 'giro bca', 'bank bca', 'bca tabungan', 'bca'],
-  bri:            ['bri cv', 'bri giro', 'giro bri', 'bank bri', 'bri tabungan', 'bri'],
+  bri:            ['bri giro', 'giro bri', 'bank bri', 'bri tabungan', 'bri'],
   mandiri:        ['bank mandiri', 'mandiri tabungan', 'mandiri giro', 'mandiri'],
   bni:            ['bank bni', 'bni tabungan', 'bni giro', 'bni'],
 
