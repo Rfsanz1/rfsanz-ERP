@@ -396,9 +396,17 @@ export async function getBankAccountId(
     const keywords = BANK_KEYWORDS[key] ?? [key];
     console.log(`[kledo] getBankAccountId key="${bankKey}" total_accounts=${accounts.length}`);
 
+    // Akun transfer bank (bca/bri/mandiri/bni) tidak boleh cocok dengan akun EDC
+    const TRANSFER_BANK_KEYS = ['bca', 'bri', 'mandiri', 'bni'];
+    const isTransferKey = TRANSFER_BANK_KEYS.includes(key);
+
     // Prioritas 2: keyword match di nama akun
     for (const kw of keywords) {
-      const match = accounts.find((a: any) => (a.name ?? '').toLowerCase().includes(kw));
+      const match = accounts.find((a: any) => {
+        const name = (a.name ?? '').toLowerCase();
+        if (isTransferKey && name.includes('edc')) return false; // Transfer BRI/BCA/BNI jangan masuk ke akun EDC
+        return name.includes(kw);
+      });
       if (match) {
         console.log(`[kledo] getBankAccountId KEYWORD kw="${kw}" → id=${match.id} name="${match.name}"`);
         return Number(match.id);
