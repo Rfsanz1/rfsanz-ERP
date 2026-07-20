@@ -56,8 +56,12 @@ export default function SalesDropdown({
         })
         .map(u => ({ id: u.id, name: u.name ?? u.email, phone: u.phone ?? u.noHp ?? null, role: u.role }));
       if (backendSales.length > 0) {
-        const staticNames = new Set(STATIC_SALES.map(s => s.name.toLowerCase()));
-        const extra = backendSales.filter(u => !staticNames.has(u.name.toLowerCase()));
+        const staticNames      = new Set(STATIC_SALES.map(s => s.name.toLowerCase()));
+        const staticFirstNames = new Set(STATIC_SALES.map(s => s.name.split(' ')[0].toLowerCase()));
+        const extra = backendSales.filter(u => {
+          const firstName = u.name.split(' ')[0].toLowerCase();
+          return !staticNames.has(u.name.toLowerCase()) && !staticFirstNames.has(firstName);
+        });
         setOptions([...STATIC_SALES, ...extra]);
       }
     } catch { /* tetap pakai STATIC_SALES */ }
