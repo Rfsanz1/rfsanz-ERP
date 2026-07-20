@@ -65,45 +65,126 @@ async function sendWa(target: string, message: string): Promise<{ ok: boolean; r
   }
 }
 
+export interface WaPembayaranEntry {
+  metode: string;
+  jumlah: number;
+  bankPilihan?: string | null;
+  edcPilihan?: string | null;
+  unitBisnis?: string | null;
+}
+
 export interface WaOrderVars {
   soNumber: string;
   namaCustomer: string;
   noHp?: string | null;
+  alamat?: string | null;
+  catatan?: string | null;
   salesName?: string | null;
   items: Array<{ nama: string; qty: number; harga: number }>;
   totalHarga: number;
   metodePembayaran?: string | null;
   bankPilihan?: string | null;
   status?: string;
+  pembayaranList?: WaPembayaranEntry[];
+  buktiCount?: number;
 }
 
-const TEMPLATE_ORDER =
-  `🛒 *ORDER BARU MASUK*\n` +
-  `━━━━━━━━━━━━━━━━━━━\n` +
-  `📋 No. Invoice : *{order_no}*\n` +
-  `👤 Customer    : *{customer_name}*\n` +
-  `📞 Telepon     : {phone}\n` +
-  `👨‍💼 Sales       : {sales}\n` +
-  `━━━━━━━━━━━━━━━━━━━\n` +
-  `📦 *Detail Produk*\n{items}\n` +
-  `━━━━━━━━━━━━━━━━━━━\n` +
-  `💰 Total Tagihan : *{total}*\n` +
-  `💳 Pembayaran    : {payment_method}\n` +
-  `📌 Status        : {status}\n` +
-  `━━━━━━━━━━━━━━━━━━━\n` +
-  `_Gentong Mas ERP • {datetime}_`;
+const BANK_LABEL: Record<string, string> = {
+  bca: 'BCA', bri: 'BRI', mandiri: 'Mandiri', bni: 'BNI',
+};
+const EDC_LABEL: Record<string, string> = {
+  bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI EDC',
+};
 
-const TEMPLATE_PAYMENT =
-  `💸 *BUKTI TRANSFER MASUK*\n` +
-  `━━━━━━━━━━━━━━━━━━━\n` +
-  `📋 No. Invoice : *{order_no}*\n` +
-  `👤 Customer    : {customer_name}\n` +
-  `📞 Telepon     : {phone}\n` +
-  `💰 Total       : *{total}*\n` +
-  `🏦 Metode      : {bank}\n` +
-  `👨‍💼 Sales       : {sales}\n` +
-  `━━━━━━━━━━━━━━━━━━━\n` +
-  `_Gentong Mas ERP • {datetime}_`;
+function metodeLabel(p: WaPembayaranEntry): string {
+  if (p.metode === 'transfer') {
+    const bank = p.bankPilihan ? ` – ${BANK_LABEL[p.bankPilihan] ?? p.bankPilihan.toUpperCase()}` : '';
+    return `Transfer${bank}`;
+  }
+  if (p.metode === 'debit') {
+    const edc = p.edcPilihan ? ` – ${EDC_LABEL[p.edcPilihan] ?? p.edcPilihan.toUpperCase()}` : '';
+    return `Debit${edc}`;
+  }
+  if (p.metode === 'cash') {
+    if (p.unitBisnis === 'elektronik') return 'Cash (Elektronik)';
+    if (p.unitBisnis === 'bahan_bangunan') return 'Cash (Bangunan)';
+    return 'Cash';
+  }
+  if (p.metode === 'cod') return 'COD';
+  if (p.metode === 'dp')  return 'DP';
+  return (p.metode ?? '-').toUpperCase();
+}
+
+function buildOrderMessage(order: WaOrderVars): string {
+  const datetime = nowStr();
+  const total    = order.totalHarga;
+
+  /* Items */
+  const MAX_ITEMS = 15;
+  const rawItems  = order.items ?? [];
+  const itemLines = rawItems.slice(0, MAX_ITEMS).map((it, i) => {
+    const nama = String(it.nama ?? '-').replace(/[\r\n]+/g, ' ').trim();
+    return `${i + 1}. ${nama} (${it.qty}x @ ${fmt(Number(it.harga))})`;
+  });
+  if (rawItems.length > MAX_ITEMS)
+    itemLines.push(`… dan ${rawItems.length - MAX_ITEMS} produk lainnya`);
+
+  /* Pembayaran */
+  const list        = order.pembayaranList ?? [];
+  const totalBayar  = list.reduce((s, p) => s + (p.jumlah || 0), 0);
+  const sisa        = Math.max(0, total - totalBayar);
+
+  let paymentSummary = '';
+  const paymentDetail: string[] = [];
+
+  if (list.length > 0) {
+    const dpStr    = sisa > 0 ? `DP ${fmt(list[0].jumlah)} (sisa ${fmt(sisa)})` : fmt(list[0].jumlah);
+    const buktiStr = order.buktiCount ? ` ✅ (${order.buktiCount} bukti TF)` : '';
+    paymentSummary = `💳 Pembayaran: ${dpStr}${buktiStr}`;
+
+    list.forEach(p => paymentDetail.push(`• ${metodeLabel(p)}: ${fmt(p.jumlah)}`));
+    if (sisa > 0) paymentDetail.push(`• ⏳ *Belum Bayar (sisa): ${fmt(sisa)}*`);
+  } else {
+    const bank = order.bankPilihan
+      ? ` – ${BANK_LABEL[order.bankPilihan] ?? order.bankPilihan.toUpperCase()}`
+      : '';
+    const metode = order.metodePembayaran ?? 'transfer';
+    paymentSummary = `💳 Pembayaran: ${metode === 'transfer' ? `Transfer${bank}` : metode.toUpperCase()}: ${fmt(total)}`;
+    paymentDetail.push(`• ${metode === 'transfer' ? `Transfer${bank}` : metode.toUpperCase()}: ${fmt(total)}`);
+  }
+
+  const lines: string[] = [
+    `🔔 *Order masuk bossku!* 👀`,
+    ``,
+    `📌 *Customer:*`,
+    `${order.namaCustomer}${order.noHp ? ` – ${order.noHp}` : ''}`,
+  ];
+
+  if (order.alamat)  lines.push(``, `📍 *Alamat:* ${order.alamat}`);
+  if (order.catatan) lines.push(`🏠 *Patokan:* ${order.catatan}`);
+
+  lines.push(
+    ``,
+    `📦 *Pesanan:*`,
+    ...itemLines,
+    ``,
+    `💰 *Total: ${fmt(total)}*`,
+    paymentSummary,
+  );
+
+  if (paymentDetail.length > 0) {
+    lines.push(``, `💰 *Rincian Pembayaran:*`, ...paymentDetail);
+  }
+
+  lines.push(
+    ``,
+    `👨‍💼 *Sales:* ${order.salesName ?? '-'}`,
+    ``,
+    `🕒 ${datetime}`,
+  );
+
+  return lines.join('\n');
+}
 
 const TEMPLATE_KONSUMEN =
   `Halo Kak *{customer_name}*, terima kasih telah berbelanja di *Gentong Mas* 🙏✨\n\n` +
@@ -130,62 +211,34 @@ export async function sendAllOrderNotifications(order: WaOrderVars): Promise<{
     getFonnteGroupPayment(),
   ]);
 
-  const MAX_ITEMS_IN_MSG = 15;
-  const rawItems = order.items ?? [];
-  const itemLines = rawItems
-    .slice(0, MAX_ITEMS_IN_MSG)
-    .map((it, i) => {
-      const namaBersih = String(it.nama ?? '-').replace(/[\r\n]+/g, ' ').trim();
-      return `${i + 1}. ${namaBersih}\n   ${it.qty} × ${fmt(Number(it.harga))} = ${fmt(Number(it.harga) * Number(it.qty))}`;
-    });
-  if (rawItems.length > MAX_ITEMS_IN_MSG) {
-    itemLines.push(`… dan ${rawItems.length - MAX_ITEMS_IN_MSG} produk lainnya`);
-  }
-  const itemsStr = itemLines.join('\n') || '(tidak ada item)';
+  /* Pesan grup invoice — format baru */
+  const msgOrder = buildOrderMessage(order);
 
-  const statusLabel =
-    order.status === 'paid' || order.status === 'lunas' ? '✅ Lunas'
+  /* Pesan konsumen — tetap pakai format lama yang ramah */
+  const MAX_ITEMS_IN_MSG = 15;
+  const rawItems  = order.items ?? [];
+  const itemLines = rawItems.slice(0, MAX_ITEMS_IN_MSG).map((it, i) => {
+    const namaBersih = String(it.nama ?? '-').replace(/[\r\n]+/g, ' ').trim();
+    return `${i + 1}. ${namaBersih}\n   ${it.qty} × ${fmt(Number(it.harga))} = ${fmt(Number(it.harga) * Number(it.qty))}`;
+  });
+  if (rawItems.length > MAX_ITEMS_IN_MSG)
+    itemLines.push(`… dan ${rawItems.length - MAX_ITEMS_IN_MSG} produk lainnya`);
+  const itemsStr    = itemLines.join('\n') || '(tidak ada item)';
+  const statusLabel = order.status === 'paid' || order.status === 'lunas' ? '✅ Lunas'
     : order.status === 'partial' ? '⏳ Sebagian' : '🕐 Pending';
 
-  const bankLabel = [order.bankPilihan, order.metodePembayaran]
-    .filter(Boolean).join(' / ') || '-';
-
-  const datetime = nowStr();
-
-  const msgOrder = apply(TEMPLATE_ORDER, {
-    order_no: order.soNumber,
-    customer_name: order.namaCustomer,
-    phone: order.noHp ?? '-',
-    sales: order.salesName ?? '-',
-    items: itemsStr,
-    total: fmt(order.totalHarga),
-    payment_method: bankLabel,
-    status: statusLabel,
-    datetime,
-  });
-
-  const msgPayment = apply(TEMPLATE_PAYMENT, {
-    order_no: order.soNumber,
-    customer_name: order.namaCustomer,
-    phone: order.noHp ?? '-',
-    total: fmt(order.totalHarga),
-    bank: bankLabel,
-    sales: order.salesName ?? '-',
-    datetime,
-  });
-
   const msgKonsumen = apply(TEMPLATE_KONSUMEN, {
-    order_no: order.soNumber,
+    order_no:      order.soNumber,
     customer_name: order.namaCustomer,
-    items: itemsStr,
-    total: fmt(order.totalHarga),
-    status: statusLabel,
+    items:         itemsStr,
+    total:         fmt(order.totalHarga),
+    status:        statusLabel,
   });
 
   const [grupOrderRes, grupPaymentRes, konsumenRes] = await Promise.all([
     grupInvoice ? sendWa(grupInvoice, msgOrder) : Promise.resolve({ ok: false, reason: 'Group ID Notif Order belum dikonfigurasi di Settings → WA Gateway' }),
-    grupPayment ? sendWa(grupPayment, msgPayment) : Promise.resolve({ ok: false, reason: 'Group ID Payment belum dikonfigurasi di Settings → WA Gateway' }),
-    order.noHp ? sendWa(order.noHp, msgKonsumen) : Promise.resolve({ ok: false, reason: 'Nomor HP konsumen tidak tersedia' }),
+    grupPayment ? sendWa(grupPayment, msgOrder) : Promise.resolve({ ok: false, reason: 'Group ID Payment belum dikonfigurasi di Settings → WA Gateway' }),
+    order.noHp  ? sendWa(order.noHp, msgKonsumen) : Promise.resolve({ ok: false, reason: 'Nomor HP konsumen tidak tersedia' }),
   ]);
 
   return { grupOrder: grupOrderRes, grupPayment: grupPaymentRes, konsumen: konsumenRes };

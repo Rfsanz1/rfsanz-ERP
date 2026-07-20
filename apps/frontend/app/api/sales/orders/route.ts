@@ -199,6 +199,8 @@ export async function POST(req: NextRequest) {
         soNumber,
         namaCustomer,
         noHp: noHp ?? null,
+        alamat: alamat ?? null,
+        catatan: catatan ?? null,
         salesName: salesName ?? null,
         items: (savedItems.length > 0 ? savedItems : items).map((it: any) => ({
           nama: it.nama,
@@ -209,6 +211,8 @@ export async function POST(req: NextRequest) {
         metodePembayaran,
         bankPilihan: bankPilihan ?? null,
         status: 'pending',
+        pembayaranList: Array.isArray(pembayaranList) ? pembayaranList : undefined,
+        buktiCount: body.buktiCount ?? 0,
       });
       console.log('[WA notifikasi]', JSON.stringify(waResult));
     } catch (waErr: any) {

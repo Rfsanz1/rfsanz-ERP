@@ -366,6 +366,7 @@ export default function CreateOrderModal({
         edcPilihan:  p.metode === 'debit'    ? p.edcPilihan  : null,
         unitBisnis:  p.metode === 'cash'     ? (unitBisnis || null) : null,
       })),
+      buktiCount: pembayaranList.filter(p => p.buktiTransfer).length || undefined,
       items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId, unit }) => ({
         nama, qty, harga, subtotal,
         diskon: diskonItem || undefined,
