@@ -267,7 +267,7 @@ export async function findOrCreateKledoContact(
 const BANK_KEYWORDS: Record<string, string[]> = {
   /* Transfer Bank spesifik — urutan dari paling spesifik ke paling umum */
   bca:            ['bca giro', 'giro bca', 'bank bca', 'bca tabungan', 'bca'],
-  bri:            ['bri giro', 'giro bri', 'bank bri', 'bri tabungan', 'bri'],
+  bri:            ['bri giro', 'giro bri', 'bank bri', 'bri tabungan', 'bri', 'bri edc'],
   mandiri:        ['bank mandiri', 'mandiri tabungan', 'mandiri giro', 'mandiri'],
   bni:            ['bank bni', 'bni tabungan', 'bni giro', 'bni'],
 
@@ -404,7 +404,8 @@ export async function getBankAccountId(
     for (const kw of keywords) {
       const match = accounts.find((a: any) => {
         const name = (a.name ?? '').toLowerCase();
-        if (isTransferKey && name.includes('edc')) return false; // Transfer BRI/BCA/BNI jangan masuk ke akun EDC
+        // Transfer BRI/BCA/BNI jangan masuk ke akun EDC, kecuali keywordnya memang 'bri edc' dst
+        if (isTransferKey && !kw.includes('edc') && name.includes('edc')) return false;
         return name.includes(kw);
       });
       if (match) {
