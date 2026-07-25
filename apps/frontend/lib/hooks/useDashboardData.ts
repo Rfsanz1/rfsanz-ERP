@@ -88,8 +88,9 @@ export function useDashboardData() {
   const [data, setData]       = useState<DashboardData>(DEFAULT);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
-  const isDemo = useAuthStore((s) => s.isDemo);
-  const token  = useAuthStore((s) => s.token);
+  const isDemo    = useAuthStore((s) => s.isDemo);
+  const token     = useAuthStore((s) => s.token);
+  const authReady = useAuthStore((s) => s.authReady);
 
   /* Mutable ref untuk update Kledo agar tidak stale-closure */
   const dataRef = useRef<DashboardData>(DEFAULT);
@@ -186,8 +187,11 @@ export function useDashboardData() {
 
   useEffect(() => {
     if (isDemo) { setLoading(false); return; }
-    if (token) { refresh(); }
-  }, [isDemo, token]);
+    // Tunggu autoLogin() selesai (authReady=true), baru fetch.
+    // Kalau authReady sudah true saat mount (token dari localStorage), langsung fetch.
+    // API interceptor di api.ts akan handle 401 otomatis jika token expired.
+    if (authReady) { refresh(); }
+  }, [isDemo, authReady]);
 
   return { data, loading, error, refresh };
 }
