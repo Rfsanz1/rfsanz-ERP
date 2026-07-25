@@ -626,8 +626,8 @@ export async function pushOrderToKledo(
       items: kledoItems,
     };
     // ref_number tidak dikirim → Kledo auto-generate nomor INV/xxxxx
-    // Memo: nama sales | no HP (alamat dikirim terpisah di field message)
-    const memo = [order.salesName || '', order.noHp || ''].filter(Boolean).join(' | ');
+    // Memo: nama sales | no HP sales (sudah digabung di salesName, noHp adalah nomor konsumen — jangan ikutkan)
+    const memo = (order.salesName || '').trim();
     if (memo)                   payload.memo    = memo;
     // Catatan order → field "Pesan" di Kledo (alamat tidak disertakan)
     if (order.catatan)          payload.message = order.catatan;
