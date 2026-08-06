@@ -43,7 +43,12 @@ export class SalesService {
   async getOrder(id: number) {
     const o = await this.prisma.order.findUnique({ where: { id }, include: { customer: true, orderItems: { include: { product: true } } } });
     if (!o) throw new NotFoundException('Order tidak ditemukan');
-    return o;
+    // Enrich: jika noHp/alamat kosong di order, ambil dari relasi customer
+    return {
+      ...o,
+      noHp:   o.noHp   || o.customer?.phone   || null,
+      alamat: o.alamat || o.customer?.address  || null,
+    };
   }
 
   async createOrder(dto: any) {
