@@ -689,42 +689,10 @@ export class KledoService {
       const kledoTransNo = res.data?.data?.trans_no ?? res.data?.trans_no ?? null;
       this.logger.log(`[Kledo] Invoice dibuat: id=${kledoId} trans_no=${kledoTransNo}`);
 
-      /* ── Auto-lunas: tandai pembayaran di Kledo setelah invoice dibuat ── */
-      let kledoPaid      = false;
-      let kledoPaidError: string | undefined;
-
-      const metode = (dto.metodePembayaran ?? '').toLowerCase();
-      if (kledoId && metode && metode !== 'cod') {
-        const bankKey = this.resolveBankKey(metode, dto.bankPilihan, dto.edcPilihan, dto.unitBisnis);
-        const totalAmt = Number(dto.totalHarga ?? 0) || resolvedItems.reduce((s, it) => s + (it.amount ?? 0), 0);
-        this.logger.log(`[Kledo] auto-lunas: metode=${metode} bankKey="${bankKey}" amount=${totalAmt}`);
-
-        if (bankKey) {
-          const bankAccountId = await this.getBankAccountId(headers, baseUrl, bankKey);
-          if (bankAccountId) {
-            const paid = await this.markInvoicePaid(
-              headers, baseUrl, Number(kledoId),
-              bankAccountId, Math.round(totalAmt), transDate,
-              `Pembayaran ${metode.toUpperCase()} — ${dto.noInvoice ?? dto.orderId ?? ''}`.trim(),
-            );
-            kledoPaid      = paid.ok;
-            kledoPaidError = paid.error;
-          } else {
-            kledoPaidError = `Akun "${bankKey}" tidak ditemukan di COA Kledo`;
-            this.logger.warn(`[Kledo] auto-lunas SKIP: ${kledoPaidError}`);
-          }
-        } else {
-          this.logger.warn(`[Kledo] auto-lunas SKIP: metode="${metode}" tidak menghasilkan bankKey`);
-        }
-        this.logger.log(`[Kledo] auto-lunas selesai: kledoPaid=${kledoPaid} error=${kledoPaidError ?? '-'}`);
-      }
-
       return {
         success: true,
         kledoInvoiceId: kledoId,
         kledoTransNo,
-        kledoPaid,
-        kledoPaidError,
         message: res.data?.message ?? 'Tagihan berhasil dibuat di Kledo',
       };
     } catch (e: any) {

@@ -6,8 +6,7 @@ import {
   ShoppingCart, Plus, X, Trash2, Package, ArrowLeft,
   Tag, Percent, Truck, Link2, CheckCircle2, AlertCircle,
   CreditCard, Banknote, Smartphone, Wallet, Copy, Check, ChevronDown,
-  ImagePlus,
-  Camera,
+  ImagePlus, Camera,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/store/useAuthStore';
 import { api } from '../../lib/api';
@@ -137,12 +136,22 @@ export default function CreateOrderModal({
   const [pajak, setPajak]                     = useState(0);
   const [ongkir, setOngkir]                   = useState(0);
 
+  /* Legacy state kept only for compatibility with the hidden payment block.
+     New orders no longer render or submit payment details. */
   type PembayaranMetode = 'transfer' | 'cash' | 'debit' | 'cod';
-  interface PembayaranEntry { id: string; metode: PembayaranMetode; jumlah: number; bankPilihan: string | null; edcPilihan: string | null; autoFill: boolean; buktiTransfer: File | null; buktiPreviewUrl: string | null; }
-  const newPembayaran = (m: PembayaranMetode = 'transfer'): PembayaranEntry => ({ id: Math.random().toString(36).slice(2), metode: m, jumlah: 0, bankPilihan: null, edcPilihan: null, autoFill: true, buktiTransfer: null, buktiPreviewUrl: null });
-  const [pembayaranList, setPembayaranList]   = useState<PembayaranEntry[]>([newPembayaran()]);
-  const [copiedBank, setCopiedBank]           = useState<string | null>(null);
-  const [openBankDrop, setOpenBankDrop]       = useState<string | null>(null);
+  interface PembayaranEntry {
+    id: string; metode: PembayaranMetode; jumlah: number;
+    bankPilihan: string | null; edcPilihan: string | null; autoFill: boolean;
+    buktiTransfer: File | null; buktiPreviewUrl: string | null;
+  }
+  const newPembayaran = (m: PembayaranMetode = 'transfer'): PembayaranEntry => ({
+    id: Math.random().toString(36).slice(2), metode: m, jumlah: 0,
+    bankPilihan: null, edcPilihan: null, autoFill: true,
+    buktiTransfer: null, buktiPreviewUrl: null,
+  });
+  const [pembayaranList, setPembayaranList] = useState<PembayaranEntry[]>([newPembayaran()]);
+  const [copiedBank, setCopiedBank] = useState<string | null>(null);
+  const [openBankDrop, setOpenBankDrop] = useState<string | null>(null);
 
   const [items, setItems]                     = useState<OrderItem[]>([emptyItem()]);
   const [saving, setSaving]                   = useState(false);
@@ -150,49 +159,33 @@ export default function CreateOrderModal({
   const [error, setError]                     = useState('');
   const [savedOrderId, setSavedOrderId]       = useState<number | null>(null);
 
-  /* Auto-deteksi unit bisnis dari kategori produk — dipakai di payload, tidak ditampilkan di UI */
-  const unitBisnis = useMemo<'elektronik' | 'bahan_bangunan' | ''>(() => {
-    const counts = { elektronik: 0, bahan_bangunan: 0 };
-    for (const it of items) {
-      const k = it.kasUnit ?? (it.nama ? detectKategori(it.nama) : null);
-      if (k === 'elektronik') counts.elektronik++;
-      else if (k === 'bahan_bangunan') counts.bahan_bangunan++;
-    }
-    if (counts.elektronik > 0 && counts.bahan_bangunan === 0) return 'elektronik';
-    if (counts.bahan_bangunan > 0 && counts.elektronik === 0) return 'bahan_bangunan';
-    return '';
-  }, [items]);
-
   /* Load custom keywords from DB once when modal mounts */
   useEffect(() => { loadCustomKeywords(); }, []);
 
   const subtotalBruto = items.reduce((s, it) => s + it.subtotal, 0);
   const grandTotal    = Math.max(0, subtotalBruto - diskonTotal + pajak + ongkir);
-  const totalDibayar  = pembayaranList.reduce((s, p) => s + (p.jumlah || 0), 0);
-  const sisaBayar     = Math.max(0, grandTotal - totalDibayar);
-
-  /* Bagi rata sisa (grandTotal - total manual) ke semua entri yang masih auto-fill */
+  const totalDibayar = pembayaranList.reduce((s, p) => s + (p.jumlah || 0), 0);
+  const sisaBayar = Math.max(0, grandTotal - totalDibayar);
   const redistributeAuto = (list: PembayaranEntry[], total: number): PembayaranEntry[] => {
-    const totalManual = list.filter(p => !p.autoFill).reduce((s, p) => s + (p.jumlah || 0), 0);
     const autoEntries = list.filter(p => p.autoFill);
-    if (autoEntries.length === 0) return list;
-    const sisa = Math.max(0, total - totalManual);
-    const share = Math.floor(sisa / autoEntries.length);
+    if (!autoEntries.length) return list;
+    const manual = list.filter(p => !p.autoFill).reduce((s, p) => s + (p.jumlah || 0), 0);
+    const share = Math.floor(Math.max(0, total - manual) / autoEntries.length);
     let seen = 0;
     return list.map(p => {
       if (!p.autoFill) return p;
       seen++;
-      const isLast = seen === autoEntries.length;
-      return { ...p, jumlah: isLast ? sisa - share * (autoEntries.length - 1) : share };
+      return { ...p, jumlah: seen === autoEntries.length
+        ? Math.max(0, total - manual) - share * (autoEntries.length - 1)
+        : share };
     });
   };
 
-  /* Auto-fill jumlah pembayaran saat grandTotal atau jumlah pembayaran manual berubah */
-  useEffect(() => {
-    setPembayaranList(prev => redistributeAuto(prev, grandTotal));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grandTotal, pembayaranList.filter(p => !p.autoFill).map(p => p.jumlah).join(',')]);
-
+  const copyRekening = (bank: string, no: string) => {
+    navigator.clipboard?.writeText(no.replace(/\s/g, '')).catch(() => {});
+    setCopiedBank(bank);
+    setTimeout(() => setCopiedBank(null), 2000);
+  };
   const handleCustomerSelect = (c: CustomerOption) => {
     setNamaCustomer(c.name);
     if (c.phone && !noHp) setNoHp(c.phone);
@@ -234,13 +227,6 @@ export default function CreateOrderModal({
     );
   };
 
-  const copyRekening = (bank: string, no: string) => {
-    const clean = no.replace(/\s/g, '');
-    navigator.clipboard.writeText(clean).catch(() => {});
-    setCopiedBank(bank);
-    setTimeout(() => setCopiedBank(null), 2000);
-  };
-
   const addItem    = () => setItems(prev => [...prev, emptyItem()]);
   const removeItem = (id: number) => setItems(prev => prev.filter(it => it.id !== id));
 
@@ -249,67 +235,6 @@ export default function CreateOrderModal({
     setSaving(true);
     setKledoStatus('syncing');
 
-    /* Helper: upload bukti transfer ke Kledo (dipanggil di semua success path) */
-    const uploadBuktiIfAvailable = async (kledoInvoiceId: number | string | null | undefined) => {
-      if (!kledoInvoiceId) return;
-      const transferEntries = pembayaranList.filter(p => p.metode === 'transfer' && p.buktiTransfer);
-      for (const entry of transferEntries) {
-        if (!entry.buktiTransfer) continue;
-        try {
-          const fd = new FormData();
-          fd.append('invoiceId', String(kledoInvoiceId));
-          fd.append('file', entry.buktiTransfer, entry.buktiTransfer.name);
-          const token = typeof window !== 'undefined' ? localStorage.getItem('gm_auth_token') ?? '' : '';
-          const r = await fetch('/api/kledo/invoice-attachment', {
-            method: 'POST',
-            body: fd,
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const d = await r.json().catch(() => ({}));
-          if (d.ok) {
-            console.log('[bukti-transfer] Upload OK ke Kledo invoice', kledoInvoiceId);
-          } else {
-            console.warn('[bukti-transfer] Upload gagal:', d.error);
-          }
-        } catch (e: any) {
-          console.warn('[bukti-transfer] Upload exception:', e.message);
-        }
-      }
-    };
-
-    /* Helper: kirim foto bukti transfer ke WA grup payment + konsumen via Fonnte */
-    const sendWaBuktiIfAvailable = async (soNumber: string | null | undefined) => {
-      const transferEntries = pembayaranList.filter(p => p.metode === 'transfer' && p.buktiTransfer);
-      if (transferEntries.length === 0) return;
-      const token = typeof window !== 'undefined' ? localStorage.getItem('gm_auth_token') ?? '' : '';
-      for (const entry of transferEntries) {
-        if (!entry.buktiTransfer) continue;
-        try {
-          const fd = new FormData();
-          fd.append('file', entry.buktiTransfer, entry.buktiTransfer.name);
-          fd.append('soNumber', soNumber ?? '-');
-          fd.append('namaCustomer', namaCustomer);
-          fd.append('noHp', noHp ?? '');
-          fd.append('totalHarga', String(grandTotal));
-          fd.append('bankPilihan', entry.bankPilihan ?? '');
-          fd.append('salesName', salesName ?? '');
-          const r = await fetch('/api/wa/send-bukti', {
-            method: 'POST',
-            body: fd,
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const d = await r.json().catch(() => ({}));
-          if (d.ok) {
-            console.log('[bukti-wa] Foto bukti transfer terkirim ke WA');
-          } else {
-            console.warn('[bukti-wa] Gagal kirim WA:', d.error ?? d.results);
-          }
-        } catch (e: any) {
-          console.warn('[bukti-wa] Exception:', e.message);
-        }
-      }
-    };
-
     /* ── RETRY MODE: order sudah tersimpan lokal, cukup kirim ulang ke Kledo ── */
     if (savedOrderId !== null) {
       try {
@@ -317,10 +242,6 @@ export default function CreateOrderModal({
         const kledoResult = (res.data as any)?.kledo;
         if (kledoResult?.ok) {
           setKledoStatus('ok');
-          // Upload bukti transfer jika retry berhasil dan ada invoiceId
-          uploadBuktiIfAvailable(kledoResult?.invoiceId).catch(() => {});
-          // Kirim foto bukti ke WA (soNumber tidak tersedia saat retry — pakai orderId)
-          sendWaBuktiIfAvailable(`ORD-${savedOrderId}`).catch(() => {});
           setTimeout(onSuccess, 800);
         } else {
           setKledoStatus('error');
@@ -355,18 +276,6 @@ export default function CreateOrderModal({
       totalHarga: grandTotal,
       status: 'pending',
       kledoContactId: kledoContactId || undefined,
-      metodePembayaran: pembayaranList.length === 1
-        ? pembayaranList[0].metode
-        : (new Set(pembayaranList.map(p => p.metode)).size === 1 ? pembayaranList[0].metode : 'mixed'),
-      unitBisnis: unitBisnis || undefined,
-      pembayaranList: pembayaranList.map(p => ({
-        metode:      p.metode,
-        jumlah:      p.jumlah || grandTotal,
-        bankPilihan: p.metode === 'transfer' ? p.bankPilihan : null,
-        edcPilihan:  p.metode === 'debit'    ? p.edcPilihan  : null,
-        unitBisnis:  p.metode === 'cash'     ? (unitBisnis || null) : null,
-      })),
-      buktiCount: pembayaranList.filter(p => p.buktiTransfer).length || undefined,
       items: items.map(({ nama, qty, harga, subtotal, diskonItem, productId, kledoProductId, unit }) => ({
         nama, qty, harga, subtotal,
         diskon: diskonItem || undefined,
@@ -390,12 +299,6 @@ export default function CreateOrderModal({
         /* Backend versi lama yang memang kembalikan { kledo } */
         if (kledoResult?.ok) {
           setKledoStatus('ok');
-          uploadBuktiIfAvailable(kledoResult?.invoiceId).catch(() => {});
-          sendWaBuktiIfAvailable(resSoNumber).catch(() => {});
-          // Cek apakah auto-lunas berhasil — tampilkan warning jika tidak
-          if (!kledoResult?.paid && kledoResult?.paidError) {
-            setError(`Invoice masuk Kledo ✓ — Lunas GAGAL: ${kledoResult.paidError}. Tandai manual di Kledo atau cek konfigurasi akun di Integrasi > Kledo.`);
-          }
           onSuccess();
         } else {
           setSavedOrderId(orderId);
@@ -408,8 +311,6 @@ export default function CreateOrderModal({
            Coba ambil kledoInvoiceId dari data order jika ada. */
         setKledoStatus('ok');
         const asyncInvoiceId = (res.data as any)?.data?.kledoInvoiceId ?? (res.data as any)?.kledoInvoiceId;
-        uploadBuktiIfAvailable(asyncInvoiceId).catch(() => {});
-        sendWaBuktiIfAvailable(resSoNumber).catch(() => {});
         onSuccess();
       }
     } catch (e: any) {
@@ -716,8 +617,8 @@ export default function CreateOrderModal({
             </div>
           </section>
 
-          {/* SEKSI 5: Detail Pembayaran */}
-          <section className="space-y-4">
+          {/* Detail pembayaran dihapus dari alur order baru. */}
+          {false && <section className="space-y-4">
             <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Detail Pembayaran</p>
 
             {/* ── Daftar pembayaran (bisa lebih dari satu) ── */}
@@ -1109,7 +1010,7 @@ export default function CreateOrderModal({
                 ⚠ {error}
               </div>
             )}
-          </section>
+          </section>}
         </div>
 
         {/* ── Footer ── */}

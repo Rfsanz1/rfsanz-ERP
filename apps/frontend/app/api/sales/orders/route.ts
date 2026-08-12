@@ -83,13 +83,6 @@ export async function POST(req: NextRequest) {
       tanggal, diskonTotal, pajak, ongkir, totalHarga,
       status = 'pending', items = [], customerId,
       kledoContactId,
-      metodePembayaran = 'transfer',
-      bankPilihan = null,
-      edcPilihan = null,
-      unitBisnis = null,
-      metodeDp = null,
-      uangMuka = 0,
-      pembayaranList = null,
     } = body;
 
     if (!namaCustomer) {
@@ -98,11 +91,6 @@ export async function POST(req: NextRequest) {
 
     const db = getDb();
     const soNumber = generateSoNumber();
-
-    /* Derive effective metodePembayaran from pembayaranList if provided */
-    const effectiveMetode = pembayaranList && Array.isArray(pembayaranList) && pembayaranList.length > 0
-      ? (new Set(pembayaranList.map((p: any) => p.metode)).size === 1 ? pembayaranList[0].metode : 'mixed')
-      : metodePembayaran;
 
     const orderRes = await db.query(
       `INSERT INTO local_orders
@@ -117,9 +105,8 @@ export async function POST(req: NextRequest) {
         salesName ?? null, tanggal ?? new Date().toISOString().slice(0, 10),
         diskonTotal ?? 0, pajak ?? 0, ongkir ?? 0,
         totalHarga ?? 0, status, customerId ?? null, soNumber,
-        effectiveMetode, uangMuka ?? 0, kledoContactId ?? null,
-        pembayaranList ? JSON.stringify(pembayaranList) : null,
-        bankPilihan ?? null, edcPilihan ?? null, unitBisnis ?? null,
+        null, 0, kledoContactId ?? null,
+        null, null, null, null,
       ],
     );
     const order = orderRes.rows[0];
@@ -148,9 +135,6 @@ export async function POST(req: NextRequest) {
     let kledoInvoiceId: number | null = null;
     let kledoError: string | undefined;
 
-    let kledoPaid = false;
-    let kledoPaidError: string | undefined;
-
     try {
       const result = await pushOrderToKledo(authHeader, {
         soNumber,
@@ -165,21 +149,12 @@ export async function POST(req: NextRequest) {
         pajak: pajak ?? 0,
         ongkir: ongkir ?? 0,
         totalHarga: totalHarga ?? 0,
-        metodePembayaran: effectiveMetode,
-        bankPilihan: bankPilihan ?? null,
-        edcPilihan: edcPilihan ?? null,
-        unitBisnis: unitBisnis ?? null,
-        metodeDp: metodeDp ?? null,
-        pembayaranList: pembayaranList ?? undefined,
         items: savedItems.length > 0 ? savedItems : items,
       });
 
       kledoOk = result.ok;
       kledoInvoiceId = result.kledoInvoiceId;
       kledoError = result.error;
-      kledoPaid = result.kledoPaid ?? false;
-      kledoPaidError = result.kledoPaidError;
-
       if (kledoOk && kledoInvoiceId) {
         await db.query(
           `UPDATE local_orders SET kledo_invoice_id=$1, kledo_synced=true, updated_at=NOW() WHERE id=$2`,
@@ -208,11 +183,7 @@ export async function POST(req: NextRequest) {
           harga: Number(it.harga ?? 0),
         })),
         totalHarga: Number(totalHarga ?? 0),
-        metodePembayaran,
-        bankPilihan: bankPilihan ?? null,
         status: 'pending',
-        pembayaranList: Array.isArray(pembayaranList) ? pembayaranList : undefined,
-        buktiCount: body.buktiCount ?? 0,
       });
       console.log('[WA notifikasi]', JSON.stringify(waResult));
     } catch (waErr: any) {
@@ -222,7 +193,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       data: fullOrder,
       error: null,
-      kledo: { ok: kledoOk, invoiceId: kledoInvoiceId, error: kledoError, paid: kledoPaid, paidError: kledoPaidError },
+      kledo: { ok: kledoOk, invoiceId: kledoInvoiceId, error: kledoError },
       wa: waResult,
     });
   } catch (e: any) {

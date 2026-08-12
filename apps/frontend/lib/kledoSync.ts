@@ -649,71 +649,9 @@ export async function pushOrderToKledo(
     const invoiceId: number = data.data.id;
     const kledoRef: string  = data.data.ref_number ?? null;
 
-    /* ── Auto tandai LUNAS/SEBAGIAN per metode pembayaran ── */
-    let kledoPaid      = false;
-    let kledoPaidError: string | undefined;
-
-    const BANK_MEMO: Record<string, string> = { bca: 'BCA Giro', bri: 'BRI EDC', mandiri: 'Mandiri', bni: 'BNI' };
-    const EDC_MEMO:  Record<string, string> = { bca_edc: 'BCA EDC', bri_edc: 'BRI EDC', bni_edc: 'BNI' };
-    const UNIT_MEMO: Record<string, string> = { elektronik: 'KAS ELEKTRONIK', bahan_bangunan: 'KAS SULAWESI' };
-
-    const totalAmount = order.totalHarga ?? order.items.reduce((s, it) => s + (it.subtotal ?? 0), 0);
-
-    /* Bangun daftar pembayaran — bisa dari array multi-metode atau fallback single */
-    const resolveKey = (entry: PembayaranEntry): { key: string; memo: string } => {
-      const bank = entry.bankPilihan?.toLowerCase() ?? '';
-      const edc  = entry.edcPilihan?.toLowerCase()  ?? '';
-      const unit = entry.unitBisnis?.toLowerCase()   ?? '';
-      if (entry.metode === 'transfer') {
-        // Jika bankPilihan ada → gunakan spesifik, jika tidak → fallback ke akun transfer/bank generik
-        if (bank) return { key: bank, memo: BANK_MEMO[bank] ?? bank.toUpperCase() };
-        return { key: 'transfer', memo: 'Transfer' };
-      }
-      if (entry.metode === 'debit') {
-        if (edc) return { key: edc, memo: EDC_MEMO[edc] ?? edc.toUpperCase() };
-        return { key: 'edc', memo: 'Debit/EDC' };
-      }
-      if (entry.metode === 'cash') return { key: unit || 'kas', memo: UNIT_MEMO[unit] ?? (unit ? unit.toUpperCase() : 'KAS') };
-      if (entry.metode === 'dp')   return { key: 'kas', memo: 'Uang Muka' };
-      return { key: '', memo: '' };
-    };
-
-    const paymentEntries: PembayaranEntry[] = order.pembayaranList && order.pembayaranList.length > 0
-      ? order.pembayaranList
-      : [{
-          metode:      order.metodePembayaran ?? '',
-          jumlah:      totalAmount,
-          bankPilihan: order.bankPilihan ?? null,
-          edcPilihan:  order.edcPilihan  ?? null,
-          unitBisnis:  order.unitBisnis  ?? null,
-        }];
-
-    console.log(`[kledo] auto-lunas: ${paymentEntries.length} entry, totalAmount=${totalAmount}, invoiceId=${invoiceId}`);
-    for (const entry of paymentEntries) {
-      console.log(`[kledo] entry: metode=${entry.metode} bank=${entry.bankPilihan} edc=${entry.edcPilihan} unit=${entry.unitBisnis} jumlah=${entry.jumlah}`);
-      if (entry.metode === 'cod') { console.log('[kledo] COD → skip'); continue; }
-      const { key, memo } = resolveKey(entry);
-      if (!key) { console.log(`[kledo] metode=${entry.metode} → key kosong, di-skip`); continue; }
-      console.log(`[kledo] resolveKey → key="${key}" memo="${memo}"`);
-      const entryAmount   = entry.jumlah || totalAmount;
-      const bankAccountId = await getBankAccountId(cfg.baseUrl, cfg.token, key);
-      if (bankAccountId) {
-        const paid = await markKledoInvoicePaid(
-          cfg.baseUrl, cfg.token, invoiceId,
-          bankAccountId, entryAmount,
-          order.tanggal,
-          `Pembayaran ${memo} — ${order.soNumber ?? ''}`.trim(),
-        );
-        if (paid.ok) kledoPaid = true;
-        else kledoPaidError = paid.error;
-      } else {
-        kledoPaidError = `Akun ${memo} tidak ditemukan di Kledo`;
-        console.error(`[kledo] TIDAK KETEMU akun untuk key="${key}" memo="${memo}"`);
-      }
-    }
-    console.log(`[kledo] auto-lunas selesai: kledoPaid=${kledoPaid} error=${kledoPaidError ?? '-'}`);
-
-    return { ok: true, kledoInvoiceId: invoiceId, kledoRef, kledoPaid, kledoPaidError };
+    // Order baru hanya membuat invoice/tagihan. Pembayaran dan auto-lunas
+    // dilakukan manual dari alur keuangan, bukan saat membuat order.
+    return { ok: true, kledoInvoiceId: invoiceId, kledoRef };
   } catch (e: any) {
     return { ok: false, kledoInvoiceId: null, kledoRef: null, error: e.message };
   }
