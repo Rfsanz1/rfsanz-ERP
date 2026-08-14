@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       ongkir       = 0,
       grandTotal   = 0,
       items        = [],
-      metodePembayaran = 'transfer',
+      metodePembayaran,
       bankPilihan  = null,
       edcPilihan   = null,
       unitBisnis   = null,
@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
     const db      = getDb();
     const invNo   = generateInvNumber();
     const tanggalFinal = tanggal ?? new Date().toISOString().slice(0, 10);
+    const metodePembayaranFinal = metodePembayaran ?? 'transfer';
 
     /* ── 1. Simpan ke local_orders (reuse tabel yang sama) ── */
     const orderRes = await db.query(
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
         invNo, namaCustomer.trim(), noHp ?? null, notes ?? null,
         salesName ?? null, tanggalFinal,
         diskonTotal, pajak, ongkir, grandTotal,
-        customerId ?? null, kledoContactId ?? null, metodePembayaran,
+        customerId ?? null, kledoContactId ?? null, metodePembayaranFinal,
         bankPilihan ?? null, edcPilihan ?? null, unitBisnis ?? null,
       ],
     );

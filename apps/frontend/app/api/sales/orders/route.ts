@@ -83,6 +83,8 @@ export async function POST(req: NextRequest) {
       tanggal, diskonTotal, pajak, ongkir, totalHarga,
       status = 'pending', items = [], customerId,
       kledoContactId,
+      metodePembayaran,
+      paymentMethod,
     } = body;
 
     if (!namaCustomer) {
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
 
     const db = getDb();
     const soNumber = generateSoNumber();
+    const metodePembayaranFinal = metodePembayaran ?? paymentMethod ?? 'transfer';
 
     const orderRes = await db.query(
       `INSERT INTO local_orders
@@ -105,7 +108,7 @@ export async function POST(req: NextRequest) {
         salesName ?? null, tanggal ?? new Date().toISOString().slice(0, 10),
         diskonTotal ?? 0, pajak ?? 0, ongkir ?? 0,
         totalHarga ?? 0, status, customerId ?? null, soNumber,
-        null, 0, kledoContactId ?? null,
+        metodePembayaranFinal, 0, kledoContactId ?? null,
         null, null, null, null,
       ],
     );
