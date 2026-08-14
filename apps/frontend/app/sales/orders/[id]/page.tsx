@@ -81,10 +81,38 @@ export default function OrderDetailPage() {
             inv = list.find((i: any) => String(i.id) === kledoId);
           }
           if (inv) {
+            const contact = inv.contact && typeof inv.contact === 'object' ? inv.contact : {};
+            const customer = inv.customer && typeof inv.customer === 'object' ? inv.customer : {};
+            const contactName = contact.name ?? customer.name ?? inv.contact_name ?? '';
+            let contactPhone = contact.phone ?? contact.mobile ?? contact.phone_number
+              ?? customer.phone ?? inv.contact_phone ?? inv.phone ?? null;
+            let contactAddress = contact.address ?? contact.alamat
+              ?? customer.address ?? inv.shipping_address ?? inv.address ?? null;
+
+            /* Sebagian respons invoice Kledo hanya membawa nama kontak.
+               Ambil detail kontak sebagai fallback agar laporan tetap lengkap. */
+            if ((!contactPhone || !contactAddress) && contactName) {
+              try {
+                const cRes = await api.get('/direct/kledo-search', {
+                  params: { type: 'contacts', q: contactName },
+                });
+                const contacts: any[] = Array.isArray(cRes.data?.data) ? cRes.data.data : [];
+                const contactId = String(contact.id ?? inv.contact_id ?? '');
+                const found = contacts.find((c: any) =>
+                  (contactId && String(c.id ?? c.kledoId ?? '') === contactId)
+                  || String(c.name ?? '').trim().toLowerCase() === String(contactName).trim().toLowerCase(),
+                );
+                contactPhone = contactPhone ?? found?.phone ?? null;
+                contactAddress = contactAddress ?? found?.address ?? null;
+              } catch {}
+            }
+
             data = {
               id,
               soNumber: inv.ref_number ?? `INV-${inv.id}`,
-              namaCustomer: inv.contact?.name ?? inv.contact_name ?? '–',
+              namaCustomer: contactName || '–',
+              noHp: contactPhone,
+              alamat: contactAddress,
               totalHarga: Number(inv.amount ?? inv.total ?? 0),
               status: inv.status ?? 'draft',
               createdAt: inv.trans_date,
@@ -103,8 +131,9 @@ export default function OrderDetailPage() {
           }
         } catch {}
       } else {
-        /* Order lokal: coba sales/orders (endpoint yang benar) lalu orders sebagai fallback */
-        for (const url of [`/sales/orders/${id}`, `/orders/${id}`]) {
+        /* Order lokal harus dicoba dulu agar detail memakai data local_orders.
+           Endpoint sales/orders adalah fallback untuk order backend lama. */
+        for (const url of [`/orders/${id}`, `/sales/orders/${id}`]) {
           try {
             const r = await api.get(url);
             const d = r.data?.data ?? r.data;
